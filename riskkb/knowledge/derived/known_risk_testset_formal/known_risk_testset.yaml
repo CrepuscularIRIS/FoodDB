@@ -1,0 +1,2344 @@
+version: known-risk-testset-v1
+generated_at: '2026-03-09T03:46:26.532316+00:00'
+source:
+  risk_taxonomy: /home/yarizakurahime/data/standalone_food_risk_kb/knowledge/configs/risk_taxonomy.yaml
+  stage_rules: /home/yarizakurahime/data/standalone_food_risk_kb/knowledge/configs/stage_rules.yaml
+  builder: backend/known_risk_testset_builder.py
+  model: MiniMax-M2.5
+cases:
+- case_id: '1'
+  style: 症状主导型
+  user_query: 消费者投诉在超市购买的某品牌糖果中发现塑料异物，食用后口腔被划伤，如何判断是否需要启动召回程序？
+  symptoms:
+  - 口腔撕裂
+  - 牙齿损伤
+  - 口腔不适
+  - 异物感
+  vulnerable_group: 儿童
+  product: 糖果
+  indicative_tests:
+  - 现场实物检查
+  - 消费者投诉记录
+  - 产品留样检测
+  expected_risk_factor_id: physical_foreign_material
+  expected_risk_factor_name: Foreign Material
+  acceptable_alternatives: []
+  expected_stage_ids:
+  - production_and_processing
+  - packaging_and_filling
+  gb_main_basis: 食品生产通用卫生规范
+  method_basis: 现场调查核实异物来源
+  evidence_type: recall_event
+  should_not_recall:
+  - 食品添加剂超标
+  - 微生物污染
+  - 农药残留
+  - 重金属超标
+  notes: 消费者明确发现塑料异物且造成人身伤害，属于物理危害应启动召回
+- case_id: '2'
+  style: 检验项主导型
+  user_query: 乳制品工厂日常金属探测仪检测出巧克力产品有铁金属信号，排查后未发现生产设备异常，这种情况是否构成召回条件？
+  symptoms:
+  - 窒息
+  - 牙齿损伤
+  - 口腔撕裂
+  vulnerable_group: 老年人
+  product: 巧克力
+  indicative_tests:
+  - 金属探测仪检测
+  - 设备校准记录
+  - 生产过程监控
+  - 原料验收记录
+  expected_risk_factor_id: physical_foreign_material
+  expected_risk_factor_name: Foreign Material
+  acceptable_alternatives: []
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 食品金属探测器使用规范
+  method_basis: 设备检测和原料溯源
+  evidence_type: expert_rule
+  should_not_recall:
+  - 食品添加剂超标
+  - 微生物污染
+  - 包装破损
+  - 标签错误
+  notes: 金属探测仪检出异物但未流入市场，属于预防性召回需评估风险等级
+- case_id: arsenic_case_001
+  style: 症状主导型
+  user_query: 消费者反映长期饮用某品牌瓶装矿泉水后出现皮肤色素沉着和指甲变形，是否可能是水质问题？
+  symptoms:
+  - 皮肤色素沉着
+  - 指甲变形
+  - 砷皮肤病变
+  - 乏力
+  vulnerable_group: 长期饮用者
+  product: 瓶装矿泉水
+  indicative_tests:
+  - 总砷含量检测
+  - 无机砷形态分析
+  - 水质微量元素检测
+  - 消费者健康调查
+  expected_risk_factor_id: chemical_arsenic
+  expected_risk_factor_name: Arsenic
+  acceptable_alternatives:
+  - chemical_lead
+  - chemical_cadmium
+  - chemical_mercury
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 矿泉水水源地砷背景值
+  method_basis: 水源地环境评估报告
+  evidence_type: medical_literature
+  should_not_recall:
+  - 农药残留
+  - 食品添加剂超标
+  - 微生物污染
+  - 包装迁移塑化剂
+  notes: 症状符合慢性砷中毒特征，需追溯水源和生产工艺
+- case_id: arsenic_case_002
+  style: 产品主导型
+  user_query: 婴儿米糊产品抽检发现砷含量接近标准限值，请问风险评估和后续处理建议？
+  symptoms:
+  - 砷皮肤病变
+  - 皮肤损伤
+  - 癌症
+  vulnerable_group: 婴幼儿
+  product: 婴儿米糊
+  indicative_tests:
+  - 总砷含量检测
+  - 无机砷含量检测
+  - 原料大米砷含量追溯
+  - 加工用水检测
+  expected_risk_factor_id: chemical_arsenic
+  expected_risk_factor_name: Arsenic
+  acceptable_alternatives:
+  - chemical_lead
+  - chemical_cadmium
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 婴幼儿食品砷限值标准
+  method_basis: 原料大米产地砷背景调查
+  evidence_type: recall_event
+  should_not_recall:
+  - 黄曲霉毒素B1
+  - 沙门氏菌
+  - 李斯特菌
+  - 致泻大肠杆菌
+  notes: 婴幼儿人群敏感，需优先评估原料风险并加强检测
+- case_id: cadmium_001
+  style: 症状主导型
+  user_query: 近期有消费者长期饮用某品牌牛奶后出现肾功能异常，检查发现尿镉含量偏高，是否可能与乳制品中的镉污染有关？
+  symptoms:
+  - 肾毒性
+  - 慢性肾病
+  - 尿镉偏高
+  vulnerable_group: 肾功能较弱的成年人
+  product: 巴氏杀菌乳
+  indicative_tests:
+  - 原料乳重金属镉含量检测
+  - 饲料及肥料重金属检测
+  - 水质重金属检测
+  expected_risk_factor_id: chemical_cadmium
+  expected_risk_factor_name: Cadmium (镉)
+  acceptable_alternatives:
+  - chemical_lead
+  - chemical_arsenic
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 乳品安全国家标准 食品中污染物限量
+  method_basis: 食品中镉的石墨炉原子吸收光谱法测定
+  evidence_type: medical_literature
+  should_not_recall:
+  - 三聚氰胺
+  - 防腐剂超标
+  - 菌落总数超标
+  - 包装迁移塑化剂
+  notes: 镉通过食物链富集进入乳制品的可能性较高，需重点追溯饲料、牧草和水源污染
+- case_id: cadmium_002
+  style: 原料污染型
+  user_query: 某乳制品企业收到原料供应商的大米镉超标的检测报告，担心使用该原料会影响产品安全，请问应该如何评估风险？
+  symptoms:
+  - 肾毒性
+  - 骨质疏松
+  - 肺癌
+  vulnerable_group: 婴幼儿
+  product: 调制乳粉
+  indicative_tests:
+  - 原料大米镉含量检测
+  - 成品镉含量检测
+  - 原料来源追溯
+  expected_risk_factor_id: chemical_cadmium
+  expected_risk_factor_name: Cadmium (镉)
+  acceptable_alternatives:
+  - chemical_lead
+  - chemical_mercury
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - farm_and_raw_milk
+  gb_main_basis: 婴幼儿配方食品原料安全标准
+  method_basis: 原料验收重金属检测规范
+  evidence_type: recall_event
+  should_not_recall:
+  - 黄曲霉毒素M1
+  - 阪崎肠杆菌
+  - 维生素含量不足
+  - 标签不合格
+  notes: 镉可通过原料引入，需评估原料污染程度及成品中的迁移量
+- case_id: case_001
+  style: 症状主导型
+  user_query: 3岁幼儿近半年出现注意力不集中、记忆力下降症状，智力发育迟缓，体检发现血铅超标，家长怀疑与日常饮食有关，如何排查风险来源？
+  symptoms:
+  - 神经系统损伤
+  - 注意力不集中
+  - 记忆力下降
+  - 智力发育迟缓
+  vulnerable_group: 儿童
+  product: 饮用水
+  indicative_tests:
+  - 血铅/血镉检测
+  - 尿汞/尿砷检测
+  - 饮用水重金属含量检测
+  - 环境重金属筛查
+  expected_risk_factor_id: chemical_heavy_metals_pb_cd_hg_as
+  expected_risk_factor_name: 重金属 (Pb, Cd, Hg, As)
+  acceptable_alternatives:
+  - chemical_melamine
+  - chemical_hazard
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 食品中重金属限量标准
+  method_basis: 石墨炉原子吸收光谱法检测铅镉，原子荧光法检测汞砷
+  evidence_type: medical_literature
+  should_not_recall:
+  - 细菌总数超标
+  - 食品添加剂超量
+  - 标签标识错误
+  - 营养成分不合格
+  notes: 儿童血铅超标需排查饮用水的管道铅迁移、净水器铅释放风险，同时考虑居住环境铅尘暴露
+- case_id: case_002
+  style: 产品主导型
+  user_query: 超市销售的水产养殖鱼类被抽检发现镉含量接近限量值上限，消费者投诉后企业需评估是否启动召回程序及防控措施
+  symptoms:
+  - 肾功能衰竭
+  - 骨质疏松
+  - 致癌
+  vulnerable_group: 肾功能不全者
+  product: 水产品
+  indicative_tests:
+  - 水产品重金属含量检测
+  - 养殖水质监测
+  - 饲料重金属检测
+  - 养殖底泥重金属筛查
+  expected_risk_factor_id: chemical_heavy_metals_pb_cd_hg_as
+  expected_risk_factor_name: 重金属 (Pb, Cd, Hg, As)
+  acceptable_alternatives:
+  - chemical_melamine
+  - chemical_hazard
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 水产品重金属限量标准
+  method_basis: ICP-MS法检测多种重金属元素
+  evidence_type: recall_event
+  should_not_recall:
+  - 兽药残留超标
+  - 寄生虫感染
+  - 组胺超标
+  - 非法添加着色剂
+  notes: 水产品镉超标主要来源于养殖水体和底泥污染，需追溯养殖环境，确认是否属于区域性环境污染而非企业生产过程问题
+- case_id: case_oa_001
+  style: 症状主导型
+  user_query: 近期有多名消费者反映饮用我们品牌的咖啡后出现不明原因的肾区不适和疲劳感，怀疑是咖啡豆原料存在问题，需要排查真菌毒素污染风险
+  symptoms:
+  - 肾区不适
+  - 疲劳
+  - 尿量异常
+  - 肾功能指标异常
+  vulnerable_group: '[''肾功能较弱者'', ''老年人'', ''孕妇'']'
+  product: 烘焙咖啡豆
+  indicative_tests:
+  - 赌曲霉毒素A高效液相色谱检测
+  - 真菌毒素广谱筛查
+  - 原料霉菌培养鉴定
+  expected_risk_factor_id: toxin_ochratoxin_a_32
+  expected_risk_factor_name: Ochratoxin A
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 咖啡豆原料验收标准及真菌毒素限量要求
+  method_basis: HPLC荧光检测法参考GB方法原理
+  evidence_type: medical_literature
+  should_not_recall:
+  - 农药残留
+  - 重金属污染
+  - 食品添加剂超标
+  - 微生物腐败
+  notes: 症状指向肾毒性，需优先排查原料中赌曲霉毒素A污染，咖啡豆是OTOA常见载体
+- case_id: case_oa_002
+  style: 产品主导型
+  user_query: 原料采购部门反馈一批进口咖啡豆的供应商检测报告显示赌曲霉毒素A含量接近欧盟限量值，需要评估这批原料是否可以投入使用
+  symptoms:
+  - 肾毒性
+  - 致畸
+  - 免疫毒性
+  vulnerable_group: '[''普通消费者'']'
+  product: 生咖啡豆
+  indicative_tests:
+  - 赌曲霉毒素A定量检测
+  - 产地真菌毒素普查
+  - 供应商原料安全评估
+  expected_risk_factor_id: toxin_ochratoxin_a_32
+  expected_risk_factor_name: Ochratoxin A
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  gb_main_basis: 咖啡豆原料进厂检验规范及真菌毒素国标限量
+  method_basis: 免疫亲和层析净化HPLC法
+  evidence_type: recall_event
+  should_not_recall:
+  - 咖啡因含量
+  - 水分含量不达标
+  - 颗粒度不均
+  - 包装密封性
+  notes: 原料源头风险排查，重点评估供应商检测报告可信度和原料仓储温湿度控制记录
+- case_id: chemical_dioxins_001
+  style: 症状主导型
+  user_query: 某品牌婴幼儿配方奶粉被投诉可能导致婴儿发育迟缓、免疫力下降，是否存在二噁英污染风险？
+  symptoms:
+  - 发育迟缓
+  - 免疫力下降
+  - 食欲不振
+  vulnerable_group: 婴儿
+  product: 婴幼儿配方奶粉
+  indicative_tests:
+  - 二噁英含量检测
+  - PCDDs/PCDFs专项检测
+  - 脂肪含量检测
+  expected_risk_factor_id: chemical_dioxins
+  expected_risk_factor_name: Dioxins
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 原料乳二噁英检测、饲料来源追溯
+  method_basis: 同位素稀释高分辨气相色谱-质谱法检测二噁英
+  evidence_type: medical_literature
+  should_not_recall:
+  - 三聚氰胺事件
+  - 阪崎肠杆菌污染
+  - 真菌毒素超标
+  - 维生素添加不足
+  notes: 二噁英为高脂溶性污染物，易在动物源性食品中富集，原料奶和饲料是主要风险环节
+- case_id: chemical_dioxins_002
+  style: 原料污染型
+  user_query: 某乳制品企业原料奶检测报告显示二噁英含量接近检出限，供应商饲料来源为某工业区周边牧场，是否需要启动召回？
+  symptoms:
+  - 视觉损害
+  - 神经元退行性损伤
+  - 发育毒性
+  vulnerable_group: 孕妇
+  product: 原料乳
+  indicative_tests:
+  - 原料乳二噁英检测
+  - 饲料二噁英筛查
+  - 牧场环境评估
+  expected_risk_factor_id: chemical_dioxins
+  expected_risk_factor_name: Dioxins
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - farm_and_raw_milk
+  gb_main_basis: 饲料供应商资质审计、原料奶入厂检验
+  method_basis: HRGC-HRMS检测方法，参照EU标准执行
+  evidence_type: recall_event
+  should_not_recall:
+  - 牛奶掺假
+  - 包装迁移污染物
+  - 加工助剂残留
+  - 细菌总数超标
+  notes: 二噁英具有强脂溶性和环境持久性，需追溯饲料和牧场环境，接近检出限需评估暴露风险
+- case_id: chemical_hazard_case_001
+  style: 人群脆弱型
+  user_query: 孕妇吃了塑料包装的熟食后出现内分泌紊乱症状，怀疑是包装材料迁移导致的，应该检查哪些风险因子？
+  symptoms:
+  - 内分泌干扰
+  - 月经不调
+  - 情绪波动
+  vulnerable_group: 孕妇
+  product: 塑料包装熟食
+  indicative_tests:
+  - 塑化剂迁移量检测
+  - 双酚A迁移量检测
+  - 食品接触材料合规证书核查
+  expected_risk_factor_id: chemical_hazard
+  expected_risk_factor_name: 包装化学品
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - packaging_and_filling
+  - raw_material_and_ingredients
+  gb_main_basis: 食品接触用塑料材料及制品国家标准
+  method_basis: 食品接触材料迁移试验方法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 农药残留
+  - 微生物超标
+  - 营养标签错误
+  - 食品添加剂超范围使用
+  notes: 聚焦孕妇人群和塑料包装，重点排查包装化学品迁移风险
+- case_id: chemical_hazard_case_002
+  style: 检验项主导型
+  user_query: 罐头食品的食品接触材料检测发现未知化学物质迁移，供应商无法提供合格证明，如何判断风险因子并决定是否召回？
+  symptoms:
+  - 致癌性
+  - 神经毒性
+  vulnerable_group: 儿童
+  product: 罐头食品
+  indicative_tests:
+  - 材料迁移检测报告核查
+  - 供应商资质审核
+  - 重金属迁移量检测
+  - 溶剂残留检测
+  expected_risk_factor_id: chemical_hazard
+  expected_risk_factor_name: 包装化学品
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - packaging_and_filling
+  gb_main_basis: 食品接触用金属材料及制品标准
+  method_basis: 罐头食品包装材料验收规范
+  evidence_type: recall_event
+  should_not_recall:
+  - 标签瑕疵
+  - 净含量不足
+  - 保质期标注错误
+  - 运输途中物理损伤
+  notes: 以检验结果异常为导向，结合供应商资质问题判断包装化学品风险
+- case_id: chemical_nitrite_nitrate_001
+  style: 症状主导型
+  user_query: 6个月婴儿因食用自制菠菜泥出现发绀、呼吸困难，送医检测显示高铁血红蛋白血症，家长怀疑与辅食原料有关
+  symptoms:
+  - 高铁血红蛋白血症
+  - 发绀
+  - 缺氧
+  - 呼吸困难
+  - 婴儿蓝婴综合征
+  vulnerable_group: 婴儿
+  product: 自制婴儿辅食-菠菜泥
+  indicative_tests:
+  - 亚硝酸盐含量检测
+  - 硝酸盐含量检测
+  - 高铁血红蛋白检测
+  - 食品中氮含量分析
+  expected_risk_factor_id: chemical_nitrite_nitrate
+  expected_risk_factor_name: nitrite_nitrate
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 婴幼儿食品安全标准-原料硝酸盐限量
+  method_basis: GB 5009.33亚硝酸盐测定-分光光度法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 生物沙门氏菌污染
+  - 物理金属异物
+  - 致敏原未标注
+  - 标签虚假宣传
+  notes: 高危人群婴儿+高铁血红蛋白血症典型症状指向硝酸盐/亚硝酸盐，需追溯原料蔬菜的来源和种植环境
+- case_id: chemical_nitrite_nitrate_002
+  style: 产品主导型
+  user_query: 市场监管部门抽检发现某品牌腌制腊肉亚硝酸盐残留量超标2倍，接到投诉称食用后出现头晕症状
+  symptoms:
+  - 头晕
+  - 恶心
+  - 发绀
+  - 头痛
+  vulnerable_group: 老年人
+  product: 腌制腊肉
+  indicative_tests:
+  - 亚硝酸盐残留量检测
+  - 硝酸盐残留量检测
+  - 添加剂使用量核查
+  - 生产配方审核
+  expected_risk_factor_id: chemical_nitrite_nitrate
+  expected_risk_factor_name: nitrite_nitrate
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - production_and_processing
+  - raw_material_and_ingredients
+  gb_main_basis: 腌制肉制品亚硝酸盐残留量标准-肉类加工规范
+  method_basis: 食品添加剂使用标准-亚硝酸盐残留检测
+  evidence_type: recall_event
+  should_not_recall:
+  - 标签营养成分不符
+  - 虚假宣传有机
+  - 价格欺诈
+  - 包装破损
+  notes: 腌制肉制品亚硝酸盐超标为典型风险场景，阶段指向生产加工中添加剂计量问题，需调取生产配方和添加剂领用记录
+- case_id: chemical_nitrite_nitrate_34_case_01
+  style: 症状主导型
+  user_query: 消费者反映食用某品牌香肠后出现嘴唇发紫、呼吸困难的症状，送到医院诊断为亚硝酸盐中毒，像这种情况我们需要立即启动召回吗？
+  symptoms:
+  - 嘴唇发紫
+  - 呼吸困难
+  - 高铁血红蛋白血症
+  - 中毒
+  vulnerable_group: ''
+  product: 某品牌香肠
+  indicative_tests:
+  - 亚硝酸盐含量检测
+  - 高铁血红蛋白含量检测
+  - 食品添加剂使用量核查
+  expected_risk_factor_id: chemical_nitrite_nitrate_34
+  expected_risk_factor_name: Nitrite/Nitrate
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - production_and_processing
+  gb_main_basis: 食品添加剂使用标准
+  method_basis: 现场检查添加剂使用记录和检测报告
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 细菌总数超标
+  - 防腐剂超标
+  - 标签不合格
+  - 营养成分不符
+  notes: 消费者出现典型亚硝酸盐中毒症状，需核实生产环节添加剂使用是否合规
+- case_id: chemical_nitrite_nitrate_34_case_02
+  style: 检验项主导型
+  user_query: 我们收到一份第三方检测报告，显示某批次火腿中亚硝酸盐残留量接近国家标准上限，想确认一下这个产品是否存在安全隐患，需要采取什么措施？
+  symptoms:
+  - 高铁血红蛋白血症
+  - 癌症
+  - 致癌
+  vulnerable_group: ''
+  product: 某批次火腿
+  indicative_tests:
+  - 亚硝酸盐残留量检测
+  - 硝酸盐转化率检测
+  - 添加剂投加量复核
+  expected_risk_factor_id: chemical_nitrite_nitrate_34
+  expected_risk_factor_name: Nitrite/Nitrate
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 肉类制品亚硝酸盐残留限量
+  method_basis: 核查原辅料来源和加工工艺中添加剂使用是否符合规范
+  evidence_type: recall_event
+  should_not_recall:
+  - 发霉变质
+  - 异物污染
+  - 过氧化值超标
+  - 标签虚假宣传
+  notes: 检测数据接近限值，需要追溯原辅料和生产过程，确认是否在合规范围内
+- case_id: clostridium_case_001
+  style: 症状主导型
+  user_query: 某医院急诊收治3名患者，均出现视线模糊、吞咽困难、呼吸肌麻痹等症状，追溯发现均食用过同品牌真空包装即食咖喱，怀疑肉毒杆菌中毒
+  symptoms:
+  - 肉毒杆菌中毒
+  - 毒素中毒
+  - 神经麻痹
+  vulnerable_group: '[''老年人'', ''免疫功能低下者'', ''儿童'']'
+  product: 真空包装即食咖喱
+  indicative_tests:
+  - 肉毒毒素生物测定
+  - 厌氧菌培养分离
+  - 产品密封性检测
+  - 杀菌温度时间验证
+  expected_risk_factor_id: microbial_clostridium
+  expected_risk_factor_name: Clostridium
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_staphylococcus_aureus
+  expected_stage_ids:
+  - production_and_processing
+  - packaging_and_filling
+  gb_main_basis: 真空包装即食食品商业无菌要求
+  method_basis: 厌氧培养及毒素检测方法
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 沙门氏菌
+  - 金黄色葡萄球菌肠毒素
+  - 致泻大肠杆菌
+  - 农药残留
+  notes: 根据典型神经麻痹症状和即食咖喱产品特征，优先排查生产环节杀菌不足及包装密封性问题
+- case_id: clostridium_case_002
+  style: 产品主导型
+  user_query: 监管部门对某肉制品生产企业进行飞行检查，发现其低温杀菌工艺记录不完整，且多批次产品耐热芽孢数异常偏高
+  symptoms:
+  - 肉毒杆菌中毒
+  - 毒素中毒
+  - 神经麻痹
+  vulnerable_group: ''
+  product: 低温调制肉制品
+  indicative_tests:
+  - 耐热芽孢计数
+  - 杀菌F0值核算
+  - 密封性负压测试
+  - 保温试验
+  expected_risk_factor_id: microbial_clostridium
+  expected_risk_factor_name: Clostridium
+  acceptable_alternatives:
+  - microbial_bacillus_cereus
+  expected_stage_ids:
+  - production_and_processing
+  - cold_chain_and_logistics
+  gb_main_basis: 肉制品良好生产规范
+  method_basis: 芽孢耐热性检测及工艺验证
+  evidence_type: expert_rule
+  should_not_recall:
+  - 重金属污染
+  - 添加剂超标
+  - 标签虚假宣传
+  - 转基因成分
+  notes: 基于工艺参数异常和芽孢检测结果，判定高概率存在Clostridium污染风险，需追溯原料及工艺控制
+- case_id: crono_t_001
+  style: 症状主导型
+  user_query: 家长反映3个月大的早产儿喝完某品牌婴儿配方奶粉后出现发热、呕吐症状，入院检查确诊为新生儿脑膜炎，血液培养检出克洛诺菌属，怀疑与奶粉有关
+  symptoms:
+  - 新生儿脑膜炎
+  - 败血症
+  - 发热
+  - 呕吐
+  - 坏死性小肠结肠炎
+  vulnerable_group: 早产儿
+  product: 婴儿配方奶粉
+  indicative_tests:
+  - 克罗诺菌属专项检测
+  - 菌落总数测定
+  - 水分活度检测
+  - 商业无菌检测
+  expected_risk_factor_id: microbial_cronobacter_sakazakii
+  expected_risk_factor_name: Cronobacter sakazakii
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_listeria_monocytogenes
+  - chemical_melamine
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  - packaging_and_filling
+  gb_main_basis: 婴儿配方奶粉生产许可审查细则
+  method_basis: GB 4789.31 沙门氏菌等致病菌检验
+  evidence_type: medical_literature
+  should_not_recall:
+  - 食品添加剂超标
+  - 重金属污染
+  - 真菌毒素超标
+  - 包装材料迁移
+  notes: 症状指向新生儿脑膜炎结合克洛诺菌检出，高度关联婴儿奶粉，需排查原料污染和生产过程控制
+- case_id: crono_t_002
+  style: 产品主导型
+  user_query: 某批次进口婴儿配方奶粉在口岸查验时发现微生物指标异常，菌落总数超标且检出克罗诺菌属阳性，企业申请复检并提供原料采购记录，询问是否需要启动召回程序
+  symptoms:
+  - 微生物指标异常
+  - 菌落总数超标
+  vulnerable_group: 低体重婴儿
+  product: 婴儿配方奶粉
+  indicative_tests:
+  - 克罗诺菌属分离鉴定
+  - 菌落总数测定
+  - 水分活度检测
+  - 生产环境监测
+  expected_risk_factor_id: microbial_cronobacter_sakazakii
+  expected_risk_factor_name: Cronobacter sakazakii
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_clostridium_botulinum
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  - cold_chain_and_logistics
+  gb_main_basis: 婴幼儿配方乳粉生产许可管理办法
+  method_basis: ISO 22964 乳和乳制品中克罗诺菌检测
+  evidence_type: recall_event
+  should_not_recall:
+  - 营养成分不符合配方
+  - 标签标识错误
+  - 感官性状异常
+  - 过氧化值超标
+  notes: 产品微生物检验异常且克罗诺菌阳性，虽未出现症状但风险明确，需评估原料和生产环节污染来源决定召回范围
+- case_id: hav_test_001
+  style: 症状主导型
+  user_query: 消费者购买草莓食用后出现发热、黄疸和食欲不振的症状，怀疑是食物中毒，请问可能是什么致病因素？
+  symptoms:
+  - 发热
+  - 黄疸
+  - 食欲不振
+  - 恶心
+  vulnerable_group: 普通人群
+  product: 草莓
+  indicative_tests:
+  - 甲肝病毒核酸检测
+  - 从业人员甲肝抗体检测
+  - 原料进货来源追溯
+  expected_risk_factor_id: microbial_hepatitis_a_virus
+  expected_risk_factor_name: Hepatitis A virus
+  acceptable_alternatives:
+  - microbial_norovirus
+  - microbial_salmonella
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 食用受污染的生食水果可能导致病毒性肝炎
+  method_basis: 病毒溯源需检查原料来源和加工人员健康状况
+  evidence_type: medical_literature
+  should_not_recall:
+  - 重金属污染
+  - 农药残留
+  - 食品添加剂超标
+  - 包装破损
+  notes: 甲肝病毒通过粪口途径传播，生食草莓是常见载体，需重点排查原料卫生和加工人员手部卫生
+- case_id: hav_test_002
+  style: 产品主导型
+  user_query: 我们餐厅制作的三明治需要从供应商处采购生菜和葱，这些蔬菜原料需要提供什么证明才能确保安全？
+  symptoms:
+  - 腹痛
+  - 恶心
+  - 肝炎
+  vulnerable_group: 餐饮消费者
+  product: 三明治
+  indicative_tests:
+  - 原料农残检测报告
+  - 供应商资质证明
+  - 冷链运输温度记录
+  - 加工人员健康体检
+  expected_risk_factor_id: microbial_hepatitis_a_virus
+  expected_risk_factor_name: Hepatitis A virus
+  acceptable_alternatives:
+  - microbial_listeria_monocytogenes
+  - microbial_salmonella
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 生食蔬菜可能携带甲肝病毒，需加强原料验收和人员卫生管理
+  method_basis: 核查原料进货台账和从业人员健康证，确保原料来源可追溯
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 霉变污染
+  - 营养成分不足
+  - 标签不合格
+  - 感官性状异常
+  notes: 三明治中的生菜和葱是甲肝病毒高风险载体，应重点检查原料供应商资质和加工过程卫生控制
+- case_id: lead_001
+  style: 症状主导型
+  user_query: 婴儿出现抽搐和发育迟缓，血液检查发现血铅含量超标，家长怀疑与长期食用的某品牌婴儿米粉有关
+  symptoms:
+  - 抽搐
+  - 发育迟缓
+  - 血铅超标
+  - 神经毒性
+  - 食欲减退
+  vulnerable_group: '[''婴儿'', ''儿童'']'
+  product: 婴儿米粉
+  indicative_tests:
+  - 血铅含量检测
+  - 食品重金属铅含量检测
+  - 婴幼儿膳食调查
+  expected_risk_factor_id: chemical_lead
+  expected_risk_factor_name: 铅 (Lead)
+  acceptable_alternatives:
+  - chemical_cadmium
+  - chemical_arsenic
+  - chemical_mercury
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 婴幼儿食品安全标准中对重金属限量的要求
+  method_basis: 石墨炉原子吸收光谱法检测食品中铅含量
+  evidence_type: medical_literature
+  should_not_recall:
+  - 细菌总数超标
+  - 防腐剂违规添加
+  - 标签不合格
+  - 真菌毒素超标
+  notes: 案例聚焦铅对婴幼儿神经系统的典型症状表现，需追溯原料产地土壤和水源污染情况
+- case_id: lead_002
+  style: 产品主导型
+  user_query: 某批次出口糖果被国外海关检出铅含量超标0.5倍，供应商需提供风险评估报告
+  symptoms:
+  - 无明显消费者症状
+  - 海关抽检异常
+  vulnerable_group: '[''儿童'', ''孕妇'']'
+  product: 糖果
+  indicative_tests:
+  - 食品中铅含量检测
+  - 原料铅本底调查
+  - 生产工艺排查
+  expected_risk_factor_id: chemical_lead
+  expected_risk_factor_name: 铅 (Lead)
+  acceptable_alternatives:
+  - chemical_cadmium
+  - chemical_arsenic
+  expected_stage_ids:
+  - production_and_processing
+  - raw_material_and_ingredients
+  gb_main_basis: 糖果产品重金属限量国家标准
+  method_basis: 电感耦合等离子体质谱法检测重金属
+  evidence_type: recall_event
+  should_not_recall:
+  - 甜味剂超标
+  - 色素违规
+  - 微生物污染
+  - 致敏原标识缺失
+  notes: 以出口召回事件为触发点，需排查生产设备管道材质和加工助剂引入风险
+- case_id: lrm001
+  style: 症状主导型
+  user_query: 孕妇食用软奶酪后出现发热和肌肉酸痛症状，伴有轻微胃肠道不适，胎儿活动减少，是否可能是李斯特菌感染？
+  symptoms:
+  - 发热
+  - 肌肉酸痛
+  - 胃肠道症状
+  - 胎儿活动减少
+  vulnerable_group: 孕妇及新生儿
+  product: 软奶酪
+  indicative_tests:
+  - 血常规检查
+  - 李斯特菌培养
+  - 胎心监护
+  - 食品留样检测
+  expected_risk_factor_id: microbial_listeria_monocytogenes
+  expected_risk_factor_name: Listeria monocytogenes
+  acceptable_alternatives:
+  - microbial_salmonella
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - production_and_processing
+  - cold_chain_and_logistics
+  gb_main_basis: 原料乳清洁度与巴氏杀菌规范
+  method_basis: 生产车间温湿度与交叉污染控制
+  evidence_type: medical_literature
+  should_not_recall:
+  - 重金属污染
+  - 农药残留
+  - 食品添加剂超标
+  - 包装材料迁移
+  notes: 孕妇+软奶酪+发热肌肉酸痛是典型李斯特菌感染表现，需重点排查原料奶源和生产冷链
+- case_id: lrm002
+  style: 冷链失控型
+  user_query: 超市熟食区预包装卤肉制品在销售过程中多次出现温度监控记录缺失，消费者投诉食用后出现腹泻和败血症症状，是否存在李斯特菌风险？
+  symptoms:
+  - 腹泻
+  - 败血症
+  - 发热
+  - 胃肠道症状
+  vulnerable_group: 免疫功能低下者
+  product: 预包装卤肉制品
+  indicative_tests:
+  - 产品菌落总数检测
+  - 李斯特菌特异性检测
+  - 冷链温度追溯记录
+  - 车间环境监测报告
+  expected_risk_factor_id: microbial_listeria_monocytogenes
+  expected_risk_factor_name: Listeria monocytogenes
+  acceptable_alternatives:
+  - microbial_clostridium_perfringens
+  - microbial_staphylococcus_aureus
+  expected_stage_ids:
+  - production_and_processing
+  - cold_chain_and_logistics
+  gb_main_basis: 熟食加工热处理与冷却规范
+  method_basis: 销售终端冷链温度控制
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 亚硝酸盐超标
+  - 防腐剂违规
+  - 标签虚假宣传
+  - 异物投诉
+  notes: 熟食+冷链断链+败血症症状高度提示李斯特菌，需追溯生产交叉污染和销售冷链环节
+- case_id: melamine_case_001
+  style: 人群脆弱型
+  user_query: 3个月婴儿出现血尿和排尿困难，怀疑与食用某品牌一段婴儿配方奶粉有关，如何排查风险因子？
+  symptoms:
+  - 血尿
+  - 排尿困难
+  - 肾结石
+  - 哭闹不安
+  vulnerable_group: 婴儿
+  product: 婴儿配方奶粉
+  indicative_tests:
+  - 奶粉中三聚氰胺含量检测
+  - 尿液分析
+  - 腹部超声检查
+  - 血生化肾功能
+  expected_risk_factor_id: chemical_melamine
+  expected_risk_factor_name: 三聚氰胺
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_hazard
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - production_and_processing
+  gb_main_basis: 原料奶收购环节非法添加
+  method_basis: 原料乳和成品的三聚氰胺专项抽检
+  evidence_type: medical_literature
+  should_not_recall:
+  - 重金属污染
+  - 真菌毒素超标
+  - 食品添加剂超范围使用
+  - 微生物超标
+  notes: 婴儿作为高脆弱人群，出现泌尿系统症状时应优先排查三聚氰胺非法添加风险
+- case_id: melamine_case_002
+  style: 检验项主导型
+  user_query: 乳制品工厂实验室收到原料乳三聚氰胺快速检测卡阳性结果，检测阈值20mg/kg，如何判定风险并追溯来源？
+  symptoms:
+  - 肾结石
+  - 急性肾衰竭
+  - 肾损伤
+  vulnerable_group: 普通人群
+  product: 生鲜乳
+  indicative_tests:
+  - 三聚氰胺快速检测卡初筛
+  - 液相色谱-质谱确证检测
+  - 原料乳收购台账核对
+  - 供应商资质审查
+  expected_risk_factor_id: chemical_melamine
+  expected_risk_factor_name: 三聚氰胺
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_hazard
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 原料乳可能掺假提高含氮量
+  method_basis: 原料奶三聚氰胺批批检测制度
+  evidence_type: recall_event
+  should_not_recall:
+  - 阪崎肠杆菌
+  - 沙门氏菌
+  - 黄曲霉毒素M1
+  - 亚硝酸盐超标
+  notes: 原料乳三聚氰胺检测阳性是典型风险信号，应立即启动追溯程序，排查是否在养殖或收购环节被非法添加
+- case_id: microbial_bacillus_cereus_001
+  style: 症状主导型
+  user_query: 顾客在餐厅食用炒饭后出现剧烈呕吐和腹泻，怀疑是食物中毒，请问可能是什么致病菌导致？
+  symptoms:
+  - 呕吐
+  - 腹泻
+  - 食物中毒
+  - 呕吐综合征
+  vulnerable_group: 一般人群
+  product: 炒饭
+  indicative_tests:
+  - 芽孢计数
+  - 产毒菌检测
+  - 呕吐毒素检测
+  - 腹泻毒素检测
+  expected_risk_factor_id: microbial_bacillus_cereus
+  expected_risk_factor_name: Bacillus cereus
+  acceptable_alternatives:
+  - microbial_staphylococcus_aureus
+  - microbial_salmonella
+  expected_stage_ids:
+  - production_and_processing
+  - cold_chain_and_logistics
+  gb_main_basis: 食品中蜡样芽孢杆菌的检验
+  method_basis: 分离培养与生化鉴定
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 重金属污染
+  - 农药残留
+  - 食品添加剂超标
+  - 转基因成分
+  notes: 呕吐和腹泻症状组合指向产芽孢细菌，Bacillus cereus是米饭制品常见致病菌，重点检查冷却和储存环节
+- case_id: microbial_bacillus_cereus_002
+  style: 产品主导型
+  user_query: 我们工厂主要生产米饭快餐盒饭，请问在生产加工环节需要重点防控哪些食源性致病菌？
+  symptoms:
+  - 食物中毒
+  - 腹泻
+  - 呕吐
+  vulnerable_group: 一般人群
+  product: 米饭快餐盒饭
+  indicative_tests:
+  - 芽孢杆菌培养
+  - 毒素检测
+  - 卫生指标菌检测
+  expected_risk_factor_id: microbial_bacillus_cereus
+  expected_risk_factor_name: Bacillus cereus
+  acceptable_alternatives:
+  - microbial_clostridium_perfringens
+  - microbial_salmonella
+  expected_stage_ids:
+  - production_and_processing
+  - cold_chain_and_logistics
+  gb_main_basis: 熟食制品微生物限量要求
+  method_basis: GB 29921 食品中致病菌限量
+  evidence_type: expert_rule
+  should_not_recall:
+  - 真菌毒素
+  - 非法添加物
+  - 包装迁移物
+  - 过敏原
+  notes: 米饭制品是Bacillus cereus高风险产品，烹饪后冷却不当和保温储存是主要风险环节，需检查温度时间控制记录
+- case_id: pcbs_case_01
+  style: 症状主导型
+  user_query: 孩子吃了附近的淡水鱼后出现发育迟缓、注意力不集中、学习能力下降的症状，去医院检查发现智力评分明显降低，是否与鱼类中的污染物有关？
+  symptoms:
+  - 发育迟缓
+  - 智力下降
+  - 神经行为异常
+  - 注意力不集中
+  vulnerable_group: '[''儿童'', ''孕妇'', ''胎儿'']'
+  product: 淡水鱼/水产品
+  indicative_tests:
+  - 鱼肉中PCBs含量检测
+  - 血清/尿液中PCBs代谢物检测
+  - 母乳PCBs筛查
+  expected_risk_factor_id: chemical_pcbs
+  expected_risk_factor_name: PCBs (多氯联苯)
+  acceptable_alternatives:
+  - chemical_dioxins
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 水产品中持久性有机污染物限量标准
+  method_basis: 鱼肉中PCBs气相色谱-质谱联用检测法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 重金属铅污染
+  - 农药残留
+  - 细菌性食物中毒
+  - 防腐剂超标
+  notes: 儿童神经系统发育症状与PCBs的神经毒性高度吻合，淡水鱼是PCBs通过食物链富集的高风险载体，需排查养殖水源和饲料来源
+- case_id: pcbs_case_02
+  style: 原料污染型
+  user_query: 乳制品企业收到原料供应商的检测报告，显示原料奶中PCBs含量接近上限，怀疑与奶牛摄入的饲料或放牧环境有关，应当如何追溯和防控？
+  symptoms:
+  - 神经毒性
+  - 发育毒性
+  - 致癌性
+  vulnerable_group: '[''婴幼儿'', ''孕妇'', ''哺乳期妇女'']'
+  product: 原料奶/乳制品
+  indicative_tests:
+  - 原料奶奶脂中PCBs含量检测
+  - 奶牛饲料PCBs筛查
+  - 牧场土壤和水源PCBs检测
+  - 牛奶加工前后PCBs变化对比
+  expected_risk_factor_id: chemical_pcbs
+  expected_risk_factor_name: PCBs (多氯联苯)
+  acceptable_alternatives:
+  - chemical_dioxins
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - farm_and_raw_milk
+  - production_and_processing
+  gb_main_basis: 生乳中PCBs等持久性有机污染物安全评估
+  method_basis: 乳制品中PCBs高效液相色谱检测方法
+  evidence_type: expert_rule
+  should_not_recall:
+  - 包装材料迁移污染
+  - 生产设备金属迁移
+  - 巴氏杀菌不彻底
+  - 仓储温度过高导致变质
+  notes: PCBs具有脂溶性，易在奶脂中富集，原料污染是首要排查环节，需追溯奶牛饲料来源和牧场周边工业污染情况
+- case_id: pfas_cn_001
+  style: 症状主导型
+  user_query: 某医院报告多例儿童出现发育迟缓症状，家长反映孩子长期食用附近超市的速冻水产品，怀疑存在食品安全问题
+  symptoms:
+  - 发育迟缓
+  - 免疫功能下降
+  - 肝功能异常
+  vulnerable_group: 儿童
+  product: 速冻水产品
+  indicative_tests:
+  - 全氟辛烷磺酸(PFOS)含量检测
+  - 全氟辛酸(PFOA)含量检测
+  - 总有机氟含量筛查
+  expected_risk_factor_id: chemical_pfas_per_and_polyfluoroalkyl_substances
+  expected_risk_factor_name: PFAS全氟烷基物质
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - packaging_and_filling
+  gb_main_basis: 食品接触材料中PFAS迁移风险
+  method_basis: LC-MS/MS质谱检测方法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 细菌性食源性疾病
+  - 农药残留
+  - 食品添加剂超标
+  notes: 症状主导型案例，需排查食品包装接触材料是否为PFAS引入途径
+- case_id: pfas_cn_002
+  style: 召回投诉型
+  user_query: 消费者协会接到投诉称某品牌饮用水被发现含有人工合成持久性有机污染物，居民长期饮用后出现代谢异常，要求追溯问题来源
+  symptoms:
+  - 脂质代谢紊乱
+  - 胆固醇升高
+  - 肝肾功能异常
+  vulnerable_group: 普通成年人群
+  product: 瓶装饮用水
+  indicative_tests:
+  - PFAS专项检测
+  - 生产水源地水质检测
+  - 包装材料迁移测试
+  expected_risk_factor_id: chemical_pfas_per_and_polyfluoroalkyl_substances
+  expected_risk_factor_name: PFAS全氟烷基物质
+  acceptable_alternatives:
+  - chemical_heavy_metals_pb_cd_hg_as
+  - chemical_melamine
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 饮用水源受工业污染可能
+  method_basis: 固相萃取-液相色谱串联质谱法
+  evidence_type: recall_event
+  should_not_recall:
+  - 生物胺超标
+  - 霉菌毒素污染
+  - 过敏原标识缺失
+  notes: 召回投诉型，需重点排查水源地环境和生产用水处理环节
+- case_id: res_test_001
+  style: 症状主导型
+  user_query: 孩子昨天喝了本地品牌巴氏杀菌奶，今天全身出现红色皮疹并伴有腹泻，怀疑是牛奶质量问题
+  symptoms:
+  - 皮肤红疹
+  - 腹泻
+  - 过敏反应
+  vulnerable_group: 儿童
+  product: 巴氏杀菌乳
+  indicative_tests:
+  - 兽药残留检测
+  - 抗生素筛查
+  - 致敏蛋白检测
+  expected_risk_factor_id: residue_hazard
+  expected_risk_factor_name: 兽药残留
+  acceptable_alternatives:
+  - residue_pesticide_residue
+  - residue_veterinary_drug_residue
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 生乳中兽药残留限量要求
+  method_basis: 液相色谱质谱联用检测方法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 包装密封性
+  - 冷链温度
+  - 生产日期标识
+  - 营养成分含量
+  notes: 症状指向过敏，兽药残留是常见诱因，需排查养殖阶段用药情况
+- case_id: res_test_002
+  style: 产品主导型
+  user_query: 收到供应商的一批冷冻鸡肉原料，想确认是否符合兽药残留要求，需要提供哪些检测报告
+  symptoms:
+  - 细菌感染
+  - 过敏反应
+  - 致癌性
+  vulnerable_group: 普通消费者
+  product: 冷冻鸡肉
+  indicative_tests:
+  - 氯霉素残留检测
+  - 四环素类残留检测
+  - 磺胺类残留检测
+  - 硝基呋喃类代谢物检测
+  expected_risk_factor_id: residue_hazard
+  expected_risk_factor_name: 兽药残留
+  acceptable_alternatives:
+  - residue_pesticide_residue
+  - residue_veterinary_drug_residue
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 动物性食品中兽药最高残留限量
+  method_basis: GB/T方法检测系列
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 解冻后微生物增殖
+  - 包装破损
+  - 标签错误
+  - 口感异常
+  notes: 原料采购前置审查场景，需验证供应商提供的兽药残留检测合格证明
+- case_id: tc001
+  style: 症状主导型
+  user_query: 用户反馈在食用某品牌奶酪后出现剧烈呕吐和腹痛，怀疑是食物中毒，想知道可能是什么原因以及如何检测
+  symptoms:
+  - 呕吐
+  - 腹痛
+  - 恶心
+  - 腹泻
+  vulnerable_group: 普通人群
+  product: 奶酪
+  indicative_tests:
+  - 金葡菌肠毒素检测
+  - 菌落总数测定
+  - 原料奶菌落总数检测
+  expected_risk_factor_id: microbial_staphylococcus_aureus
+  expected_risk_factor_name: Staphylococcus aureus
+  acceptable_alternatives:
+  - microbial_salmonella
+  expected_stage_ids:
+  - production_and_processing
+  - farm_and_raw_milk
+  gb_main_basis: 食品中金葡菌检验相关标准
+  method_basis: 金葡菌肠毒素免疫学检测方法
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 重金属铅污染
+  - 农药残留
+  - 真菌毒素黄曲霉毒素
+  - 违规添加防腐剂
+  notes: 症状符合金葡菌食物中毒的典型快速发病特征，需重点排查加工环节人员卫生和原料污染
+- case_id: tc002
+  style: 原料污染型
+  user_query: 乳制品工厂发现原料奶到货检测时菌落总数偏高，想排查是否存在金葡菌污染风险，询问应该重点检查哪些环节和指标
+  symptoms:
+  - 呕吐
+  - 恶心
+  - 腹痛
+  vulnerable_group: 普通人群
+  product: 乳制品
+  indicative_tests:
+  - 原料奶菌落总数检测
+  - 金葡菌专项检测
+  - 车间环境监测
+  - 设备清洗消毒验证
+  expected_risk_factor_id: microbial_staphylococcus_aureus
+  expected_risk_factor_name: Staphylococcus aureus
+  acceptable_alternatives:
+  - microbial_salmonella
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 生乳卫生规范及金葡菌控制要求
+  method_basis: 原料奶微生物限量检测方法
+  evidence_type: expert_rule
+  should_not_recall:
+  - 包装材料塑化剂迁移
+  - 冷链温度超标导致李斯特菌
+  - 虚假标注生产日期
+  - 滥用食品添加剂
+  notes: 原料奶菌落总数异常升高提示存在金葡菌污染风险，需追溯牧场卫生和挤奶环节
+- case_id: tc_brucella_001
+  style: 症状主导型
+  user_query: 我妻子怀孕3个月，最近持续低热、关节酸痛，怀疑是不是喝了她买的现挤羊奶导致的？
+  symptoms:
+  - 持续低热
+  - 关节酸痛
+  - 肌肉疼痛
+  - 乏力
+  - 夜间盗汗
+  vulnerable_group: 孕妇
+  product: 现挤羊奶
+  indicative_tests:
+  - 虎红平板凝集试验
+  - SAT试管凝集试验
+  - PCR核酸检测
+  - 细菌培养
+  expected_risk_factor_id: microbial_brucella
+  expected_risk_factor_name: 布鲁氏菌
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_campylobacter
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 原料乳来源管控和巴氏杀菌验证
+  method_basis: 血清学检测和病原分离鉴定
+  evidence_type: medical_literature
+  should_not_recall:
+  - 食品添加剂超标
+  - 农药残留
+  - 重金属污染
+  - 真菌毒素
+  notes: 孕妇属于高危人群，现挤乳制品未经过巴氏杀菌，存在布鲁氏菌感染风险
+- case_id: tc_brucella_002
+  style: 冷链失控型
+  user_query: 我们超市的巴氏杀菌奶在例行抽检中发现微生物指标异常，追溯发现物流环节温度记录有中断
+  symptoms:
+  - 布鲁氏菌病
+  - 发热
+  - 头痛
+  vulnerable_group: 普通消费者
+  product: 巴氏杀菌奶
+  indicative_tests:
+  - 菌落总数检测
+  - 大肠菌群检测
+  - 布鲁氏菌分离培养
+  - 冷链温度曲线回溯
+  expected_risk_factor_id: microbial_brucella
+  expected_risk_factor_name: 布鲁氏菌
+  acceptable_alternatives:
+  - microbial_salmonella
+  expected_stage_ids:
+  - cold_chain_and_logistics
+  - production_and_processing
+  gb_main_basis: 巴氏杀菌工艺有效性及冷链持续低温保障
+  method_basis: 微生物检测和温度监控记录核查
+  evidence_type: recall_event
+  should_not_recall:
+  - 非法添加物
+  - 包装材料迁移
+  - 辐照食品标识违规
+  - 营养强化剂超标
+  notes: 冷链中断可能导致巴氏杀菌后二次污染或菌落增殖，需重点核查物流环节温度管控
+- case_id: test_aflatoxin_001
+  style: 症状主导型
+  user_query: 某幼儿园多名儿童出现肝功能异常，检查发现甲胎蛋白升高，怀疑与学校配餐中的食材有关，需要排查可能的食品污染来源
+  symptoms:
+  - 肝功能异常
+  - 甲胎蛋白升高
+  - 致癌
+  - 肝毒性
+  vulnerable_group: 儿童
+  product: 谷物制品
+  indicative_tests:
+  - 黄曲霉毒素B1检测
+  - 黄曲霉毒素M1检测
+  - 真菌毒素谱检测
+  - 饲料原料检测
+  expected_risk_factor_id: toxin_aflatoxins
+  expected_risk_factor_name: Aflatoxins
+  acceptable_alternatives:
+  - toxin_patulin
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - farm_and_raw_milk
+  gb_main_basis: 食品中真菌毒素限量标准
+  method_basis: 液相色谱-质谱联用法检测
+  evidence_type: medical_literature
+  should_not_recall:
+  - 农药残留
+  - 食品添加剂超标
+  - 微生物污染
+  - 重金属铅污染
+  notes: 症状指向肝损伤和致癌性，需优先排查黄曲霉毒素污染，原料阶段为高风险环节
+- case_id: test_aflatoxin_002
+  style: 产品主导型
+  user_query: 某批次花生酱产品在进口检验时检出黄曲霉毒素B1超标，需评估是否需要启动召回程序，并排查污染环节
+  symptoms:
+  - 致癌
+  - 肝毒性
+  - 真菌污染
+  vulnerable_group: 普通人群
+  product: 坚果制品
+  indicative_tests:
+  - 黄曲霉毒素B1定量检测
+  - 黄曲霉毒素总量检测
+  - AFB1-8,9-环氧化物检测
+  - 原料储存条件检查
+  expected_risk_factor_id: toxin_aflatoxins
+  expected_risk_factor_name: Aflatoxins
+  acceptable_alternatives:
+  - toxin_deoxynivalenol
+  - toxin_fumonisins
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 坚果及其制品中真菌毒素限量
+  method_basis: 免疫亲和层析高效液相色谱法
+  evidence_type: recall_event
+  should_not_recall:
+  - 塑化剂污染
+  - 过氧化值超标
+  - 标签不合格
+  - 菌落总数超标
+  notes: 产品检测发现毒素超标，需追溯原料来源和储存加工环节，不涉及其他类型的食品质量问题
+- case_id: test_campylobacter_001
+  style: 症状主导型
+  user_query: 近期多地出现因食用某品牌鲜奶后出现急性腹泻、发热等症状的投诉，怀疑是巴氏杀菌不彻底导致的食源性感染
+  symptoms:
+  - 急性腹泻
+  - 发热
+  - 腹痛
+  - 血便
+  vulnerable_group: 儿童、老年人及免疫功能低下者
+  product: 巴氏杀菌鲜牛奶
+  indicative_tests:
+  - 巴氏杀菌温度记录
+  - 原料奶菌落总数
+  - 致病菌专项检测
+  - 冷链温度监测数据
+  expected_risk_factor_id: microbial_campylobacter
+  expected_risk_factor_name: Campylobacter
+  acceptable_alternatives:
+  - microbial_salmonella
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - production_and_processing
+  gb_main_basis: 巴氏杀菌乳卫生规范
+  method_basis: 检查杀菌温度是否达到72-75°C并保持15秒以上
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 重金属污染
+  - 农药残留
+  - 防腐剂超标
+  - 包装迁移物
+  notes: 症状符合弯曲菌感染特征，需追溯原料奶来源及巴氏杀菌工艺参数
+- case_id: test_campylobacter_002
+  style: 冷链失控型
+  user_query: 超市销售的预包装禽肉制品在销售终端被投诉有异味，开封后部分消费者出现肠胃不适，怀疑冷链环节出问题
+  symptoms:
+  - 呕吐
+  - 腹泻
+  - 胃痉挛
+  - 轻度发热
+  vulnerable_group: 普通成年人群
+  product: 预包装冷鲜禽肉
+  indicative_tests:
+  - 冷链温度记录
+  - 菌落总数检测
+  - 致病菌检测
+  - 包装完整性检查
+  expected_risk_factor_id: microbial_campylobacter
+  expected_risk_factor_name: Campylobacter
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_clostridium
+  expected_stage_ids:
+  - cold_chain_and_logistics
+  gb_main_basis: 冷链食品物流规范
+  method_basis: 核查全程温度是否保持在0-4°C范围内，是否存在温度波动
+  evidence_type: recall_event
+  should_not_recall:
+  - 亚硝酸盐超标
+  - 色素添加违规
+  - 标签虚假宣传
+  - 异物投诉
+  notes: 冷链失控可能导致弯曲菌存活，禽肉是主要载体，需检查终端存储温度
+- case_id: test_case_001
+  style: 症状主导型
+  user_query: 消费者投诉在超市购买的国产纯牛奶喝完后出现腹泻和皮肤瘙痒症状，怀疑牛奶质量问题
+  symptoms:
+  - 腹泻
+  - 皮肤瘙痒
+  - 恶心
+  - 腹痛
+  vulnerable_group: 过敏体质人群, 免疫力低下者
+  product: 国产纯牛奶
+  indicative_tests:
+  - 兽药残留快速检测
+  - 抗生素残留ELISA检测
+  - 气相色谱-质谱联用检测
+  - 高效液相色谱检测
+  expected_risk_factor_id: residue_veterinary_drug_residue
+  expected_risk_factor_name: veterinary_drug_residue
+  acceptable_alternatives:
+  - residue_pesticide_residue
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 牛奶中兽药残留限量标准
+  method_basis: 参照GB/T相关检测方法
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 食品添加剂超标
+  - 包装迁移物
+  - 真菌毒素污染
+  - 转基因成分
+  notes: 症状与兽药残留导致的过敏反应相符，需排查泌乳期用药和休药期执行情况
+- case_id: test_case_002
+  style: 检验项主导型
+  user_query: 乳制品生产企业送检原料奶，实验室检测发现β-内酰胺类抗生素残留超标，询问风险评估和处理建议
+  symptoms: []
+  vulnerable_group: 婴幼儿, 孕妇
+  product: 原料奶
+  indicative_tests:
+  - β-内酰胺类抗生素检测
+  - 四环素类残留检测
+  - 氟喹诺酮类残留检测
+  - 磺胺类残留检测
+  expected_risk_factor_id: residue_veterinary_drug_residue
+  expected_risk_factor_name: veterinary_drug_residue
+  acceptable_alternatives:
+  - residue_pesticide_residue
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 生乳兽药残留限量规定
+  method_basis: 依据农业农村部兽药残留检测标准
+  evidence_type: recall_event
+  should_not_recall:
+  - 防腐剂违规添加
+  - 营养成分虚假标注
+  - 标签标识错误
+  - 微生物超标
+  notes: 检测结果显示明确的兽药残留阳性，需追溯养殖环节用药记录和休药期执行情况
+- case_id: test_case_stec_001
+  style: 症状主导型
+  user_query: 消费者投诉在某电商平台购买巴氏杀菌鲜牛奶后，出现严重腹泻和轻微发热症状，怀疑食品安全性问题
+  symptoms:
+  - 腹泻
+  - 腹痛
+  - 发热
+  vulnerable_group: 儿童
+  product: 巴氏杀菌鲜牛奶
+  indicative_tests:
+  - 原料乳菌落总数检测
+  - STEC O157:H7专项检测
+  - 巴氏杀菌温度时间记录复核
+  - 生产设备清洁消毒验证
+  expected_risk_factor_id: microbial_escherichia_coli_stec
+  expected_risk_factor_name: Escherichia coli / STEC
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_listeria_monocytogenes
+  - microbial_campylobacter
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - production_and_processing
+  gb_main_basis: 原料乳验收规范及巴氏杀菌温度控制
+  method_basis: 原料奶源质量控制和加工温度监控
+  evidence_type: medical_literature
+  should_not_recall:
+  - 食品添加剂超标
+  - 农药残留
+  - 重金属污染
+  - 包装材料迁移
+  notes: 症状与STEC感染高度吻合，重点排查原料奶源卫生和巴氏杀菌工艺有效性
+- case_id: test_case_stec_002
+  style: 召回/投诉型
+  user_query: 监管部门抽检发现某乳品企业生产的生鲜乳原料中检出STEC阳性，要求企业立即启动产品追溯和召回程序
+  symptoms:
+  - 腹泻
+  - 出血性结肠炎
+  - 腹痛
+  vulnerable_group: 老年人
+  product: 生鲜乳原料
+  indicative_tests:
+  - STEC PCR核酸检测
+  - 分离菌株血清学分型
+  - 原料乳收购环节卫生审查
+  - 冷链运输温度记录核查
+  expected_risk_factor_id: microbial_escherichia_coli_stec
+  expected_risk_factor_name: Escherichia coli / STEC
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_listeria_monocytogenes
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  - cold_chain_and_logistics
+  gb_main_basis: 生鲜乳收购质量安全和冷链物流规范
+  method_basis: 原料奶源动物健康管理和运输温控监测
+  evidence_type: recall_event
+  should_not_recall:
+  - 防腐剂违规使用
+  - 营养成分虚标
+  - 转基因标识不符
+  - 辐照食品未经许可
+  notes: 监管部门抽检阳性触发的召回场景，需核实源头污染环节和波及产品范围
+- case_id: test_cb_001
+  style: 症状主导型
+  user_query: 某老年消费者食用某品牌胡萝卜汁后出现进行性肌肉无力和呼吸困难，疑似肉毒杆菌中毒，紧急送医
+  symptoms:
+  - 进行性肌肉无力
+  - 呼吸衰竭
+  - 弛缓性麻痹
+  - 神经肌肉阻断
+  - 吞咽困难
+  vulnerable_group: 老年人
+  product: 胡萝卜汁
+  indicative_tests:
+  - 厌氧菌培养
+  - 肉毒毒素动物实验检测
+  - pH值测定
+  - 真空度检测
+  expected_risk_factor_id: microbial_clostridium_botulinum
+  expected_risk_factor_name: Clostridium botulinum
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_listeria_monocytogenes
+  expected_stage_ids:
+  - production_and_processing
+  - packaging_and_filling
+  gb_main_basis: 食品安全国家标准 饮料
+  method_basis: 厌氧培养与毒素检测规范
+  evidence_type: medical_literature
+  should_not_recall:
+  - 农药残留
+  - 重金属污染
+  - 食品添加剂超标
+  - 致敏原标识缺失
+  notes: 老年消费者出现典型神经麻痹症状，结合低酸饮料特性，优先排查杀菌不足导致肉毒杆菌存活
+- case_id: test_cb_002
+  style: 召回投诉型
+  user_query: 某批次盐渍黑豆产品在保质期内出现胀袋和异味，经销商投诉要求召回，怀疑是厌氧菌污染
+  symptoms:
+  - 产品胀袋
+  - 异味
+  - 无消费者投诉症状
+  vulnerable_group: 所有消费者
+  product: 盐渍黑豆
+  indicative_tests:
+  - 密封性检测
+  - 厌氧菌培养
+  - 肉毒毒素检测
+  - 水分活度测定
+  expected_risk_factor_id: microbial_clostridium_botulinum
+  expected_risk_factor_name: Clostridium botulinum
+  acceptable_alternatives:
+  - microbial_clostridium_perfringens
+  - microbial_bacillus_cereus
+  expected_stage_ids:
+  - production_and_processing
+  - packaging_and_filling
+  - cold_chain_and_logistics
+  gb_main_basis: 食品安全国家标准 豆制品
+  method_basis: 密封性及厌氧菌检测方法
+  evidence_type: recall_event
+  should_not_recall:
+  - 农药残留
+  - 重金属污染
+  - 食品添加剂超标
+  - 标签不合格
+  notes: 盐渍食品常处于低水分活度环境利于芽孢存活，胀袋提示厌氧代谢，需排查肉毒杆菌毒素产生风险
+- case_id: test_chemical_mercury_001
+  style: 症状主导型
+  user_query: 近期出现多起儿童神经系统异常就诊病例，家长反映孩子曾食用过同一家超市的金枪鱼罐头，需要评估是否与汞污染有关
+  symptoms:
+  - 神经毒性
+  - 认知能力下降
+  - 肾功能损害
+  - 贫血
+  vulnerable_group: 儿童
+  product: 金枪鱼罐头
+  indicative_tests:
+  - 总汞含量检测
+  - 甲基汞含量检测
+  - 血汞尿汞水平检测
+  expected_risk_factor_id: chemical_mercury
+  expected_risk_factor_name: Mercury (汞)
+  acceptable_alternatives:
+  - chemical_lead
+  - chemical_cadmium
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  gb_main_basis: 水产品汞含量限量标准
+  method_basis: 原子荧光光谱法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 微生物污染
+  - 食品添加剂超标
+  - 农药残留
+  - 包装材料迁移
+  notes: 儿童神经系统症状与水产品汞暴露存在明确医学关联，需追溯原料来源
+- case_id: test_chemical_mercury_002
+  style: 原料污染型
+  user_query: 供应商提供的旗鱼柳原料需要入库检验，请问汞含量应该检测哪些项目？旗鱼属于高汞风险鱼种吗？
+  symptoms:
+  - 神经毒性
+  - 肾功能损害
+  - 贫血
+  vulnerable_group: 孕妇
+  product: 旗鱼柳
+  indicative_tests:
+  - 总汞含量检测
+  - 甲基汞含量检测
+  expected_risk_factor_id: chemical_mercury
+  expected_risk_factor_name: Mercury (汞)
+  acceptable_alternatives:
+  - chemical_arsenic
+  - chemical_lead
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  gb_main_basis: 水产品重金属限量及检测方法
+  method_basis: 冷原子吸收光谱法
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 细菌总数超标
+  - 防腐剂添加量
+  - 标签不符合
+  - 净含量不足
+  notes: 原料污染型案例，重点考察对高汞风险鱼种的原料检验能力
+- case_id: test_microbial_giardia_001
+  style: 症状主导型
+  user_query: 3岁幼儿饮用邻居赠送的生牛奶后出现水样腹泻和阵发性腹痛，已持续3天，大便有酸臭味
+  symptoms:
+  - 水样腹泻
+  - 腹痛
+  - 腹胀
+  - 胀气
+  - 食欲不振
+  vulnerable_group: '[''幼儿'', ''儿童'']'
+  product: 生牛奶
+  indicative_tests:
+  - 贾第虫抗原检测
+  - 大便寄生虫卵检测
+  - 水源贾第虫检测
+  expected_risk_factor_id: microbial_giardia
+  expected_risk_factor_name: Giardia
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_campylobacter
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 生奶源头管控-动物粪便污染水源
+  method_basis: 牧场水质监测-原虫包囊检测
+  evidence_type: expert_rule
+  should_not_recall:
+  - 农药残留
+  - 重金属污染
+  - 防腐剂过量
+  - 添加剂违规
+  notes: 幼儿饮用生奶后出现典型贾第虫病症状，重点排查牧场水源和动物粪便污染
+- case_id: test_microbial_giardia_002
+  style: 产品主导型
+  user_query: 餐厅食用了凉拌绿叶沙拉后，多人出现集体腹泻事件，怀疑是蔬菜或清洗用水问题
+  symptoms:
+  - 腹泻
+  - 腹胀
+  - 胀气
+  - 痢疾
+  - 恶心
+  vulnerable_group: '[''用餐顾客'']'
+  product: 绿叶沙拉
+  indicative_tests:
+  - 蔬菜清洗水检测
+  - 加工用水余氯检测
+  - 绿叶菜贾第虫检测
+  expected_risk_factor_id: microbial_giardia
+  expected_risk_factor_name: Giardia
+  acceptable_alternatives:
+  - microbial_norovirus
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 生食蔬菜加工-清洗用水消毒不彻底
+  method_basis: 加工用水微生物检测-原虫包囊
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 肉类添加剂超标
+  - 奶制品细菌超标
+  - 罐头异物
+  - 饮料色素违规
+  notes: 集体用餐后出现食源性疾病症状，沙拉为高风险生食产品，重点排查清洗用水和原料蔬菜
+- case_id: test_norovirus_001
+  style: 症状主导型
+  user_query: 某幼儿园出现多名儿童呕吐、腹泻症状，家长反映孩子在学校食用了午餐配发的三明治和沙拉，怀疑是食品问题
+  symptoms:
+  - 呕吐
+  - 腹泻
+  - 恶心
+  - 胃痉挛
+  - 发热
+  vulnerable_group: 儿童
+  product: 三明治
+  indicative_tests:
+  - 诺如病毒核酸检测
+  - RT-PCR检测
+  - 食品环境采样
+  expected_risk_factor_id: microbial_norovirus
+  expected_risk_factor_name: Norovirus
+  acceptable_alternatives:
+  - microbial_salmonella
+  expected_stage_ids:
+  - production_and_processing
+  gb_main_basis: 餐饮服务食品安全操作规范
+  method_basis: 诺如病毒检测方法及食品加工人员手部卫生标准
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 沙门氏菌
+  - 大肠杆菌O157:H7
+  - 金黄色葡萄球菌肠毒素
+  - 农药残留
+  notes: 高传染性病毒性胃肠炎暴发，儿童聚集场所多发，需重点排查加工人员健康状况和食品操作规范
+- case_id: test_norovirus_002
+  style: 召回/投诉型
+  user_query: 某连锁超市收到多起消费者投诉，称购买的水果沙拉食用后出现上吐下泻症状，已有三位免疫功能低下顾客就医，监管部门要求排查
+  symptoms:
+  - 腹泻
+  - 呕吐
+  - 恶心
+  - 发热
+  vulnerable_group: 免疫功能低下者
+  product: 水果沙拉
+  indicative_tests:
+  - 诺如病毒快速检测试剂
+  - RT-PCR核酸扩增
+  - 贝类毒素检测
+  expected_risk_factor_id: microbial_norovirus
+  expected_risk_factor_name: Norovirus
+  acceptable_alternatives:
+  - microbial_listeria_monocytogenes
+  - microbial_salmonella
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - retail_and_terminal_storage
+  gb_main_basis: 即食食品微生物限量标准
+  method_basis: 生食果蔬清洗消毒规范及诺如病毒检验标准
+  evidence_type: recall_event
+  should_not_recall:
+  - 副溶血性弧菌
+  - 甲肝病毒
+  - 重金属铅超标
+  - 防腐剂超标
+  notes: 多例免疫脆弱人群集中发病，高度提示诺如病毒，需追溯原料来源特别是进口贝类或浆果类水果
+- case_id: test_pesticide_residue_001
+  style: 症状主导型
+  user_query: 昨天在超市买了草莓给孩子吃，今天孩子出现头晕、恶心的症状，怀疑草莓农药残留超标，请问可以送检吗？
+  symptoms:
+  - 头晕
+  - 恶心
+  - 头痛
+  - 食欲不振
+  vulnerable_group: '[''儿童'']'
+  product: 草莓
+  indicative_tests:
+  - 有机磷农药残留检测
+  - 氨基甲酸酯类农药残留检测
+  - 多菌灵残留检测
+  expected_risk_factor_id: residue_pesticide_residue
+  expected_risk_factor_name: pesticide_residue
+  acceptable_alternatives:
+  - residue_veterinary_drug_residue
+  - residue_hazard
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  gb_main_basis: GB 2763 食品中农药最大残留限量
+  method_basis: 气相色谱质谱联用检测
+  evidence_type: medical_literature
+  should_not_recall:
+  - 微生物污染
+  - 添加剂超标
+  - 食品过期
+  - 重金属污染
+  notes: 症状出现时间与食用时间关联，需排查农药残留可能性
+- case_id: test_pesticide_residue_002
+  style: 产品主导型
+  user_query: 我们公司要从国外进口一批绿茶用于饮料加工，请问进口茶叶需要重点关注哪些农药残留指标？需要提供哪些检测报告？
+  symptoms:
+  - 头痛
+  - 头晕
+  - 恶心
+  vulnerable_group: '[''普通人群'', ''孕妇'']'
+  product: 绿茶
+  indicative_tests:
+  - 欧盟农药残留检测
+  - 茶叶专项农残套餐
+  - 草甘膦残留检测
+  - 硫丹残留检测
+  expected_risk_factor_id: residue_pesticide_residue
+  expected_risk_factor_name: pesticide_residue
+  acceptable_alternatives:
+  - residue_veterinary_drug_residue
+  - residue_hazard
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - farm_and_raw_milk
+  gb_main_basis: GB 2763 茶叶中农药残留限量标准
+  method_basis: 进口食品境外生产企业注册管理办法要求
+  evidence_type: expert_rule
+  should_not_recall:
+  - 微生物超标
+  - 非法添加色素
+  - 塑化剂污染
+  - 辐照食品标识
+  notes: 进口原料需符合我国农药残留标准，重点关注出口国常用农药与我国标准的差异
+- case_id: test_salmonella_001
+  style: 症状主导型
+  user_query: 宝宝喝了超市买的生鲜乳后出现腹泻发热症状，怀疑是奶制品问题
+  symptoms:
+  - 腹泻
+  - 发热
+  - 腹痛
+  vulnerable_group: 婴儿
+  product: 生鲜乳
+  indicative_tests:
+  - 沙门氏菌培养鉴定
+  - 菌落总数检测
+  - 耐热菌检测
+  expected_risk_factor_id: microbial_salmonella
+  expected_risk_factor_name: Salmonella
+  acceptable_alternatives:
+  - microbial_listeria_monocytogenes
+  - microbial_norovirus
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 生鲜乳原料验收标准
+  method_basis: 原料巴氏杀菌工艺验证
+  evidence_type: medical_literature
+  should_not_recall:
+  - 农药残留
+  - 重金属污染
+  - 添加剂超标
+  - 包装材料迁移
+  notes: 婴儿腹泻伴发热是典型沙门氏菌感染症状，重点排查原料奶卫生和巴氏杀菌工艺
+- case_id: test_salmonella_002
+  style: 产品主导型
+  user_query: 我们公司想出口一批坚果制品到欧盟，需要做沙门氏菌风险评估
+  symptoms:
+  - 呕吐
+  - 肠胃炎
+  - 发热
+  vulnerable_group: 老年人
+  product: 坚果制品
+  indicative_tests:
+  - 沙门氏菌GB标准检测
+  - 水分活度检测
+  - 加工环境监测
+  expected_risk_factor_id: microbial_salmonella
+  expected_risk_factor_name: Salmonella
+  acceptable_alternatives:
+  - microbial_listeria_monocytogenes
+  - microbial_norovirus
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 坚果制品卫生规范
+  method_basis: 原料筛选和热加工工艺
+  evidence_type: recall_event
+  should_not_recall:
+  - 黄曲霉毒素
+  - 过氧化值超标
+  - 标签错误
+  - 营养成分不符
+  notes: 坚果制品出口需重点关注原料污染和加工过程中的交叉污染，建议加强供应商审计和成品沙门氏菌监控
+- case_id: test_toxin_zearalenone_001
+  style: 症状主导型
+  user_query: 近期出现月经不调、雌激素水平异常的症状，怀疑与食用的面制品有关
+  symptoms:
+  - 雌激素样效应
+  - 生殖障碍
+  - 月经紊乱
+  vulnerable_group: 成年女性
+  product: 面粉
+  indicative_tests:
+  - 玉米赤霉烯酮检测
+  - 雌激素水平检测
+  - 伏马菌素检测
+  expected_risk_factor_id: toxin_zearalenone
+  expected_risk_factor_name: Zearalenone
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 谷物原料真菌毒素限量标准
+  method_basis: 液相色谱-质谱联用检测方法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 食品添加剂超标
+  - 重金属污染
+  - 农药残留
+  - 微生物超标
+  notes: 症状指向雌激素干扰，需排查谷物原料中的真菌毒素污染
+- case_id: test_toxin_zearalenone_002
+  style: 产品主导型
+  user_query: 奶牛场使用的饲料检测出真菌毒素残留，担心影响生乳品质
+  symptoms:
+  - 牛奶品质下降
+  - 奶牛繁殖性能异常
+  vulnerable_group: 奶牛养殖业
+  product: 饲料
+  indicative_tests:
+  - 玉米赤霉烯酮检测
+  - 黄曲霉毒素检测
+  - 呕吐毒素检测
+  - 霉菌总数检测
+  expected_risk_factor_id: toxin_zearalenone
+  expected_risk_factor_name: Zearalenone
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 饲料真菌毒素限量标准
+  method_basis: 饲料中霉菌毒素检测标准方法
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 兽药残留
+  - 重金属超标
+  - 细菌污染
+  - 转基因成分
+  notes: 饲料为农产品直接关联风险，需追溯原料来源和储存条件
+- case_id: test_vibrio_001
+  style: 症状主导型
+  user_query: 昨天吃了生拌生蚝，今天凌晨开始腹泻、发烧，伴有呕吐，是否可能是弧菌感染？
+  symptoms:
+  - 腹泻
+  - 发热
+  - 呕吐
+  - 腹痛
+  - 败血症
+  vulnerable_group: '[''免疫缺陷者'', ''肝病患者'', ''老年人'']'
+  product: 生拌生蚝
+  indicative_tests:
+  - 弧菌培养鉴定
+  - 血清分型
+  - PCR检测
+  - 食物留样检测
+  expected_risk_factor_id: microbial_vibrio
+  expected_risk_factor_name: Vibrio (弧菌)
+  acceptable_alternatives:
+  - microbial_salmonella
+  - microbial_norovirus
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 食品安全国家标准 鲜、冻动物性水产品
+  method_basis: 弧菌检测方法 选择性培养基培养
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 重金属铅超标
+  - 农药残留
+  - 非法添加色素
+  - 防腐剂过量
+  notes: 消费者出现典型弧菌感染症状且有生食贝类史，应优先排查弧菌而非其他风险因子
+- case_id: test_vibrio_002
+  style: 检验项主导型
+  user_query: 进口冷冻虾仁在海关检测出副溶血性弧菌阳性，这批产品还能销售吗？
+  symptoms:
+  - 肠胃炎
+  - 腹泻
+  - 呕吐
+  vulnerable_group: ''
+  product: 进口冷冻虾仁
+  indicative_tests:
+  - 副溶血性弧菌培养
+  - 菌落计数
+  - 耐热性测试
+  expected_risk_factor_id: microbial_vibrio
+  expected_risk_factor_name: Vibrio (弧菌)
+  acceptable_alternatives:
+  - microbial_salmonella
+  expected_stage_ids:
+  - cold_chain_and_logistics
+  - raw_material_and_ingredients
+  gb_main_basis: 进出口水产品检验检疫规程
+  method_basis: 副溶血性弧菌国标检测法
+  evidence_type: recall_event
+  should_not_recall:
+  - 重金属铅超标
+  - 农药残留
+  - 非法添加色素
+  - 标签错误
+  notes: 弧菌阳性且冷链记录显示温度波动，应立即召回涉事批次并追溯原料来源
+- case_id: toxin_aflatoxin_m1_case_001
+  style: 症状主导型
+  user_query: 某三甲医院报告近期有多例肝癌患者，流行病学调查发现患者均有长期饮用同一品牌巴氏杀菌乳的习惯，是否需要考虑黄曲霉毒素M1污染？
+  symptoms:
+  - 肝癌
+  - 肝毒性
+  - 致癌
+  vulnerable_group: 长期饮用者,中老年群体
+  product: 巴氏杀菌乳
+  indicative_tests:
+  - 黄曲霉毒素M1定量检测
+  - 饲料霉菌毒素筛查
+  - 原料乳毒素检测
+  expected_risk_factor_id: toxin_aflatoxin_m1
+  expected_risk_factor_name: Aflatoxin M1
+  acceptable_alternatives:
+  - toxin_ochratoxin_a
+  expected_stage_ids:
+  - farm_and_raw_milk
+  - raw_material_and_ingredients
+  gb_main_basis: 乳及乳制品黄曲霉毒素M1限量要求
+  method_basis: 液相色谱-质谱联用检测方法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 三聚氰胺污染
+  - 防腐剂超标
+  - 细菌总数超标
+  - 包装迁移物
+  notes: 症状指向肝损伤，需排查乳制品真菌毒素污染，重点审查牧场饲料管理和原料奶源头
+- case_id: toxin_aflatoxin_m1_case_002
+  style: 原料污染型
+  user_query: 某乳制品企业接到下游经销商反馈，销售的奶酪产品被投诉有霉味，要求提供近期的原料供应商审计和霉菌毒素检测记录，应如何评估风险？
+  symptoms:
+  - 真菌毒素中毒
+  - 霉味投诉
+  vulnerable_group: 敏感消费者
+  product: 奶酪
+  indicative_tests:
+  - 黄曲霉毒素M1检测
+  - 霉菌总数测定
+  - 饲料来源追溯
+  - 供应商资质核查
+  expected_risk_factor_id: toxin_aflatoxin_m1
+  expected_risk_factor_name: Aflatoxin M1
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - farm_and_raw_milk
+  - production_and_processing
+  gb_main_basis: 乳制品原料验收规范
+  method_basis: 供应商审计与检测报告核对
+  evidence_type: recall_event
+  should_not_recall:
+  - 食品添加剂违规
+  - 标签标识错误
+  - 重量不足
+  - 过期销售
+  notes: 霉味投诉需排查原料污染和加工过程霉菌滋生，审查饲料来源和原料奶检测记录确认是否为黄曲霉毒素M1
+- case_id: toxin_deoxynivalenol_001
+  style: 症状主导型
+  user_query: 消费者反馈食用某品牌面粉后出现严重呕吐和腹泻，怀疑食品质量问题
+  symptoms:
+  - 呕吐
+  - 腹泻
+  - 胃肠炎症
+  - 食欲不振
+  vulnerable_group: 普通人群
+  product: 小麦面粉
+  indicative_tests:
+  - DON毒素定量检测
+  - 谷物真菌毒素筛查
+  - 霉菌污染度检测
+  expected_risk_factor_id: toxin_deoxynivalenol
+  expected_risk_factor_name: 脱氧雪腐镰刀菌烯醇（Deoxynivalenol）
+  acceptable_alternatives:
+  - toxin_zearalenone
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  gb_main_basis: 原料小麦DON毒素限量要求
+  method_basis: HPLC或ELISA法检测DON含量
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 重金属污染
+  - 农药残留
+  - 食品添加剂超标
+  - 细菌性食源性疾病
+  notes: 症状与DON毒素中毒高度吻合，需追溯原料小麦的毒素检测报告
+- case_id: toxin_deoxynivalenol_002
+  style: 检验项主导型
+  user_query: 供应商提供的原料大麦检测报告显示DON含量接近限量值，需要评估风险等级
+  symptoms:
+  - 呕吐
+  - 腹泻
+  - 胃肠炎症
+  vulnerable_group: 食品加工企业
+  product: 大麦
+  indicative_tests:
+  - 原料DON快速检测
+  - 真菌毒素高效液相色谱法
+  - 镰刀菌属污染监测
+  expected_risk_factor_id: toxin_deoxynivalenol
+  expected_risk_factor_name: 脱氧雪腐镰刀菌烯醇（Deoxynivalenol）
+  acceptable_alternatives:
+  - toxin_ochratoxin_a
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 谷物及其制品DON限量标准
+  method_basis: 原料验收真菌毒素检测规程
+  evidence_type: medical_literature
+  should_not_recall:
+  - 塑化剂迁移
+  - 防腐剂过量
+  - 标签标识错误
+  - 感官性状异常
+  notes: 原料端DON接近限量值，需结合加工工艺评估最终产品安全性
+- case_id: toxin_fumonisins_case_001
+  style: 症状主导型
+  user_query: 某马匹养殖场报告多匹马出现急性神经系统症状，表现为精神沉郁、步态不稳，严重者出现阵挛性抽搐，经兽医诊断疑似脑白质软化症，是否与饲料中伏马毒素污染有关？
+  symptoms:
+  - 马匹神经系统症状
+  - 步态不稳
+  - 阵挛性抽搐
+  - 精神沉郁
+  - 脑白质软化症
+  vulnerable_group: 马匹等草食动物
+  product: 马饲料/玉米饲料
+  indicative_tests:
+  - 饲料中伏马毒素B1、B2定量检测
+  - 玉米原料伏马毒素筛查
+  - 动物血液及组织样本毒素检测
+  expected_risk_factor_id: toxin_fumonisins
+  expected_risk_factor_name: Fumonisins
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 饲料卫生标准中真菌毒素限量要求
+  method_basis: 液相色谱-质谱联用检测伏马毒素
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 重金属超标
+  - 农药残留
+  - 细菌性食物中毒
+  - 转基因成分
+  notes: 本案例以动物中枢神经系统症状为触发点，指向饲料中伏马毒素污染导致的动物疾病，应重点追溯原料玉米的毒素检测记录和供应商管理情况
+- case_id: toxin_fumonisins_case_002
+  style: 检验项主导型
+  user_query: 食品生产企业需要对一批进口玉米原料进行出厂检验，检验报告显示伏马毒素B1含量为1200μg/kg，请问该批原料是否可用于婴幼儿配方奶粉生产？
+  symptoms:
+  - 无直接消费者症状
+  - 潜在致癌性
+  - 肝脏损伤风险
+  vulnerable_group: 婴幼儿
+  product: 玉米原料/婴幼儿配方奶粉
+  indicative_tests:
+  - 伏马毒素B1、B2总量检测
+  - 伏马毒素B1单体制检测定
+  - 原料来源追溯
+  expected_risk_factor_id: toxin_fumonisins
+  expected_risk_factor_name: Fumonisins
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_zearalenone
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 婴幼儿配方食品原料安全标准
+  method_basis: 免疫亲和层析净化高效液相色谱法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 大肠杆菌污染
+  - 沙门氏菌污染
+  - 三聚氰胺残留
+  - 反式脂肪酸超标
+  notes: 本案例以检测结果超标的检验项为主导，需要判断该原料是否适用于特定敏感人群产品，应结合国标限量要求进行风险评估并给出是否放行的专业建议
+- case_id: toxin_ochratoxin_a_001
+  style: 症状主导型
+  user_query: 某患者连续半年每日饮用自酿葡萄酒后出现持续性腰酸乏力，尿常规显示尿蛋白阳性且伴有肾小管上皮细胞脱落，是否可能与赭曲霉毒素A有关？
+  symptoms:
+  - 持续性腰酸乏力
+  - 尿蛋白阳性
+  - 肾小管上皮细胞脱落
+  - 肾功能减退
+  vulnerable_group: '[''慢性肾功能不全患者'', ''长期饮酒者'', ''老年人'']'
+  product: 自酿葡萄酒
+  indicative_tests:
+  - 尿液中赭曲霉毒素A代谢物测定
+  - 血清赭曲霉毒素A浓度检测
+  - 肾功能三项（肌酐、尿素氮、尿酸）
+  - 尿常规+尿沉渣镜检
+  expected_risk_factor_id: toxin_ochratoxin_a
+  expected_risk_factor_name: ochratoxin_a
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  - packaging_and_filling
+  gb_main_basis: 食品中真菌毒素限量标准
+  method_basis: HPLC-FLD检测法
+  evidence_type: medical_literature
+  should_not_recall:
+  - 农药残留超标
+  - 食品添加剂超标
+  - 重金属污染
+  - 微生物菌落总数超标
+  notes: 赭曲霉毒素A具有强肾毒性，主要损伤肾小管，自酿葡萄酒原料把关不足易导致污染，需结合临床症状和生物标志物确诊
+- case_id: toxin_ochratoxin_a_002
+  style: 产品主导型
+  user_query: 海关进口查验时一批红酒被发现赭曲霉毒素A含量为8.5μg/L，接近国标限值，是否需要启动召回程序？
+  symptoms: []
+  vulnerable_group: '[''普通消费者'', ''孕妇'', ''儿童'']'
+  product: 进口红酒
+  indicative_tests:
+  - HPLC-FLD定量检测赭曲霉毒素A
+  - LC-MS/MS确证方法
+  - 原料产地霉菌污染评估
+  - 储运温湿度记录核查
+  expected_risk_factor_id: toxin_ochratoxin_a
+  expected_risk_factor_name: ochratoxin_a
+  acceptable_alternatives:
+  - toxin_aflatoxin_m1
+  - toxin_zearalenone
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 食品中赭曲霉毒素A最大限量规定
+  method_basis: 液相色谱荧光检测法
+  evidence_type: recall_event
+  should_not_recall:
+  - 二氧化硫残留
+  - 山梨酸钾超标
+  - 着色剂违规
+  - 发酵菌种异常
+  notes: 进口红酒中赭曲霉毒素A超限应立即启动召回，同时追溯原料产地的霉菌污染源头，评估同批次产品风险
+- case_id: toxin_patulin_001
+  style: 症状主导型
+  user_query: 昨天喝了一杯鲜榨苹果汁，今天出现严重腹痛和呕吐，是不是食物中毒了？
+  symptoms:
+  - 胃肠道损伤
+  - 腹痛
+  - 呕吐
+  - 恶心
+  vulnerable_group: '[''儿童'', ''老年人'', ''免疫功能低下者'']'
+  product: 鲜榨苹果汁
+  indicative_tests:
+  - 展青霉素含量检测
+  - 真菌毒素筛查
+  - 霉菌培养鉴定
+  expected_risk_factor_id: toxin_patulin
+  expected_risk_factor_name: Patulin
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  gb_main_basis: 原料苹果霉烂控制
+  method_basis: HPLC法检测展青霉素
+  evidence_type: outbreak_event
+  should_not_recall:
+  - 农药残留超标
+  - 食品添加剂违规使用
+  - 重金属污染
+  - 细菌性食物中毒
+  notes: 根据症状和食品类型，优先排查展青霉素污染，重点检查原料苹果是否霉烂
+- case_id: toxin_patulin_002
+  style: 产品主导型
+  user_query: 超市买的苹果酱打开后发现瓶口附近有少量霉斑，还能吃吗？
+  symptoms:
+  - 肝毒性
+  - 免疫毒性
+  vulnerable_group: '[''孕妇'', ''儿童'', ''慢性病患者'']'
+  product: 苹果酱
+  indicative_tests:
+  - 展青霉素定量检测
+  - 真菌毒素谱检测
+  - 霉菌菌种鉴定
+  expected_risk_factor_id: toxin_patulin
+  expected_risk_factor_name: Patulin
+  acceptable_alternatives:
+  - toxin_aflatoxins
+  - toxin_deoxynivalenol
+  expected_stage_ids:
+  - raw_material_and_ingredients
+  - production_and_processing
+  - packaging_and_filling
+  gb_main_basis: 原料质量与加工工艺控制
+  method_basis: LC-MS/MS多毒素检测
+  evidence_type: recall_event
+  should_not_recall:
+  - 违规添加防腐剂
+  - 包装材料迁移
+  - 重金属超标
+  - 微生物致病菌超标
+  notes: 霉斑出现提示可能存在真菌毒素产生，需检测展青霉素及其他真菌毒素

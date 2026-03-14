@@ -1,0 +1,51 @@
+{
+  "name": "standalone_food_risk_kb",
+  "purpose": "symptom_to_risk_to_stage layered external knowledge base",
+  "layers": [
+    {
+      "name": "rule_layer",
+      "files": [
+        "knowledge/configs/risk_taxonomy.yaml",
+        "knowledge/configs/stage_rules.yaml",
+        "knowledge/configs/gb_dairy_rules.yaml",
+        "knowledge/configs/gb2762_contaminant_limits.yaml"
+      ],
+      "role": "risk factor inference, stage prior inference, regulatory thresholds"
+    },
+    {
+      "name": "management_layer",
+      "files": [
+        "knowledge/corpora/rag_corpus_management_v2.jsonl"
+      ],
+      "role": "production issues, process control gaps, control actions"
+    },
+    {
+      "name": "standard_layer",
+      "files": [
+        "knowledge/corpora/rag_corpus_standard_txt.jsonl",
+        "knowledge/standard_txt/"
+      ],
+      "role": "GB text evidence and cross-standard references"
+    },
+    {
+      "name": "method_layer",
+      "files": [
+        "knowledge/corpora/rag_corpus_methods_standards.jsonl"
+      ],
+      "role": "test method evidence and inspection parameters"
+    },
+    {
+      "name": "derived_rule_text_layer",
+      "files": [
+        "knowledge/corpora/rag_corpus_config_rules.jsonl"
+      ],
+      "role": "text-retrievable mirror of structured rules"
+    }
+  ],
+  "entrypoints": [
+    "backend/router.py",
+    "backend/cli.py"
+  ],
+  "graph_required_now": false,
+  "raganything_reingest_required_now": false
+}

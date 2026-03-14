@@ -1,0 +1,91 @@
+# GB 19302-2010 食品安全国家标准 发酵乳
+standard_no: "GB 19302-2010"
+standard_name: "食品安全国家标准 发酵乳"
+applicable_products:
+  - yogurt
+
+indicators:
+  - name: "蛋白质"
+    threshold: 2.3
+    operator: ">="
+    unit: "g/100g"
+    risk_type: "营养"
+    severity: "medium"
+    test_method: "GB 5009.5"
+    action_suggestion: "建议检查原料乳和发酵工艺"
+
+  - name: "脂肪"
+    threshold: 2.5
+    operator: ">="
+    unit: "g/100g"
+    risk_type: "营养"
+    severity: "low"
+    test_method: "GB 5413.3"
+    action_suggestion: "建议调整配方"
+
+  - name: "酸度"
+    threshold: 70
+    operator: ">="
+    unit: "°T"
+    risk_type: "理化"
+    severity: "low"
+    test_method: "GB 5009.239"
+    action_suggestion: "发酵正常的指标"
+
+  - name: "大肠菌群"
+    threshold: 10
+    operator: "<="
+    unit: "CFU/mL"
+    risk_type: "微生物"
+    severity: "high"
+    test_method: "GB 4789.3"
+    action_suggestion: "建议排查发酵环境和包装卫生"
+
+  - name: "酵母"
+    threshold: 100
+    operator: "<="
+    unit: "CFU/mL"
+    risk_type: "微生物"
+    severity: "medium"
+    test_method: "GB 4789.15"
+    action_suggestion: "酵母超标，建议检查冷链储存条件"
+
+  - name: "霉菌"
+    threshold: 30
+    operator: "<="
+    unit: "CFU/mL"
+    risk_type: "微生物"
+    severity: "medium"
+    test_method: "GB 4789.15"
+    action_suggestion: "霉菌超标，建议检查生产环境卫生"
+
+  - name: "金黄色葡萄球菌"
+    threshold: 0
+    operator: "="
+    unit: "CFU/mL"
+    risk_type: "微生物"
+    severity: "high"
+    test_method: "GB 4789.10"
+    action_suggestion: "致病菌检出，建议召回产品"
+
+  - name: "沙门氏菌"
+    threshold: 0
+    operator: "="
+    unit: "CFU/25mL"
+    risk_type: "微生物"
+    severity: "high"
+    test_method: "GB 4789.4"
+    action_suggestion: "致病菌检出，建议召回产品"
+
+  - name: "铅"
+    threshold: 0.05
+    operator: "<="
+    unit: "mg/kg"
+    risk_type: "安全"
+    severity: "high"
+    test_method: "GB 5009.12"
+    action_suggestion: "建议检查生产设备和包装材料"
+
+notes: |
+  发酵乳应在2-6°C条件下储存和运输，保质期一般为14-28天。
+  酵母和霉菌超标通常与冷链断链或包装污染有关。

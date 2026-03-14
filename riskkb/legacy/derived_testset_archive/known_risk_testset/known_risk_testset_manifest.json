@@ -1,0 +1,1 @@
+{"cases": 32, "cases_per_factor_target": 1, "generated_at": "2026-03-08T17:49:00.200619+00:00", "output_jsonl": "/home/yarizakurahime/data/standalone_food_risk_kb/knowledge/derived/known_risk_testset/known_risk_testset.jsonl", "output_yaml": "/home/yarizakurahime/data/standalone_food_risk_kb/knowledge/derived/known_risk_testset/known_risk_testset.yaml", "risk_factor_count": 39}

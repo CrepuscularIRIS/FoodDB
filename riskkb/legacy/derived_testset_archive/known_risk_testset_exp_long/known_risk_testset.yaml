@@ -1,0 +1,8 @@
+version: known-risk-testset-v1
+generated_at: '2026-03-09T05:23:23.568912+00:00'
+source:
+  risk_taxonomy: /home/yarizakurahime/data/standalone_food_risk_kb/knowledge/configs/risk_taxonomy.yaml
+  stage_rules: /home/yarizakurahime/data/standalone_food_risk_kb/knowledge/configs/stage_rules.yaml
+  builder: backend/known_risk_testset_builder.py
+  model: MiniMax-M2.5
+cases: []

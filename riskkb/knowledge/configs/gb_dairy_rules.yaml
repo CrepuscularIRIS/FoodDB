@@ -1,0 +1,239 @@
+# ═══════════════════════════════════════════════════════════════════
+# GB 2760-2024 乳制品食品添加剂规则库
+# 来源：GB 2760-2024《食品安全国家标准 食品添加剂使用标准》
+# 提炼范围：食品分类 01.x（乳及乳制品）的明确规定
+#           重点关注：婴配粉（13.01）、特殊膳食（13.x）的严格限制
+# ═══════════════════════════════════════════════════════════════════
+#
+# 用途：在 ClaudeCode 进行 L1 推断时，先查这份规则库。
+#       如果检测到的添加剂在某类乳制品中被标注"不得使用/除外"，
+#       则可以直接判定为"硬违规（basis=observed, confidence=high）"
+#
+# 分类号索引（乳及乳制品 01.x）：
+#   01.01.01  巴氏杀菌乳
+#   01.01.02  灭菌乳和高温杀菌乳
+#   01.01.03  调制乳
+#   01.02.01  发酵乳
+#   01.02.02  风味发酵乳
+#   01.03.01  乳粉和奶油粉
+#   01.03.02  调制乳粉和调制奶油粉
+#   01.05.01  稀奶油
+#   01.06     干酪、再制干酪、干酪制品及干酪类似品
+#   13.01     婴幼儿配方食品（婴配粉适用）
+# ═══════════════════════════════════════════════════════════════════
+
+gb_standard: "GB 2760-2024"
+effective_date: "2025-02-08"
+replaced: "GB 2760-2014"
+
+# ─────────────────────────────────────────────────────────────────
+# 第一部分：明确"不得添加"的场景（最强硬规则）
+# 触发这些规则 → 直接判定为 illegal_additive，无需推断
+# ─────────────────────────────────────────────────────────────────
+prohibited_in_dairy:
+
+  - rule_id: "gb2760_pro_001"
+    description: "纯乳（巴氏杀菌乳/灭菌乳/发酵乳）禁止添加任何非营养强化剂类食品添加剂"
+    applicable_products:
+      - "01.01.01"  # 巴氏杀菌乳
+      - "01.01.02"  # 灭菌乳/高温杀菌乳
+      - "01.02.01"  # 发酵乳（纯）
+      - "01.03.01"  # 乳粉和奶油粉（纯）
+      - "01.05.01"  # 稀奶油（纯）
+    rule: "以上纯乳类产品不在附录A任何添加剂的适用范围内（除A.2所列例外编号1-68之外，均按生产需要），但若有独立列明，则以独立列明为准"
+    violation_keywords: ["非天然香精", "人工甜味剂", "防腐剂", "香兰素", "乙基香兰素"]
+    risk_id: "illegal_additive_vanillin_stage1"
+    confidence: "high"
+    basis: "observed"
+    note: "GB 2760 把婴配 1 段（13.01.01）的允许添加剂严格限制，香兰素仅允许在 2/3 段，1 段严禁"
+
+  - rule_id: "gb2760_pro_002"
+    description: "婴幼儿配方粉（1段，0-6月）禁止添加香兰素/乙基香兰素/香豆素"
+    applicable_products:
+      - "13.01.01"  # 婴儿配方食品（1段，0~6月）
+    prohibited_additives:
+      - name: "香兰素"
+        cns: "04.007"
+        ins: "637"
+        legal_limit_in_product: "0"  # 不允许添加
+      - name: "乙基香兰素"
+        cns: "04.008"
+        ins: "637"
+        legal_limit_in_product: "0"
+    legal_in:
+      - product_code: "13.01.02"
+        product_name: "较大婴儿配方食品（2段，6-12月）"
+        max_limit_g_per_kg: 5
+      - product_code: "13.01.03"
+        product_name: "幼儿配方食品（3段，12-36月）"
+        max_limit_g_per_kg: 5
+    risk_id: "illegal_additive_vanillin_stage1"
+    detection_indicator: "香兰素超标 OR 在1段检出香兰素"
+    severity: "critical"
+    rationale: "1段婴配粉中香兰素的违规添加会诱导婴儿嗜好人工香味，违反母乳化导向原则。已有专项打击。"
+
+  - rule_id: "gb2760_pro_003"
+    description: "生乳、纯牛奶中禁止添加防腐剂（苯甲酸、山梨酸等）"
+    applicable_products:
+      - "01.01.01"  # 巴氏杀菌乳
+      - "01.01.02"  # 灭菌乳
+      - "01.02.01"  # 发酵乳
+    prohibited_additives:
+      - name: "苯甲酸及其钠盐"
+        cns: "17.001,17.002"
+        ins: "210,211"
+      - name: "山梨酸及其钾盐"
+        cns: "17.009,17.010"
+        ins: "200,202"
+      - name: "双乙酸钠"
+        cns: "17.028"
+        ins: "262"
+    risk_id: "illegal_additive_preservative"
+    test_item_triggers: ["苯甲酸", "山梨酸", "benzoic acid", "sorbic acid"]
+    severity: "high"
+
+  - rule_id: "gb2760_pro_004"
+    description: "所有乳及乳制品中绝对禁止添加非食用物质（不在添加剂目录中）"
+    examples:
+      - name: "三聚氰胺"
+        reason: "非食品原料，非法掺假手段"
+        risk_id: "illegal_additive_melamine"
+      - name: "β-内酰胺酶"
+        reason: "非许可食品添加剂，用于掩盖抗生素残留"
+        risk_id: "illegal_additive_beta_lactamase"
+      - name: "硫氰酸钠"
+        reason: "非食品原料，曾用于非法防腐"
+        risk_id: "illegal_additive_sodium_thiocyanate"
+      - name: "工业明胶/皮革水解蛋白"
+        reason: "非食品级明胶，中铬污染风险"
+        risk_id: "illegal_additive_leather_protein"
+      - name: "工业碱（Na2CO3/NaOH用于掩盖酸败）"
+        reason: "超出食品级使用范围，用于欺骗性掩盖"
+        risk_id: "illegal_additive_industrial_alkali"
+    severity: "critical"
+
+# ─────────────────────────────────────────────────────────────────
+# 第二部分：乳制品中有明确限量的添加剂（超标即违规）
+# 用于 L0 提取 test_value > legal_limit → 触发违规判定
+# ─────────────────────────────────────────────────────────────────
+limit_rules_dairy:
+
+  - rule_id: "gb2760_lim_001"
+    additive: "阿斯巴甜"
+    cns: "19.004"
+    ins: "951"
+    function: "甜味剂"
+    dairy_limits:
+      - product_code: "01.01.03"
+        product_name: "调制乳"
+        max_g_per_kg: 0.60
+      - product_code: "01.02.02"
+        product_name: "风味发酵乳"
+        max_g_per_kg: 1.00
+      - product_code: "01.03.02"
+        product_name: "调制乳粉和调制奶油粉"
+        max_g_per_kg: 2.00
+    not_allowed_in:
+      - "01.01.01"  # 巴氏杀菌乳
+      - "01.01.02"  # 灭菌乳
+      - "01.02.01"  # 发酵乳（纯）
+      - "01.03.01"  # 乳粉（纯）
+      - "13.01"     # 婴配粉（全系列）
+
+  - rule_id: "gb2760_lim_002"
+    additive: "安赛蜜（乙酰磺胺酸钾）"
+    cns: "19.011"
+    ins: "950"
+    function: "甜味剂"
+    dairy_limits:
+      - product_code: "01.02.02"
+        product_name: "风味发酵乳"
+        max_g_per_kg: 0.35
+    not_allowed_in:
+      - "01.01.01"  # 巴氏杀菌乳
+      - "01.01.02"  # 灭菌乳
+      - "01.02.01"  # 发酵乳（纯）
+      - "01.03.01"  # 乳粉（纯）
+      - "13.01"     # 婴配粉
+
+  - rule_id: "gb2760_lim_003"
+    additive: "β-胡萝卜素"
+    cns: "08.010"
+    ins: "160a"
+    function: "着色剂"
+    dairy_limits:
+      - product_code: "01.01.03"
+        product_name: "调制乳"
+        max_g_per_kg: 1.000
+      - product_code: "01.02.02"
+        product_name: "风味发酵乳"
+        max_g_per_kg: 1.000
+      - product_code: "01.03.02"
+        product_name: "调制乳粉"
+        max_g_per_kg: 1.000
+      - product_code: "01.06.01"
+        product_name: "非熟化干酪"
+        max_g_per_kg: 0.600
+      - product_code: "01.06.02"
+        product_name: "熟化干酪"
+        max_g_per_kg: 1.000
+    not_allowed_in:
+      - "01.01.01"  # 巴氏杀菌乳
+      - "01.01.02"  # 灭菌乳
+      - "01.02.01"  # 发酵乳（纯）
+      - "01.03.01"  # 乳粉（纯）
+      - "13.01"     # 婴配粉
+
+  - rule_id: "gb2760_lim_004"
+    additive: "丙二醇脂肪酸酯"
+    cns: "10.020"
+    function: "乳化剂"
+    dairy_limits:
+      - product_code: "01.0（调制/风味类）"
+        product_name: "调制乳/风味发酵乳/调制乳粉等（01.01.01/02/01.02.01/01.03.01除外）"
+        max_g_per_kg: 5.00
+    not_allowed_in:
+      - "01.01.01"  # 巴氏杀菌乳
+      - "01.01.02"  # 灭菌乳
+      - "01.02.01"  # 发酵乳（纯）
+      - "01.03.01"  # 乳粉（纯）
+      - "01.05.01"  # 稀奶油
+      - "13.01"     # 婴配粉
+
+# ─────────────────────────────────────────────────────────────────
+# 第三部分：婴配粉专用规则（风险最高，最严格）
+# ─────────────────────────────────────────────────────────────────
+infant_formula_special_rules:
+
+  - rule_id: "gb2760_inf_001"
+    description: "婴幼儿配方食品（13.01）中允许的添加剂仅限 GB 14880 营养强化剂及特定工艺用途添加剂"
+    products_covered: ["13.01.01", "13.01.02", "13.01.03"]
+    key_principle: "凡是没有在 GB 14880 或对应婴配标准中明确列出的添加剂，均视为禁止添加"
+    common_violations:
+      - additive: "香兰素"
+        product: "1段（13.01.01）"
+        risk_id: "illegal_additive_vanillin_stage1"
+      - additive: "人工色素（如日落黄、胭脂红）"
+        product: "所有段次"
+        risk_id: "illegal_additive_colorant_infant"
+      - additive: "防腐剂"
+        product: "所有段次"
+        risk_id: "illegal_additive_preservative"
+      - additive: "甜味剂（如阿斯巴甜、安赛蜜）"
+        product: "所有段次"
+        risk_id: "illegal_additive_sweetener_infant"
+
+# ─────────────────────────────────────────────────────────────────
+# 第四部分：字段映射（用于 L0 提取的正则辅助）
+# ─────────────────────────────────────────────────────────────────
+test_item_to_rule_mapping:
+  "香兰素":         {rule_id: "gb2760_pro_002", risk_id: "illegal_additive_vanillin_stage1"}
+  "乙基香兰素":     {rule_id: "gb2760_pro_002", risk_id: "illegal_additive_vanillin_stage1"}
+  "苯甲酸":         {rule_id: "gb2760_pro_003", risk_id: "illegal_additive_preservative"}
+  "山梨酸":         {rule_id: "gb2760_pro_003", risk_id: "illegal_additive_preservative"}
+  "三聚氰胺":       {rule_id: "gb2760_pro_004", risk_id: "illegal_additive_melamine"}
+  "硫氰酸钠":       {rule_id: "gb2760_pro_004", risk_id: "illegal_additive_sodium_thiocyanate"}
+  "β-内酰胺酶":    {rule_id: "gb2760_pro_004", risk_id: "illegal_additive_beta_lactamase"}
+  "阿斯巴甜":       {rule_id: "gb2760_lim_001", risk_id: "quality_additive_sweetener"}
+  "安赛蜜":         {rule_id: "gb2760_lim_002", risk_id: "quality_additive_sweetener"}
+  "β-胡萝卜素超标": {rule_id: "gb2760_lim_003", risk_id: "quality_additive_colorant"}

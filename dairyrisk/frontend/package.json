@@ -1,0 +1,31 @@
+{
+  "name": "dairy-risk-assessment-frontend",
+  "version": "1.1.0",
+  "description": "乳制品供应链风险研判智能体 - 前端展示系统",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "echarts": "^5.4.3",
+    "echarts-for-react": "^3.0.2",
+    "axios": "^1.6.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "@heroicons/react": "^2.0.18",
+    "react-markdown": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "typescript": "^5.2.0",
+    "eslint": "^8.52.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}

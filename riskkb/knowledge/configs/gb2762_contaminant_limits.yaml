@@ -1,0 +1,194 @@
+# ═══════════════════════════════════════════════════════════════════
+# GB 2762-2022 乳品污染物限量规则库（含第1号修改单）
+# 来源：GB 2762-2022《食品安全国家标准 食品中污染物限量》
+#       + 2025年3月16日第1号修改单（实施日起生效）
+# 作用：提供重金属/污染物的硬限量数值，用于 L0 阶段
+#       "检测值 > 限量 → 直接判定污染物超标"的机械判断
+# ═══════════════════════════════════════════════════════════════════
+
+gb_standard: "GB 2762-2022"
+amendment_1: "2025-03-16实施"
+extraction_date: "2026-02-25"
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.1 铅 (Pb) 限量 — 乳及乳制品相关条目
+# 检验方法: GB 5009.12
+# ─────────────────────────────────────────────────────────────────
+lead_limits:
+  risk_id: "heavy_metal_lead"
+  unit: "mg/kg"
+  dairy_entries:
+    - product: "生乳、巴氏杀菌乳、灭菌乳"
+      product_codes: ["生乳", "01.01.01", "01.01.02"]
+      limit_mg_per_kg: 0.02
+      note: "极严格限量，是一般乳制品的1/10"
+      severity: "critical_if_exceeded"
+    - product: "调制乳、发酵乳"
+      product_codes: ["01.01.03", "01.02.01", "01.02.02"]
+      limit_mg_per_kg: 0.04
+    - product: "其他乳及乳制品（乳粉、干酪等）"
+      product_codes: ["01.03", "01.04", "01.05", "01.06", "01.07"]
+      limit_mg_per_kg: 0.20
+    - product: "婴幼儿配方食品（固态计）"
+      product_codes: ["13.01.01", "13.01.02", "13.01.03"]
+      limit_mg_per_kg: 0.08
+      note: "液态婴配按8:1折算，即液态≤0.01 mg/kg"
+      severity: "critical_if_exceeded"
+    - product: "含乳饮料"
+      product_codes: ["含乳饮料"]
+      limit_mg_per_kg: 0.05
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.2 镉 (Cd) 限量 — 乳及乳制品
+# 注：GB 2762-2022 对纯乳类（生乳/巴氏/灭菌/调制/发酵）未单独列出镉限量
+#     即适用"未列明食品"的通用原则（建议参照一般食品0.1 mg/kg评估）
+# 检验方法: GB 5009.15
+# ─────────────────────────────────────────────────────────────────
+cadmium_limits:
+  risk_id: "heavy_metal_cadmium"
+  unit: "mg/kg"
+  dairy_entries:
+    - product: "婴幼儿谷类辅助食品"
+      product_codes: ["13.02.01"]
+      limit_mg_per_kg: 0.06
+      note: "乳品中镉无国标专项限量，但婴配辅食有专项控制"
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.3 汞 (Hg/甲基汞) 限量 — 乳及乳制品
+# 检验方法: GB 5009.17
+# ─────────────────────────────────────────────────────────────────
+mercury_limits:
+  risk_id: "heavy_metal_mercury"
+  unit: "mg/kg"
+  dairy_entries:
+    - product: "生乳、巴氏杀菌乳、灭菌乳、调制乳、发酵乳"
+      product_codes: ["生乳", "01.01.01", "01.01.02", "01.01.03", "01.02.01", "01.02.02"]
+      limit_mg_per_kg: 0.01
+      measurement: "总汞（以Hg计）"
+      severity: "critical_if_exceeded"
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.4 砷 (As总砷/无机砷) 限量 — 乳及乳制品
+# 检验方法: GB 5009.11
+# ─────────────────────────────────────────────────────────────────
+arsenic_limits:
+  risk_id: "heavy_metal_arsenic"
+  unit: "mg/kg"
+  dairy_entries:
+    - product: "生乳、巴氏杀菌乳、灭菌乳、调制乳、发酵乳"
+      product_codes: ["生乳", "01.01.01", "01.01.02", "01.01.03", "01.02.01"]
+      limit_mg_per_kg: 0.10
+      measurement: "总砷"
+      severity: "high_if_exceeded"
+    - product: "乳粉和调制乳粉"
+      product_codes: ["01.03.01", "01.03.02"]
+      limit_mg_per_kg: 0.50
+      measurement: "总砷"
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.7 铬 (Cr) 限量 — 乳及乳制品
+# 检验方法: GB 5009.123
+# ─────────────────────────────────────────────────────────────────
+chromium_limits:
+  risk_id: "heavy_metal_chromium"
+  unit: "mg/kg"
+  dairy_entries:
+    - product: "生乳、巴氏杀菌乳、灭菌乳、调制乳、发酵乳"
+      product_codes: ["生乳", "01.01.01", "01.01.02", "01.01.03", "01.02.01", "01.02.02"]
+      limit_mg_per_kg: 0.30
+      measurement: "以Cr计"
+      severity: "critical_if_exceeded"
+      note: "工业区奶源须重点关注（唐山/天津/呼和浩特实测数据显示此值有超标风险）"
+    - product: "乳粉和调制乳粉"
+      product_codes: ["01.03.01", "01.03.02"]
+      limit_mg_per_kg: 2.00
+      note: "浓缩工艺导致富集，限量相对宽松"
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.5 锡 (Sn) 限量 — 镀锡罐装乳制品
+# 检验方法: GB 5009.16
+# ─────────────────────────────────────────────────────────────────
+tin_limits:
+  risk_id: "heavy_metal_tin_can"
+  unit: "mg/kg"
+  note: "仅适用于采用镀锡薄钢板容器包装的食品"
+  dairy_entries:
+    - product: "婴幼儿配方食品、婴幼儿辅助食品（罐装）"
+      product_codes: ["13.01", "13.02"]
+      limit_mg_per_kg: 50
+    - product: "其他罐装乳制品"
+      product_codes: ["01.x（罐装）"]
+      limit_mg_per_kg: 250
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.8 亚硝酸盐/硝酸盐 限量 — 乳及乳制品
+# 检验方法: GB 5009.33
+# ─────────────────────────────────────────────────────────────────
+nitrite_nitrate_limits:
+  risk_id: "contaminant_nitrite"
+  dairy_entries:
+    - product: "生乳"
+      product_codes: ["生乳"]
+      nitrite_limit_mg_per_kg: 0.40
+      measurement: "以NaNO2计"
+    - product: "乳粉和调制乳粉"
+      product_codes: ["01.03.01", "01.03.02"]
+      nitrite_limit_mg_per_kg: 2.00
+    - product: "婴儿/较大婴儿/幼儿配方食品（乳基固态）"
+      product_codes: ["13.01.01", "13.01.02", "13.01.03"]
+      nitrite_limit_mg_per_kg: 2.00
+      nitrate_limit_mg_per_kg: 100
+      note: "仅适用于乳基产品；液态婴配按8:1折算"
+      severity: "critical_if_exceeded"
+
+# ─────────────────────────────────────────────────────────────────
+# § 4.9 苯并[a]芘 限量 — 乳脂类
+# 检验方法: GB 5009.27
+# ─────────────────────────────────────────────────────────────────
+benzo_a_pyrene_limits:
+  risk_id: "contaminant_benzo_a_pyrene"
+  unit: "μg/kg"
+  dairy_entries:
+    - product: "稀奶油、奶油、无水奶油"
+      product_codes: ["01.05", "01.05.01"]
+      limit_ug_per_kg: 10
+      note: "脂肪含量高，富集效应明显"
+
+# ─────────────────────────────────────────────────────────────────
+# 汇总：乳制品检测值 → 超标判定快速查询表
+# ─────────────────────────────────────────────────────────────────
+quick_reference_dairy_limits:
+  description: "L0 提取阶段使用：检测值 > limit 即判定超标"
+  entries:
+    - test_item: "铅"
+      aliases: ["Pb", "lead", "铅超标"]
+      risk_id: "heavy_metal_lead"
+      limits_by_product:
+        生乳/巴氏/灭菌乳: 0.02      # mg/kg
+        调制乳/发酵乳: 0.04
+        其他乳制品: 0.20
+        婴配粉（固态）: 0.08
+    - test_item: "汞"
+      aliases: ["Hg", "mercury", "总汞", "汞超标"]
+      risk_id: "heavy_metal_mercury"
+      limits_by_product:
+        所有液态乳（生乳/巴氏/灭菌/调制/发酵）: 0.01   # mg/kg
+    - test_item: "砷"
+      aliases: ["As", "arsenic", "总砷", "砷超标"]
+      risk_id: "heavy_metal_arsenic"
+      limits_by_product:
+        液态乳: 0.10
+        乳粉: 0.50
+    - test_item: "铬"
+      aliases: ["Cr", "chromium", "六价铬", "铬超标"]
+      risk_id: "heavy_metal_chromium"
+      limits_by_product:
+        液态乳: 0.30
+        乳粉: 2.00
+    - test_item: "亚硝酸盐"
+      aliases: ["NO2", "亚硝酸盐超标", "NaNO2"]
+      risk_id: "contaminant_nitrite"
+      limits_by_product:
+        生乳: 0.40
+        乳粉: 2.00
+        婴配粉（固态）: 2.00
