@@ -69,7 +69,6 @@ Thumbs.db
 
 # Claude files
 .claude/
-CLAUDE.md
 AGENTS.md
 
 # Backend logs
