@@ -30,6 +30,7 @@ from pydantic import BaseModel
 from agent.workflow import RiskAssessmentAgent
 from agent.symptom_router import get_symptom_router, SymptomRiskResult
 from agent.risk_predictor import RiskPredictor, get_risk_predictor
+from agent.risk_propagation import TemporalRiskPropagator
 
 # 检查 LLM 提取器是否可用
 try:
@@ -73,6 +74,8 @@ app.add_middleware(
 agent: Optional[RiskAssessmentAgent] = None
 symptom_router = None
 orchestrator: Optional[Orchestrator] = None
+risk_propagator: Optional[TemporalRiskPropagator] = None
+latest_risk_timeline: List[Dict[str, Any]] = []
 
 
 # 数据模型
@@ -92,6 +95,14 @@ class SamplingRequest(BaseModel):
 class PropagationRequest(BaseModel):
     node_id: str
     max_hops: int = 3
+
+
+class TemporalPropagationRequest(BaseModel):
+    node_id: str
+    max_steps: int = 3
+    initial_risk: Optional[float] = None
+    decay_rate: float = 0.55
+    min_risk_threshold: float = 0.03
 
 
 class SymptomAssessRequest(BaseModel):
@@ -116,7 +127,7 @@ class PopulationInfo(BaseModel):
 # 初始化Agent
 @app.on_event("startup")
 async def startup_event():
-    global agent, symptom_router, orchestrator
+    global agent, symptom_router, orchestrator, risk_propagator
 
     # 日志输出当前数据源
     data_dir = os.environ.get("DATA_DIR", "自动解析")
@@ -138,6 +149,10 @@ async def startup_event():
     print("正在初始化 Mode A/B 联动编排器...")
     orchestrator = Orchestrator(data_dir=agent.retriever.data_dir)
     print("✓ 联动编排器初始化完成")
+
+    print("正在初始化时序风险传播器...")
+    risk_propagator = TemporalRiskPropagator(agent.retriever, agent.scoring_engine)
+    print("✓ 时序风险传播器初始化完成")
 
 
 # 健康检查
@@ -461,6 +476,42 @@ async def analyze_propagation(request: PropagationRequest):
     return {
         "success": True,
         "data": result
+    }
+
+
+@app.post("/api/risk/propagate")
+async def propagate_risk_timeline(request: TemporalPropagationRequest):
+    """时序风险传播接口。"""
+    global latest_risk_timeline
+
+    if not risk_propagator:
+        raise HTTPException(status_code=503, detail="时序风险传播器未初始化")
+
+    try:
+        result = risk_propagator.propagate(
+            node_id=request.node_id,
+            max_steps=request.max_steps,
+            initial_risk=request.initial_risk,
+            decay_rate=request.decay_rate,
+            min_risk_threshold=request.min_risk_threshold,
+        )
+        latest_risk_timeline = result.get("timeline", [])
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"时序传播失败: {str(e)}")
+
+
+@app.get("/api/risk/timeline")
+async def get_risk_timeline():
+    """获取最近一次传播计算的风险时间线。"""
+    return {
+        "success": True,
+        "data": {
+            "timeline": latest_risk_timeline,
+            "steps": len(latest_risk_timeline),
+        },
     }
 
 
