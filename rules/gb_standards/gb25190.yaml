@@ -1,0 +1,73 @@
+# GB 25190-2010 食品安全国家标准 灭菌乳
+standard_no: "GB 25190-2010"
+standard_name: "食品安全国家标准 灭菌乳"
+applicable_products:
+  - UHT
+
+indicators:
+  - name: "蛋白质"
+    threshold: 2.9
+    operator: ">="
+    unit: "g/100g"
+    risk_type: "营养"
+    severity: "medium"
+    test_method: "GB 5009.5"
+    action_suggestion: "建议检查原料乳质量"
+
+  - name: "脂肪"
+    threshold: 3.1
+    operator: ">="
+    unit: "g/100g"
+    risk_type: "营养"
+    severity: "low"
+    test_method: "GB 5413.3"
+    action_suggestion: "建议调整配方"
+
+  - name: "非脂乳固体"
+    threshold: 8.1
+    operator: ">="
+    unit: "g/100g"
+    risk_type: "营养"
+    severity: "medium"
+    test_method: "GB 19301"
+    action_suggestion: "建议检查原料乳浓缩工艺"
+
+  - name: "酸度"
+    threshold: 18
+    operator: "<="
+    unit: "°T"
+    risk_type: "理化"
+    severity: "medium"
+    test_method: "GB 5009.239"
+    action_suggestion: "建议检查原料乳新鲜度"
+
+  - name: "铅"
+    threshold: 0.05
+    operator: "<="
+    unit: "mg/kg"
+    risk_type: "安全"
+    severity: "high"
+    test_method: "GB 5009.12"
+    action_suggestion: "建议检查生产设备和包装材料"
+
+  - name: "黄曲霉毒素M1"
+    threshold: 0.5
+    operator: "<="
+    unit: "μg/kg"
+    risk_type: "安全"
+    severity: "high"
+    test_method: "GB 5009.24"
+    action_suggestion: "建议排查饲料来源"
+
+  - name: "商业无菌"
+    threshold: 0
+    operator: "="
+    unit: ""
+    risk_type: "微生物"
+    severity: "high"
+    test_method: "GB 4789.26"
+    action_suggestion: "灭菌不彻底，建议检查灭菌工艺参数"
+
+notes: |
+  灭菌乳可在常温下储存和运输，保质期一般为6-12个月。
+  主要风险来自原料乳质量和灭菌工艺。
