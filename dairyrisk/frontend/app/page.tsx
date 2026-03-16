@@ -10,9 +10,10 @@ import WorkflowSteps from '@/components/WorkflowSteps';
 import SymptomSearchPanel from '@/components/SymptomSearchPanel';
 import SymptomRiskResult from '@/components/SymptomRiskResult';
 import LinkedWorkflowPanel from '@/components/LinkedWorkflowPanel';
+import RiskStatsCard from '@/components/RiskStatsCard';
 import { useStreamingAgent, useStreamingAgentSSE } from '@/hooks/useStreamingAgent';
 import LLMStreamDisplay from '@/components/LLMStreamDisplay';
-import { ExclamationTriangleIcon, PlayIcon, ArrowsRightLeftIcon, LinkIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, PlayIcon, ArrowsRightLeftIcon, LinkIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { addHistory } from '@/lib/history';
 
 type AssessmentMode = 'supply_chain' | 'symptom_driven' | 'linked';
@@ -59,6 +60,26 @@ export default function Home() {
   const [symptomResult, setSymptomResult] = useState<SymptomAssessResult | null>(null);
   const [showStreaming, setShowStreaming] = useState(false);
   const [symptomLoading, setSymptomLoading] = useState(false);
+  const [showStats, setShowStats] = useState(true);
+
+  // 页面标题
+  const PageHeader = () => (
+    <div className="text-center mb-8 relative">
+      {/* 版本标识 */}
+      <div className="absolute top-0 right-0 flex items-center gap-2">
+        <span className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg">
+          V2.0
+        </span>
+      </div>
+      {/* 主标题 */}
+      <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2 drop-shadow-sm">
+        食品安全风险监管大屏
+      </h1>
+      <p className="text-gray-500 text-sm mt-2">
+        智能供应链风险研判系统 | Food Safety Risk Monitoring Dashboard
+      </p>
+    </div>
+  );
   const { state, execute, reset, llmStreamContent } = useStreamingAgentSSE();
 
   const handleAssess = async (query: string, withPropagation: boolean = false) => {
@@ -124,6 +145,9 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
+      {/* 页面标题 */}
+      <PageHeader />
+
       {/* 模式切换器 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1">
         <div className="flex space-x-1">
@@ -164,6 +188,13 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      {/* 风险统计仪表盘 */}
+      {mode === 'supply_chain' && showStats && (
+        <div className="relative">
+          <RiskStatsCard onClose={() => setShowStats(false)} />
+        </div>
+      )}
 
       {/* Mode A: 供应链研判 */}
       {mode === 'supply_chain' && (

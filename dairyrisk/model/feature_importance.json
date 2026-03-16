@@ -1,0 +1,23 @@
+{
+  "node_type_encoded": 0.010516784004269517,
+  "scale_encoded": 0.00858598020205396,
+  "credit_encoded": 0.006546527265414547,
+  "haccp_encoded": 0.011535227076124461,
+  "iso_encoded": 0.006701400045932943,
+  "historical_violation_count": 0.007909628827989028,
+  "inspection_count": 0.02732663484674668,
+  "supervision_freq": 0.8112628139221918,
+  "enterprise_age": 0.026881620667775136,
+  "violation_rate": 0.016237972896923362,
+  "in_degree": 0.00803845051795013,
+  "out_degree": 0.002238362698577542,
+  "total_degree": 0.011233707593939867,
+  "is_source": 0.000861266942697316,
+  "has_downstream": 0.0002355648064651804,
+  "has_upstream": 0.0003060438839349596,
+  "in_cold_chain": 0.002054295838448371,
+  "out_cold_chain": 0.00107650954200183,
+  "avg_edge_weight": 0.019540394544625615,
+  "total_edge_weight": 0.017730991184284443,
+  "edge_count": 0.0031798226916532777
+}
