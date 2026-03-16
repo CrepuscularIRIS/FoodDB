@@ -1,0 +1,269 @@
+version: 1
+
+medical_literature_queries:
+  - id: cronobacter_infant_formula
+    query: '("milk" OR dairy OR cheese OR "powdered infant formula") AND ("Cronobacter sakazakii" OR Cronobacter)'
+    hazard_hint: cronobacter
+    product_domain: dairy
+  - id: listeria_dairy
+    query: '("milk" OR dairy OR cheese) AND ("Listeria monocytogenes" OR Listeria)'
+    hazard_hint: listeria
+    product_domain: dairy
+  - id: afm1_dairy
+    query: '(milk OR dairy) AND ("aflatoxin M1" OR AFM1)'
+    hazard_hint: aflatoxin_m1
+    product_domain: dairy
+  - id: melamine_dairy
+    query: '(milk OR dairy) AND melamine AND (kidney OR renal OR urolithiasis)'
+    hazard_hint: melamine
+    product_domain: dairy
+  - id: heavy_metals_dairy
+    query: '(milk OR dairy) AND (cadmium OR lead OR arsenic) AND (neurotoxicity OR nephrotoxicity OR kidney)'
+    hazard_hint: heavy_metals
+    product_domain: dairy
+  - id: salmonella_dairy
+    query: '("milk" OR dairy OR cheese OR yogurt) AND (Salmonella OR salmonellosis)'
+    hazard_hint: salmonella
+    product_domain: dairy
+  - id: ecoli_dairy
+    query: '("milk" OR dairy OR cheese OR yogurt) AND ("Escherichia coli" OR "E. coli" OR STEC)'
+    hazard_hint: ecoli
+    product_domain: dairy
+  - id: salmonella_food
+    query: '(food OR foods OR beverage OR milk OR dairy OR meat OR poultry OR fish OR seafood OR egg OR eggs OR vegetable OR vegetables) AND (Salmonella OR salmonellosis)'
+    hazard_hint: salmonella
+    product_domain: food_general
+  - id: listeria_food
+    query: '(food OR foods OR dairy OR cheese OR meat OR seafood OR "ready-to-eat") AND ("Listeria monocytogenes" OR Listeria)'
+    hazard_hint: listeria
+    product_domain: food_general
+  - id: ecoli_food
+    query: '(food OR foods OR milk OR dairy OR meat OR produce OR vegetable OR sprout) AND ("Escherichia coli" OR "E. coli" OR STEC OR O157:H7)'
+    hazard_hint: ecoli
+    product_domain: food_general
+  - id: campylobacter_food
+    query: '(food OR poultry OR chicken OR milk OR dairy OR meat) AND (Campylobacter OR campylobacteriosis)'
+    hazard_hint: campylobacter
+    product_domain: food_general
+  - id: staph_aureus_food
+    query: '(food OR milk OR dairy OR meat OR pastry OR seafood) AND ("Staphylococcus aureus" OR staphylococcal OR enterotoxin)'
+    hazard_hint: staphylococcus_aureus
+    product_domain: food_general
+  - id: bacillus_cereus_food
+    query: '(food OR rice OR dairy OR milk OR infant formula) AND ("Bacillus cereus" OR cereulide)'
+    hazard_hint: bacillus_cereus
+    product_domain: food_general
+  - id: clostridium_perfringens_food
+    query: '(food OR meat OR poultry OR gravy OR dairy) AND ("Clostridium perfringens")'
+    hazard_hint: clostridium_perfringens
+    product_domain: food_general
+  - id: clostridium_botulinum_food
+    query: '(food OR canned OR seafood OR meat OR dairy) AND ("Clostridium botulinum" OR botulism)'
+    hazard_hint: clostridium_botulinum
+    product_domain: food_general
+  - id: vibrio_food
+    query: '(food OR seafood OR shellfish OR oyster OR oysters) AND (Vibrio OR "Vibrio parahaemolyticus" OR "Vibrio vulnificus")'
+    hazard_hint: vibrio
+    product_domain: food_general
+  - id: brucella_food
+    query: '(food OR milk OR dairy OR cheese OR "raw milk") AND (Brucella OR brucellosis)'
+    hazard_hint: brucella
+    product_domain: food_general
+  - id: norovirus_food
+    query: '(food OR foods OR shellfish OR berry OR berries OR produce) AND (norovirus OR "foodborne virus")'
+    hazard_hint: norovirus
+    product_domain: food_general
+  - id: hepatitis_a_food
+    query: '(food OR shellfish OR berry OR berries OR frozen OR produce) AND ("hepatitis A")'
+    hazard_hint: hepatitis_a
+    product_domain: food_general
+  - id: aflatoxin_food
+    query: '(food OR milk OR dairy OR maize OR peanut OR nuts OR cereal) AND (aflatoxin OR aflatoxins)'
+    hazard_hint: aflatoxin
+    product_domain: food_general
+  - id: ochratoxin_food
+    query: '(food OR cereal OR coffee OR grape OR wine OR dried fruit) AND ("ochratoxin A" OR ochratoxin)'
+    hazard_hint: ochratoxin_a
+    product_domain: food_general
+  - id: patulin_food
+    query: '(food OR apple OR juice OR fruit) AND (patulin)'
+    hazard_hint: patulin
+    product_domain: food_general
+  - id: fumonisin_food
+    query: '(food OR maize OR corn OR cereal) AND (fumonisin OR fumonisins)'
+    hazard_hint: fumonisin
+    product_domain: food_general
+  - id: deoxynivalenol_food
+    query: '(food OR wheat OR cereal OR grain) AND ("deoxynivalenol" OR DON OR vomitoxin)'
+    hazard_hint: deoxynivalenol
+    product_domain: food_general
+  - id: zearalenone_food
+    query: '(food OR cereal OR maize OR grain) AND (zearalenone)'
+    hazard_hint: zearalenone
+    product_domain: food_general
+  - id: heavy_metals_food
+    query: '(food OR foods OR milk OR dairy OR seafood OR rice OR vegetable) AND (lead OR cadmium OR arsenic OR mercury OR chromium) AND (toxicity OR poisoning OR contamination)'
+    hazard_hint: heavy_metals
+    product_domain: food_general
+  - id: nitrite_nitrate_food
+    query: '(food OR meat OR vegetable OR water) AND (nitrite OR nitrate) AND (toxicity OR poisoning OR methemoglobinemia)'
+    hazard_hint: nitrite_nitrate
+    product_domain: food_general
+  - id: benzoapyrene_food
+    query: '(food OR smoked OR grilled OR oil OR meat) AND ("benzo[a]pyrene" OR PAH OR PAHs)'
+    hazard_hint: benzoapyrene
+    product_domain: food_general
+  - id: melamine_food
+    query: '(food OR milk OR dairy OR infant formula) AND melamine AND (kidney OR renal OR toxicity)'
+    hazard_hint: melamine
+    product_domain: food_general
+  - id: pesticide_residue_food
+    query: '(food OR vegetable OR fruit OR tea OR grain) AND ("pesticide residue" OR organophosphate OR carbamate) AND (poisoning OR toxicity)'
+    hazard_hint: pesticide_residue
+    product_domain: food_general
+  - id: veterinary_drug_residue_food
+    query: '(food OR milk OR meat OR egg OR seafood) AND ("drug residue" OR "veterinary drug residue" OR antibiotic residue OR chloramphenicol OR nitrofuran)'
+    hazard_hint: veterinary_drug_residue
+    product_domain: food_general
+  - id: bisphenol_phthalate_food
+    query: '(food OR beverage OR canned OR packaging) AND ("bisphenol A" OR BPA OR phthalate OR phthalates) AND (migration OR exposure OR toxicity)'
+    hazard_hint: packaging_contaminants
+    product_domain: food_general
+  - id: pfas_food
+    query: '(food OR fish OR seafood OR egg OR milk OR packaging) AND (PFAS OR perfluoroalkyl OR perfluorinated) AND (toxicity OR exposure)'
+    hazard_hint: pfas
+    product_domain: food_general
+  - id: dioxin_food
+    query: '(food OR milk OR dairy OR fish OR meat OR egg) AND (dioxin OR dioxins OR PCB OR PCBs) AND (contamination OR toxicity)'
+    hazard_hint: dioxins_pcbs
+    product_domain: food_general
+
+sources:
+  - id: pubmed
+    source_type: literature
+    priority: 1
+    access_mode: api
+    requires_api_key: true
+    api_key_env:
+      - PUBMED_API_KEY
+      - PubMed-API-KEY
+    notes: NCBI E-utilities; use for PMID retrieval and abstract/full metadata.
+    target_fields:
+      - source_url_or_id
+      - hazard_name
+      - symptoms
+      - vulnerable_group
+      - typical_products
+      - evidence_type
+  - id: europe_pmc
+    source_type: literature
+    priority: 1
+    access_mode: public_api
+    requires_api_key: false
+    notes: Europe PMC REST search for metadata, abstracts, and open access links.
+    target_fields:
+      - source_url_or_id
+      - hazard_name
+      - symptoms
+      - vulnerable_group
+      - typical_products
+      - evidence_type
+  - id: pubtator_central
+    source_type: literature_annotation
+    priority: 1
+    access_mode: public_api
+    requires_api_key: false
+    notes: PMID annotation export for disease, chemical, species, gene, mutation, and cell line concepts.
+    target_fields:
+      - hazard_name
+      - symptoms
+      - evidence_type
+      - source_url_or_id
+  - id: openfoodtox
+    source_type: toxicology
+    priority: 2
+    access_mode: public_download
+    requires_api_key: false
+    notes: EFSA chemical hazard evidence; not fetched in the first medical-literature pass.
+    target_fields:
+      - hazard_class
+      - authority
+      - source_url_or_id
+  - id: jecfa
+    source_type: toxicology
+    priority: 2
+    access_mode: public_database
+    requires_api_key: false
+    notes: WHO/JECFA evaluations; not fetched in the first medical-literature pass.
+    target_fields:
+      - hazard_class
+      - authority
+      - source_url_or_id
+  - id: cdc_nors
+    source_type: outbreak
+    priority: 2
+    access_mode: public_download
+    requires_api_key: false
+    notes: Outbreak dataset to add event evidence later.
+    target_fields:
+      - typical_products
+      - evidence_type
+      - source_url_or_id
+  - id: fda_core_outbreak
+    source_type: outbreak
+    priority: 2
+    access_mode: public_web
+    requires_api_key: false
+    notes: FDA CORE outbreak table and investigation report pages.
+    target_fields:
+      - hazard_name
+      - typical_products
+      - evidence_type
+      - source_url_or_id
+      - authority
+  - id: fda_warning_letters
+    source_type: compliance
+    priority: 2
+    access_mode: public_download
+    requires_api_key: false
+    notes: FDA warning letters page and xlsx export.
+    target_fields:
+      - evidence_type
+      - source_url_or_id
+      - authority
+      - typical_products
+  - id: openfda_food_enforcement
+    source_type: recall
+    priority: 1
+    access_mode: api
+    requires_api_key: true
+    api_key_env:
+      - OPENFDA_API_KEY
+      - openFDA-API-KEY
+    notes: Food enforcement recall records from openFDA.
+    target_fields:
+      - hazard_name
+      - typical_products
+      - authority
+      - evidence_type
+      - source_url_or_id
+  - id: huggingface_bc5cdr
+    source_type: training_corpus
+    priority: 3
+    access_mode: hub_download
+    requires_api_key: false
+    notes: Biomedical chemical-disease relation extraction dataset.
+    target_fields:
+      - hazard_name
+      - symptoms
+      - source_url_or_id
+  - id: huggingface_biored
+    source_type: training_corpus
+    priority: 3
+    access_mode: hub_download
+    requires_api_key: false
+    notes: Biomedical relation extraction dataset with multi-entity relations.
+    target_fields:
+      - hazard_name
+      - symptoms
+      - source_url_or_id

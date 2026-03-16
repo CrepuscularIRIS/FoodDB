@@ -1,0 +1,1771 @@
+version: vnext-stage-rules
+generated_at: '2026-03-08T17:29:52.709187+00:00'
+source:
+  risk_taxonomy: /home/yarizakurahime/data/standalone_food_risk_kb/knowledge/configs/risk_taxonomy.yaml
+  builder: backend/stage_rules_rebuilder.py
+  model: MiniMax-M2.5
+stages:
+- id: farm_and_raw_milk
+  name: 牧场与原料乳
+  description: 奶源养殖、饲料饮水、动物健康、挤奶与原奶暂存。
+  records_to_check:
+  - 奶源验收记录
+  - 原料乳检测记录
+  - 动物健康与用药记录
+  - 挤奶与暂存卫生记录
+- id: raw_material_and_ingredients
+  name: 原辅料与供应商
+  description: 非乳原料、添加剂、包材、供应商来料与合格证明。
+  records_to_check:
+  - 供应商资质与审核记录
+  - 原辅料COA
+  - 来料验收与抽检记录
+  - 包材合规文件
+- id: production_and_processing
+  name: 生产加工
+  description: 配料、混合、杀菌、发酵、干燥、清洗消毒等厂内工艺。
+  records_to_check:
+  - 工艺参数记录
+  - CIP/SIP记录
+  - 关键控制点监控记录
+  - 环境监测记录
+- id: packaging_and_filling
+  name: 包装与灌装
+  description: 灌装、封口、贴标、包材接触与成品放行。
+  records_to_check:
+  - 灌装与封口记录
+  - 包材批次与放行记录
+  - 在线异物检测记录
+  - 成品放行记录
+- id: cold_chain_and_logistics
+  name: 冷链与物流
+  description: 成品暂存、冷链运输、仓储与配送。
+  records_to_check:
+  - 冷库温度记录
+  - 运输温度记录
+  - 收发货交接记录
+  - 仓储巡检记录
+- id: retail_and_terminal_storage
+  name: 零售与终端储存
+  description: 门店陈列、消费端储存、终端开封与效期管理。
+  records_to_check:
+  - 终端巡检记录
+  - 效期与退货记录
+  - 消费者投诉记录
+  - 门店温控记录
+default_rule:
+  stage_candidates:
+  - stage: production_and_processing
+    priority: medium
+    rationale: 默认先查生产加工环节
+  evidence_requirements:
+  - 需补充风险因子对应证据
+  records_to_check:
+  - 原始检验与追溯记录
+stage_rules:
+- applicable_products:
+  - 奶酪
+  - 肉类
+  - 熟食
+  - 生鲜果蔬
+  - 沙拉
+  - 冷链食品
+  evidence_requirements:
+  - 原料奶检测报告
+  - 车间温湿度记录
+  - 设备清洁消毒记录
+  - 员工健康证
+  - 包装密封性检测报告
+  - 冷链温度连续监测数据
+  hazard_class: microbial
+  records_to_check:
+  - 供应商资质文件
+  - 原料奶检验记录
+  - 生产加工记录表
+  - HACCP计划执行记录
+  - 出厂检验报告
+  - 物流温度追溯记录
+  risk_factor_id: microbial_listeria_monocytogenes
+  risk_factor_name: Listeria monocytogenes
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料乳可能携带李斯特菌，直接影响终产品安全性
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 加工过程易发生交叉污染，环境温控不当利于菌体生长
+    stage: production_and_processing
+  - priority: medium
+    rationale: 密封性不足可能导致二次污染
+    stage: packaging_and_filling
+  - priority: high
+    rationale: 李斯特菌可在低温生长，冷链断链风险极高
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料奶验收未检测李斯特菌
+  - 加工车间温度超过限值
+  - 设备清洗消毒不彻底
+  - 人员操作交叉污染
+  - 包装密封性检测缺失
+  - 冷链温度监控断链
+- applicable_products:
+  - 坚果制品
+  - 种子类制品
+  - 水果
+  - 生鲜乳
+  - 奶酪
+  - 肉类
+  evidence_requirements:
+  - 原料检验合格报告
+  - 热加工工艺参数记录
+  - 生熟分区标识
+  - 设备清洗消毒验证报告
+  - 包装环境监测报告
+  - 原料储存温控记录
+  hazard_class: microbial
+  records_to_check:
+  - 供应商审计记录
+  - 原料入库检验报告
+  - 生产工艺参数确认表
+  - 车间清洁检查记录
+  - 产品微生物抽检报告
+  - 纠偏处理记录
+  risk_factor_id: microbial_salmonella
+  risk_factor_name: Salmonella
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料污染是沙门氏菌主要来源，供应商管理至关重要
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工温度和时间不足无法有效杀菌
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装后二次污染风险
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 沙门氏菌更耐热，低温控制相对次要
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料验收未做沙门氏菌检测
+  - 热处理温度或时间不足
+  - 生熟加工区未有效分离
+  - 设备清洁不彻底
+  - 包装环境洁净度不足
+  - 原料储存温度超标
+- applicable_products:
+  - 生菜
+  - 沙拉
+  - 三明治
+  - 贝类
+  - 水果
+  - 饮用水
+  evidence_requirements:
+  - 人员健康证明
+  - 手部消毒设施配置
+  - 原料来源安全证明
+  - 车间入口洗手消毒记录
+  - 个人防护用品发放记录
+  - 终端销售规范执行检查
+  hazard_class: microbial
+  records_to_check:
+  - 员工健康体检档案
+  - 洗手消毒设施检查表
+  - 原料供应商资质
+  - 车间人员进出登记
+  - 产品标签合规性检查
+  - 终端销售温度记录
+  risk_factor_id: microbial_norovirus
+  risk_factor_name: Norovirus
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 加工人员可能成为传播媒介，食品直接接触风险大
+    stage: production_and_processing
+  - priority: medium
+    rationale: 受污染原料可能带入病毒
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 包装过程人员接触频繁
+    stage: packaging_and_filling
+  - priority: medium
+    rationale: 终端操作不当可导致交叉污染
+    stage: retail_and_terminal_storage
+  typical_failure_points:
+  - 加工人员手部卫生不达标
+  - 原料受诺如病毒污染
+  - 车间入口无洗手消毒设施
+  - 带病上岗操作
+  - 包装前未进行手部消毒
+  - 终端食品暴露存放
+- applicable_products:
+  - 生鲜农产品
+  - 乳制品
+  - 果汁
+  - 肉类
+  - 冷冻食品
+  - 生鲜农产品（如菠菜、芽菜）
+  evidence_requirements:
+  - 原料乳菌落总数检测
+  - STEC专项检测报告
+  - 巴氏杀菌温度记录
+  - 设备清洁消毒记录
+  - 员工卫生培训证明
+  - 冷链温度监控数据
+  hazard_class: microbial
+  records_to_check:
+  - 原料乳验收记录
+  - 巴氏杀菌工艺参数
+  - 设备清洗消毒记录
+  - 生产车间环境监测
+  - 冷链温度记录
+  - 产品出厂检验报告
+  risk_factor_id: microbial_escherichia_coli_stec
+  risk_factor_name: Escherichia coli / STEC
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 牛是STEC主要宿主，生乳可能带菌
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 原料乳及添加成分可能引入病原
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工环节温度控制不当易增殖
+    stage: production_and_processing
+  - priority: medium
+    rationale: 低温存储可抑制但无法完全灭活
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 牧场卫生不佳
+  - 生乳采集污染
+  - 原料乳验收疏漏
+  - 巴氏杀菌温度不足
+  - 加工过程交叉污染
+  - 冷却速度过慢
+- applicable_products:
+  - 糖果
+  - 乳制品
+  - 零食
+  - 饮料
+  - 调味品
+  - 生鲜农产品
+  evidence_requirements:
+  - 原料检验报告
+  - 金属探测仪校准记录
+  - 设备维护保养记录
+  - 生产现场检查记录
+  - 异物检测报告
+  - 员工操作规范考核
+  hazard_class: physical
+  records_to_check:
+  - 原料验收标准
+  - 设备维护计划
+  - 金属探测记录
+  - 现场巡检记录
+  - 培训考核档案
+  - 客户投诉处理记录
+  risk_factor_id: physical_foreign_material
+  risk_factor_name: Foreign Material
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料本身可能含异物
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 设备磨损或操作失误引入异物
+    stage: production_and_processing
+  - priority: high
+    rationale: 包装材料或设备问题导致异物
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 运输碰撞可能导致包装破损异物
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料筛选不严
+  - 设备磨损产生金属碎屑
+  - 包装材料缺陷
+  - 操作人员带入异物
+  - 生产环境管理疏漏
+  - 检测设备灵敏度不足
+- applicable_products:
+  - 肉类
+  - 牛肉
+  - 猪肉
+  - 沙拉
+  - 烧烤食品
+  - 豆类
+  evidence_requirements:
+  - 原料菌落检测报告
+  - 热处理工艺记录
+  - 冷却温度曲线
+  - 密封性测试报告
+  - 清洁消毒验证
+  - 冷链温度监测数据
+  hazard_class: microbial
+  records_to_check:
+  - 原料检验记录
+  - 杀菌工艺参数
+  - 冷却过程监控
+  - 设备清洗记录
+  - 产品仓储温度
+  - 产品召回演练记录
+  risk_factor_id: microbial_clostridium_perfringens
+  risk_factor_name: Clostridium perfringens
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: medium
+    rationale: 原料可能带菌但非主要来源
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加热不足或冷却慢导致芽孢存活增殖
+    stage: production_and_processing
+  - priority: medium
+    rationale: 密封不严可能导致二次污染
+    stage: packaging_and_filling
+  - priority: high
+    rationale: 厌氧环境和适宜温度促进产毒
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料验收未检测芽孢
+  - 热处理温度时间不足
+  - 冷却过程缓慢
+  - 灌装密封不良
+  - 生产间隔清洁不彻底
+  - 冷链温度控制失效
+- applicable_products:
+  - 乳制品
+  - 奶酪
+  - 蛋白粉
+  - 肉类
+  - 加工食品
+  evidence_requirements:
+  - 原料奶菌落总数检测报告
+  - 加工人员健康体检证明
+  - 车间环境监测记录
+  - 设备清洗消毒验证报告
+  - 产品微生物抽检结果
+  - 生产人员卫生培训记录
+  hazard_class: microbial
+  records_to_check:
+  - 原料奶验收记录
+  - 挤奶设备清洗记录
+  - 员工健康证
+  - 车间沉降菌检测报告
+  - 清洁消毒剂使用记录
+  - 关键控制点监控记录
+  risk_factor_id: microbial_staphylococcus_aureus
+  risk_factor_name: Staphylococcus aureus
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料奶可能因奶牛乳腺炎或牧场卫生问题导致金葡菌污染
+    stage: farm_and_raw_milk
+  - priority: medium
+    rationale: 乳制品原料或辅料可能携带金葡菌，特别是来自动物来源的成分
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工人员手部伤口、鼻腔带菌或加工器具污染是最常见污染途径
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装过程密封不严或操作人员卫生不当可导致二次污染
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 原料奶体细胞数过高
+  - 挤奶设备清洗消毒不彻底
+  - 加工人员手部伤口未包扎
+  - 加工车间空气洁净度不足
+  - 器具交叉污染
+  - 包装前未进行微生物检测
+- applicable_products:
+  - 肉类
+  - 未经巴氏杀菌乳
+  - 水产品
+  - 蔬菜
+  evidence_requirements:
+  - 巴氏杀菌工艺参数记录
+  - 原料来源及供应商资质证明
+  - 生熟分区生产证明
+  - 冷链温度监测数据
+  - 产品弯曲菌检测报告
+  - 生产车间分区管理文件
+  hazard_class: microbial
+  records_to_check:
+  - 杀菌温度记录曲线
+  - 原料进货查验记录
+  - 车间人流物流走向图
+  - 冷藏运输温度记录
+  - 微生物检测报告
+  - 供应商审计报告
+  risk_factor_id: microbial_campylobacter
+  risk_factor_name: Campylobacter
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料奶可能因牛只肠道感染或牧场环境导致弯曲菌污染
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 禽类来源辅料或与禽肉共用生产线的交叉污染风险高
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工过程中生熟不分、器具交叉污染是主要风险环节
+    stage: production_and_processing
+  - priority: medium
+    rationale: 低温运输不当可能导致弯曲菌存活并繁殖
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料奶巴氏杀菌温度不足
+  - 禽类原料未做到专厂专线生产
+  - 生熟加工区域未有效分隔
+  - 加工温度控制不当
+  - 冷链运输温度监控缺失
+  - 原料储存温度偏高
+- applicable_products:
+  - 谷物
+  - 坚果制品
+  - 香料
+  - 调味品
+  evidence_requirements:
+  - 饲料黄曲霉毒素检测报告
+  - 原料奶黄曲霉毒素M1检测报告
+  - 饲料储存条件温湿度记录
+  - 供应商资质及检测证明
+  - 原料验收毒素筛查记录
+  - 奶牛喂养记录及饲料配方
+  hazard_class: toxin
+  records_to_check:
+  - 饲料采购及检测报告
+  - 原料奶收购检测记录
+  - 饲料储存温湿度监控记录
+  - 原料奶黄曲霉毒素M1检测报告
+  - 奶牛养殖记录
+  - 供应商审计报告
+  risk_factor_id: toxin_aflatoxins
+  risk_factor_name: Aflatoxins
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 奶牛摄入含黄曲霉毒素的饲料后，毒素可代谢转移至原料奶中
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 谷物、坚果等饲料原料在储存过程中易受真菌污染产生毒素
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工环节温度湿度控制不当可能导致真菌生长和毒素产生
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装阶段主要涉及成品保护，毒素风险相对较低
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 饲料原料储存温度湿度过高
+  - 饲料原料发霉变质未被发现
+  - 奶牛饲料中毒素含量超标
+  - 原料奶黄曲霉毒素M1检测缺失
+  - 原料储存条件不符合要求
+  - 原料验收未进行毒素筛查
+- applicable_products:
+  - 贝类
+  - 甲壳类
+  - 海产
+  evidence_requirements:
+  - 原料批检报告
+  - 加工温度记录
+  - 消毒验证报告
+  - 冷链温度记录
+  - 包装密封性检测
+  - 微生物监测数据
+  hazard_class: microbial
+  records_to_check:
+  - 供应商资质证明
+  - 原料检验记录
+  - 生产加工记录
+  - 温控记录
+  - 清洗消毒记录
+  - 产品微生物报告
+  risk_factor_id: microbial_vibrio
+  risk_factor_name: Vibrio (弧菌)
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 海产原料可能携带弧菌，需严格供应商审核
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工过程温度控制不当易导致弧菌繁殖
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装密封性影响后续微生物控制
+    stage: packaging_and_filling
+  - priority: medium
+    rationale: 低温存储可抑制弧菌生长
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料验收未检测弧菌
+  - 加工温度未达安全标准
+  - 设备清洗消毒不彻底
+  - 交叉污染风险
+  - 冷链温度监控缺失
+  - 包装密封性不足
+- applicable_products:
+  - 水产品
+  - 动物内脏
+  - 蔬菜
+  - 谷物
+  - 饮用水
+  - 饮料
+  evidence_requirements:
+  - 原料乳重金属检测报告
+  - 饲料合格证明
+  - 设备材质证明
+  - 生产用水检测报告
+  - 成品定期抽检报告
+  - 供应商审核记录
+  hazard_class: chemical
+  records_to_check:
+  - 牧场环境监测报告
+  - 饲料来源证明
+  - 原料检验记录
+  - 设备清洗维护记录
+  - 水质检测报告
+  - 产品检测报告
+  risk_factor_id: chemical_heavy_metals_pb_cd_hg_as
+  risk_factor_name: 重金属 (Pb, Cd, Hg, As)
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 环境迁移可能导致原料乳重金属污染
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 饲料及添加剂可能含重金属残留
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 设备管道金属析出风险
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装材料迁移风险较低
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 牧场土壤水源污染
+  - 饲料重金属超标
+  - 设备金属腐蚀析出
+  - 原辅料验收不严
+  - 检测能力不足
+  - 追溯体系缺失
+- applicable_products:
+  - 婴儿配方奶粉
+  - 生鲜乳
+  - 乳制品
+  - 面粉
+  - 蛋白粉
+  evidence_requirements:
+  - 原料乳三聚氰胺检测报告
+  - 辅料合格证明
+  - 批批检测记录
+  - 供应商审计报告
+  - 生产过程监控记录
+  - 产品出厂检验报告
+  hazard_class: chemical
+  records_to_check:
+  - 原料乳收购记录
+  - 供应商资质审核
+  - 原辅料检验记录
+  - 生产投料记录
+  - 检测报告存档
+  - 产品追溯档案
+  risk_factor_id: chemical_melamine
+  risk_factor_name: 三聚氰胺
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料乳可能非法添加三聚氰胺以提高含氮量
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 辅料可能含三聚氰胺或被污染
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工环节需防止非法添加
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装阶段风险较低
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 原料乳掺假
+  - 辅料带入
+  - 交叉污染
+  - 检测漏检
+  - 供应链诚信缺失
+  - 追溯信息不完整
+- applicable_products:
+  - 蛋白粉
+  - 胡萝卜汁
+  - 盐渍黑豆
+  - 腌制鲱鱼
+  - 熏鲱鱼
+  - 贝类
+  evidence_requirements:
+  - 热处理工艺记录
+  - 杀菌温度时间监控数据
+  - 包装密封性检测报告
+  - 原料验收记录
+  - 清洁消毒验证报告
+  - 环境监测数据
+  hazard_class: microbial
+  records_to_check:
+  - 杀菌工艺参数记录
+  - 冷却作业记录
+  - 包装完整性检验记录
+  - 原料检验报告
+  - CIP清洗记录
+  - 生产环境监控记录
+  risk_factor_id: microbial_clostridium_botulinum
+  risk_factor_name: Clostridium botulinum
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 厌氧环境与热处理不足是肉毒杆菌存活主要风险点
+    stage: production_and_processing
+  - priority: high
+    rationale: 密封包装创造厌氧环境利于毒素产生
+    stage: packaging_and_filling
+  - priority: medium
+    rationale: 常温储存促进芽孢萌发与毒素生成
+    stage: cold_chain_and_logistics
+  - priority: low
+    rationale: 原料带入风险相对较低但需关注
+    stage: raw_material_and_ingredients
+  typical_failure_points:
+  - 热处理温度或时间不足
+  - 冷却过程缓慢造成厌氧环境
+  - 包装密封性不良
+  - 原料芽孢污染
+  - 杀菌工艺参数偏离
+  - 清洁消毒不彻底
+- applicable_products:
+  - 米饭制品
+  - 意面
+  - 禽肉
+  - 谷物
+  - 豆类
+  - 酱汁
+  evidence_requirements:
+  - 冷却温度时间监控记录
+  - 热保温温度记录
+  - 冷链温度监测数据
+  - 二次加热温度记录
+  - 原料检验报告
+  - 设备清洁验证报告
+  hazard_class: microbial
+  records_to_check:
+  - 冷却作业记录
+  - 热保温温度记录
+  - 冷链温度记录
+  - 成品检验报告
+  - 原料验收记录
+  - 卫生检查记录
+  risk_factor_id: microbial_bacillus_cereus
+  risk_factor_name: Bacillus cereus
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 烹饪后冷却不当导致芽孢萌发是主要风险环节
+    stage: production_and_processing
+  - priority: high
+    rationale: 高温储存促使细菌快速繁殖产生毒素
+    stage: cold_chain_and_logistics
+  - priority: medium
+    rationale: 终端温度控制不当增加风险
+    stage: retail_and_terminal_storage
+  - priority: low
+    rationale: 原料可能带入芽孢但风险可控
+    stage: raw_material_and_ingredients
+  typical_failure_points:
+  - 烹饪后缓慢冷却
+  - 热保温温度不足
+  - 储存温度偏高
+  - 二次加热不充分
+  - 原料芽孢污染
+  - 设备清洁不彻底
+- applicable_products:
+  - 婴儿配方奶粉
+  - 营养补充剂
+  - 特医食品
+  - 乳制品
+  evidence_requirements:
+  - 原料微生物检验报告
+  - 生产环境监测数据
+  - 杀菌工艺验证报告
+  - 灌装洁净度检测报告
+  - 包装密封性测试报告
+  - 成品微生物检验报告
+  hazard_class: microbial
+  records_to_check:
+  - 原料检验记录
+  - 生产环境监控记录
+  - 杀菌工艺参数记录
+  - 灌装作业记录
+  - 包装检验记录
+  - 成品放行记录
+  risk_factor_id: microbial_cronobacter_sakazakii
+  risk_factor_name: Cronobacter sakazakii
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 婴儿奶粉原料是主要污染来源需严格管控
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 湿热处理不足无法有效杀灭该菌
+    stage: production_and_processing
+  - priority: high
+    rationale: 灌装过程污染及包装完整性关键
+    stage: packaging_and_filling
+  - priority: medium
+    rationale: 储存温度影响微生物增殖
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料菌落总数超标
+  - 干法混合交叉污染
+  - 湿法生产温度不足
+  - 灌装环境洁净度不合格
+  - 包装密封性不良
+  - 生产环境温湿度控制不当
+- applicable_products:
+  - 塑料包装食品
+  - 罐头食品
+  - 一次性餐具
+  evidence_requirements:
+  - 包装材料食品接触材料合规证书
+  - 供应商资质审核记录
+  - 材料迁移检测报告
+  - 包装材料验收标准
+  - 存储温度监控记录
+  - 产品型式检验报告
+  hazard_class: chemical
+  records_to_check:
+  - 供应商资质文件
+  - 采购合同及验收记录
+  - 包装材料检验报告
+  - 生产过程温度记录
+  - 产品留样检测记录
+  - 质量追溯档案
+  risk_factor_id: chemical_hazard
+  risk_factor_name: 包装化学品
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 包装材料采购渠道及合规性是首要控制点
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 包装使用条件和存储环境可能影响化学品迁移
+    stage: production_and_processing
+  - priority: high
+    rationale: 直接接触食品，迁移风险最高
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 温度可能加速包装材料老化
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 使用非食品级包装材料
+  - 供应商无法提供合规证明
+  - 包装材料存储条件不当
+  - 灌装温度超过材料耐受范围
+  - 包装材料超过有效期使用
+  - 未进行迁移测试
+- applicable_products:
+  - 生鲜乳
+  - 未经巴氏杀菌乳
+  - 奶酪
+  - 乳制品
+  evidence_requirements:
+  - 原料乳巴氏杀菌证明
+  - 牧场动物检疫报告
+  - 巴氏杀菌工艺参数记录
+  - 原料乳菌落总数检测报告
+  - 产品布鲁氏菌检测报告
+  - 员工健康体检档案
+  hazard_class: microbial
+  records_to_check:
+  - 原料乳来源证明
+  - 巴氏杀菌工艺记录
+  - 产品微生物检测报告
+  - 冷链温度监控记录
+  - 牧场检疫记录
+  - 生产批次追溯档案
+  risk_factor_id: microbial_brucella
+  risk_factor_name: 布鲁氏菌
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 感染动物产的原料乳是根本污染源
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 原料乳来源及巴氏杀菌验证是关键
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 巴氏杀菌工艺参数直接决定杀菌效果
+    stage: production_and_processing
+  - priority: medium
+    rationale: 冷链中断可能导致二次污染或菌落增殖
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 使用未经巴氏杀菌的生乳
+  - 奶牛感染布鲁氏菌未隔离
+  - 巴氏杀菌温度或时间不足
+  - 原料乳储存温度超标
+  - 交叉污染风险
+  - 员工防护措施不足
+- applicable_products:
+  - 食品包装
+  - 水产品
+  - 肉类
+  - 乳制品
+  - 谷物
+  - 饮用水
+  evidence_requirements:
+  - 原料PFAS检测报告
+  - 包装材料合规证明
+  - 供应商成分声明
+  - 生产用水检测报告
+  - 产品PFAS专项检测报告
+  - 生产助剂合规性文件
+  hazard_class: chemical
+  records_to_check:
+  - 原料供应商资质
+  - 包装材料检验报告
+  - 生产助剂使用记录
+  - 水质检测报告
+  - 产品检测报告
+  - 供应商审计记录
+  risk_factor_id: chemical_pfas_per_and_polyfluoroalkyl_substances
+  risk_factor_name: PFAS全氟烷基物质
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料和包装材料可能是PFAS主要引入途径
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工设备和工艺可能引入PFAS
+    stage: production_and_processing
+  - priority: medium
+    rationale: 部分食品包装含PFAS涂层
+    stage: packaging_and_filling
+  - priority: medium
+    rationale: 环境和饲料可能造成原料污染
+    stage: farm_and_raw_milk
+  typical_failure_points:
+  - 使用含PFAS的包装材料
+  - 原料受环境污染
+  - 生产设备润滑剂含PFAS
+  - 供应商无法提供PFAS检测证明
+  - 加工过程使用含PFAS助剂
+  - 水源受PFAS污染
+- applicable_products:
+  - 水产品
+  - 乳制品
+  - 肉类
+  - 动物源性食品
+  - 高脂动物源性食品
+  evidence_requirements:
+  - 原料乳二噁英检测报告
+  - 饲料供应商资质证明
+  - 饲料来源及检测报告
+  - 牧场环境评估报告
+  - 生产加工卫生记录
+  - 产品出厂检测报告
+  hazard_class: chemical
+  records_to_check:
+  - 原料奶入厂检验记录
+  - 饲料采购台账
+  - 供应商审计报告
+  - 生产过程监控记录
+  - 产品检测报告
+  - 不合格品处理记录
+  risk_factor_id: chemical_dioxins
+  risk_factor_name: Dioxins
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 二噁英通过食物链在动物体内累积，原料乳是直接风险载体
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 动物饲料是二噁英主要来源，供应商管理至关重要
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工过程可能引入或活化污染物
+    stage: production_and_processing
+  - priority: low
+    rationale: 储存条件对已存在污染物影响较小
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 牧场周边工业污染
+  - 动物饲料来源不明
+  - 饲料储存不当
+  - 挤奶卫生不达标
+  - 加工设备清洁度不足
+  - 原料奶检测缺失
+- applicable_products:
+  - 小麦
+  - 大麦
+  - 谷物
+  evidence_requirements:
+  - 原料谷物DON检测报告
+  - 供应商资质及审核记录
+  - 原料储存温湿度记录
+  - 加工工艺参数记录
+  - 成品真菌毒素检测报告
+  - 产品储存温湿度监控记录
+  hazard_class: toxin
+  records_to_check:
+  - 原料入库检验记录
+  - 供应商评价档案
+  - 原料储存管理台账
+  - 生产工艺参数记录
+  - 产品出厂检验报告
+  - 储存温湿度检查记录
+  risk_factor_id: toxin_deoxynivalenol
+  risk_factor_name: 脱氧雪腐镰刀菌烯醇（Deoxynivalenol）
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 谷物原料DON主要来源，源头控制最关键
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工温度和时间影响毒素水平
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装密封性影响后期污染风险
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 终端储存条件影响较小
+    stage: retail_and_terminal_storage
+  typical_failure_points:
+  - 原料谷物DON超标
+  - 供应商原料检测缺失
+  - 原料储存受潮霉变
+  - 加工温度控制不当
+  - 成品检测未覆盖DON
+  - 产品储存温湿度超标
+- applicable_products:
+  - 谷物
+  - 饲料
+  evidence_requirements:
+  - 玉米原料伏马毒素检测报告
+  - 供应商资质及审计记录
+  - 原料储存条件记录
+  - 加工工艺参数记录
+  - 产品伏马毒素检测报告
+  - 包装完整性验证记录
+  hazard_class: toxin
+  records_to_check:
+  - 原料入库检验台账
+  - 供应商管理档案
+  - 原料储存温湿度记录
+  - 生产工艺执行记录
+  - 产品批次检验报告
+  - 包装密封性检测记录
+  risk_factor_id: toxin_fumonisins
+  risk_factor_name: Fumonisins
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 玉米原料是伏马毒素主要来源，原料控制决定风险基线
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工工艺影响毒素水平，烘烤可部分降解
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装完整性关系产品安全性
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 低温对伏马毒素影响有限
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 玉米原料伏马毒素超标
+  - 原料储存温度湿度失控
+  - 供应商原料检测不完善
+  - 加工温度参数不达标
+  - 产品密封性不足
+  - 成品检测项目不全
+- applicable_products:
+  - 苹果
+  - 果汁
+  - 苹果酱
+  - 果制品
+  - 水果
+  evidence_requirements:
+  - 原料验收记录
+  - 霉烂原料剔除记录
+  - 加工工艺参数记录
+  - 清洗消毒记录
+  - 包装密封性检测报告
+  - 温湿度监控记录
+  hazard_class: toxin
+  records_to_check:
+  - 供应商资质证明
+  - 原料检验报告
+  - 生产加工记录
+  - 清洗消毒记录
+  - 温湿度监控记录
+  - 产品检测报告
+  risk_factor_id: toxin_patulin
+  risk_factor_name: Patulin
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料苹果霉烂是主要污染来源，需严格把控供应商原料质量
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工过程温度时间控制不当可能加剧毒素产生，需规范工艺
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装密封性影响产品稳定性，需防止二次污染
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 储存温度过高可能促进真菌生长，需监控温湿度
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料验收未检测霉烂比例
+  - 使用霉变原料未剔除
+  - 加工温度时间参数不达标
+  - 清洗消毒不彻底
+  - 包装密封性不足
+  - 储存温湿度控制不当
+- applicable_products:
+  - 蔬菜
+  - 腌制肉
+  - 饮用水
+  - 加工食品
+  - 肉类
+  evidence_requirements:
+  - 原料产地证明
+  - 添加剂使用记录
+  - 计量设备校准证书
+  - 产品标签内容
+  - 温度监控记录
+  - 产品检测报告
+  hazard_class: chemical
+  records_to_check:
+  - 供应商资质证明
+  - 原料检验报告
+  - 添加剂领用记录
+  - 生产配方记录
+  - 产品标签样板
+  - 成品检测报告
+  risk_factor_id: chemical_nitrite_nitrate
+  risk_factor_name: nitrite_nitrate
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 原料本身含硝酸盐或人为添加，需控制来源和添加量
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工中亚硝酸盐添加需精确计量，避免超量使用
+    stage: production_and_processing
+  - priority: medium
+    rationale: 标签需准确标示添加剂成分，便于追溯
+    stage: packaging_and_filling
+  - priority: medium
+    rationale: 储存条件影响亚硝酸盐转化，需监控温度
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料硝酸盐含量超标
+  - 亚硝酸盐添加量超标准
+  - 计量设备校准偏差
+  - 添加剂使用记录缺失
+  - 标签标示不准确
+  - 储存温度过高促进转化
+- applicable_products:
+  - 水果
+  - 蔬菜
+  - 谷物
+  - 豆类
+  - 香料
+  evidence_requirements:
+  - 原料农残检测报告
+  - 供应商审核记录
+  - 原料验收标准
+  - 设备清洗记录
+  - 包装材料合规证明
+  - 饲料来源证明
+  hazard_class: residue
+  records_to_check:
+  - 供应商资质证明
+  - 原料检验报告
+  - 农残检测报告
+  - 供应商审计记录
+  - 清洗消毒记录
+  - 产品检测报告
+  risk_factor_id: residue_pesticide_residue
+  risk_factor_name: pesticide_residue
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 农药残留主要来自原料环节，需严格源头控制
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工过程需防止交叉污染，保持设备清洁
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装材料需符合食品接触材料标准
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 若涉及乳制品，饲料中农药残留可能转移至生乳
+    stage: farm_and_raw_milk
+  typical_failure_points:
+  - 原料农药残留超标
+  - 供应商监管不到位
+  - 未进行原料农残检测
+  - 加工设备清洁不彻底
+  - 包装材料不符合标准
+  - 生乳饲料来源不明
+- applicable_products:
+  - 水果
+  - 咖啡
+  - 香辛料
+  - 谷物
+  - 葡萄酒
+  - 葡萄制品
+  evidence_requirements:
+  - 饲料霉菌毒素检测报告
+  - 原料供应商资质和检测证明
+  - 原料储存温湿度记录
+  - 生产车间霉菌监控记录
+  - 成品毒素抽检报告
+  hazard_class: toxin
+  records_to_check:
+  - 饲料采购和检测记录
+  - 原料入库检验记录
+  - 原料储存温湿度记录
+  - 车间清洁消毒记录
+  - 产品出厂检验报告
+  - 供应商审计记录
+  risk_factor_id: toxin_ochratoxin_a
+  risk_factor_name: ochratoxin_a
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 饲料受霉菌污染导致毒素进入生乳
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 谷物、香辛料等原料易携带霉菌毒素
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工温度无法破坏耐热毒素
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装密封性影响后期污染风险
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 饲料储存不当发霉
+  - 原料验收未检测毒素
+  - 原料储存条件温湿度超标
+  - 生产设备清洁不彻底
+  - 包装材料受污染
+- applicable_products:
+  - 乳制品
+  - 肉类
+  - 动物源性食品
+  evidence_requirements:
+  - 奶牛健康档案和用药记录
+  - 兽药使用审批记录
+  - 休药期执行证明
+  - 原料奶残留检测报告
+  - 供应商兽药管理审计报告
+  hazard_class: residue
+  records_to_check:
+  - 奶牛养殖档案
+  - 兽医用药处方记录
+  - 兽药库存和领用记录
+  - 原料奶收购检验记录
+  - 休药期执行检查记录
+  - 原料供应商资质文件
+  risk_factor_id: residue_veterinary_drug_residue
+  risk_factor_name: veterinary_drug_residue
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 泌乳期用药直接导致残留
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 兽药采购和使用管理不当
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工过程无法去除已残留药物
+    stage: production_and_processing
+  - priority: low
+    rationale: 物流阶段不涉及残留风险
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 泌乳期违规使用抗生素
+  - 休药期执行不严格
+  - 兽药使用记录不完整
+  - 原料奶未进行残留筛查
+  - 交叉污染导致误检
+- applicable_products:
+  - 谷物
+  - 小麦
+  - 大麦
+  - 高粱
+  - 饲料
+  - 面粉
+  evidence_requirements:
+  - 谷物原料真菌毒素检测报告
+  - 饲料霉菌毒素检测报告
+  - 原料储存条件监控记录
+  - 原料产地气候和仓储条件证明
+  - 成品真菌毒素检测报告
+  hazard_class: toxin
+  records_to_check:
+  - 谷物原料采购和检测记录
+  - 饲料配方和检测报告
+  - 原料储存温湿度记录
+  - 原料产地来源追溯记录
+  - 生产过程控制记录
+  - 产品出厂检验报告
+  risk_factor_id: toxin_zearalenone
+  risk_factor_name: Zearalenone
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 谷物原料为主要污染源
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 饲料污染可传递至生乳
+    stage: farm_and_raw_milk
+  - priority: medium
+    rationale: 加工温度难完全破坏毒素
+    stage: production_and_processing
+  - priority: low
+    rationale: 主要风险在原料端
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 谷物收获前田间感染霉菌
+  - 原料储存条件不当导致霉变
+  - 饲料原料污染奶牛
+  - 原料验收未检测真菌毒素
+  - 加工设备残留污染
+- applicable_products:
+  - 生鲜乳
+  - 巴氏杀菌乳
+  - 奶酪
+  - 乳制品
+  evidence_requirements:
+  - 饲料来源证明
+  - 黄曲霉毒素检测报告
+  - 供应商资质文件
+  - 原料乳入厂检验记录
+  - 奶牛健康档案
+  - 饲养管理日志
+  hazard_class: toxin
+  records_to_check:
+  - 饲料采购台账
+  - 饲料霉菌毒素检测报告
+  - 原料乳接收检验记录
+  - 供应商审计记录
+  - 牧场饲养记录
+  - 产品出厂检验报告
+  risk_factor_id: toxin_aflatoxin_m1
+  risk_factor_name: Aflatoxin M1
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 黄曲霉毒素M1来源于饲料，原料乳是主要污染环节
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 饲料质量直接决定毒素水平，供应商管理关键
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工过程难以降解毒素，重点在源头控制
+    stage: production_and_processing
+  - priority: low
+    rationale: 毒素稳定性强，冷链对风险影响较小
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 奶牛饲料霉变
+  - 饲料储存不当
+  - 原料乳抽检缺失
+  - 供应商审计不严
+  - 饲料黄曲霉毒素B1超标
+  - 掺假或替代饲料
+- applicable_products:
+  - 草莓
+  - 水果
+  - 葱
+  - 蔬菜
+  - 沙拉
+  - 三明治
+  evidence_requirements:
+  - 原料来源证明
+  - 人员健康体检记录
+  - 手部卫生培训记录
+  - 加工环境检测报告
+  - 水源检测报告
+  - GMP执行记录
+  hazard_class: microbial
+  records_to_check:
+  - 原料进货台账
+  - 从业人员健康证
+  - 卫生培训记录
+  - 车间消毒记录
+  - 水质检测报告
+  - 产品检验记录
+  risk_factor_id: microbial_hepatitis_a_virus
+  risk_factor_name: Hepatitis A virus
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 病毒可能通过受污染的原料带入
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工人员手部卫生是关键污染途径
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装过程可能引入交叉污染
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 零售环节非主要风险阶段
+    stage: retail_and_terminal_storage
+  typical_failure_points:
+  - 原料污染
+  - 加工人员带菌
+  - 手部卫生不达标
+  - 加工环境消毒不足
+  - 水源污染
+  - 交叉污染
+- applicable_products:
+  - 谷物
+  - 咖啡豆
+  - 葡萄干
+  - 葡萄酒
+  - 豆类
+  evidence_requirements:
+  - 原料产地证明
+  - 毒素检测报告
+  - 供应商资质审核
+  - 仓储条件记录
+  - 入库检验报告
+  - 批次追溯文件
+  hazard_class: toxin
+  records_to_check:
+  - 原料采购台账
+  - 霉菌毒素检测报告
+  - 供应商审计记录
+  - 仓库温湿度记录
+  - 原料入库检验记录
+  - 批次追溯档案
+  risk_factor_id: toxin_ochratoxin_a_32
+  risk_factor_name: Ochratoxin A
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 毒素主要来源于受污染的谷物等原料
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工过程难以去除已污染的毒素
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装环节对毒素风险影响有限
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 毒素稳定性强，储存条件影响小
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 谷物原料霉变
+  - 储存条件不当
+  - 供应商审计缺失
+  - 原料毒素检测不足
+  - 仓库温湿度失控
+  - 原料掺假
+- applicable_products:
+  - 糖果
+  - 婴儿食品
+  - 水产品
+  - 加工食品
+  evidence_requirements:
+  - 原料乳重金属检测报告
+  - 饲料及添加剂合格证明
+  - 水质检测报告
+  - 设备材质证明
+  - 包装材料符合性证明
+  - 生产环境监测记录
+  hazard_class: chemical
+  records_to_check:
+  - 原料乳验收记录
+  - 饲料来源及检测报告
+  - 水质监测报告
+  - 设备清洗维护记录
+  - 包装材料检验记录
+  - 产品重金属检测报告
+  risk_factor_id: chemical_lead
+  risk_factor_name: 铅 (Lead)
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 铅可通过土壤、牧草、饲料和水源进入原料乳
+    stage: farm_and_raw_milk
+  - priority: medium
+    rationale: 加工助剂或包装材料可能引入铅污染
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 管道、设备腐蚀或添加剂带入铅
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装材料铅含量需控制
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 牧场土壤铅含量超标
+  - 饲料或添加剂铅污染
+  - 水源铅污染
+  - 加工管道设备腐蚀
+  - 包装材料铅迁移
+  - 生产环境铅沉积
+- applicable_products:
+  - 肉类
+  - 腌制食品
+  - 香肠
+  - 火腿
+  evidence_requirements:
+  - 原辅料亚硝酸盐检测报告
+  - 添加剂成分证明
+  - 加工工艺参数记录
+  - 设备清洗验证记录
+  - 包装材料符合性证明
+  - 产品亚硝酸盐检测报告
+  hazard_class: chemical
+  records_to_check:
+  - 原辅料验收记录
+  - 添加剂使用记录
+  - 加工工艺参数记录
+  - 设备清洗维护记录
+  - 包装材料检验记录
+  - 产品出厂检测报告
+  risk_factor_id: chemical_nitrite_nitrate_34
+  risk_factor_name: Nitrite/Nitrate
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 加工助剂或辅料可能带入亚硝酸盐
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工过程中可能产生或引入亚硝酸盐
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装材料可能影响亚硝酸盐含量
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 温度控制影响亚硝酸盐转化
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料或助剂亚硝酸盐超标
+  - 加工温度控制不当
+  - 使用含亚硝酸盐添加剂
+  - 设备清洗剂残留
+  - 包装材料污染
+  - 储存温度过高加速转化
+- applicable_products:
+  - 大米
+  - 蔬菜
+  - 水产品
+  - 贝类
+  evidence_requirements:
+  - 原料乳重金属检测报告
+  - 饲料及肥料检测报告
+  - 水质检测报告
+  - 设备材质证明
+  - 包装材料符合性证明
+  - 生产环境监测记录
+  hazard_class: chemical
+  records_to_check:
+  - 原料乳验收记录
+  - 饲料来源及检测报告
+  - 水质监测报告
+  - 设备材质证明文件
+  - 包装材料检验记录
+  - 产品重金属检测报告
+  risk_factor_id: chemical_cadmium
+  risk_factor_name: Cadmium (镉)
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 镉可通过土壤、牧草、饲料进入原料乳
+    stage: farm_and_raw_milk
+  - priority: medium
+    rationale: 饲料或添加剂可能含镉
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 设备和管道材质可能析出镉
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装材料镉迁移风险较低
+    stage: packaging_and_filling
+  typical_failure_points:
+  - 牧场土壤镉污染
+  - 饲料或肥料镉富集
+  - 水源镉污染
+  - 加工设备腐蚀
+  - 包装材料镉迁移
+  - 生产环境镉沉积
+- applicable_products:
+  - 果汁
+  - 婴儿米糊
+  - 瓶装矿泉水
+  - 果汁浓缩物
+  - 婴儿米糊/米制婴儿食品
+  - 果汁饮料
+  evidence_requirements:
+  - 原料砷含量检测报告
+  - 加工用水水质检测报告
+  - 包装材料迁移测试报告
+  - 产品出厂砷含量检测报告
+  - 供应商原料产地环境评估报告
+  - 生产工艺参数记录
+  hazard_class: chemical
+  records_to_check:
+  - 原料采购合同及供应商资质
+  - 原料入库检验记录
+  - 水质检测报告
+  - 包装材料合规证明
+  - 生产加工记录
+  - 产品出厂检验报告
+  risk_factor_id: chemical_arsenic
+  risk_factor_name: Arsenic
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 砷主要通过受污染的原料进入食品链
+    stage: raw_material_and_ingredients
+  - priority: high
+    rationale: 加工用水和工艺可能影响砷含量
+    stage: production_and_processing
+  - priority: medium
+    rationale: 包装材料可能存在砷迁移风险
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 储存条件对砷含量影响较小
+    stage: retail_and_terminal_storage
+  typical_failure_points:
+  - 原料产地土壤砷含量超标
+  - 加工用水砷浓度过高
+  - 使用含砷的助剂或添加剂
+  - 包装材料砷迁移
+  - 原料储存不当导致二次污染
+  - 检测遗漏或方法灵敏度不足
+- applicable_products:
+  - 肉类
+  - 乳制品
+  - 水产品
+  - 蜂产品
+  evidence_requirements:
+  - 牧场兽药使用记录
+  - 原料乳兽药残留检测报告
+  - 供应商资质及审计记录
+  - 休药期执行证明
+  - 产品兽药残留抽检报告
+  - 牛群健康档案
+  hazard_class: residue
+  records_to_check:
+  - 兽药采购及使用台账
+  - 原料奶接收检验记录
+  - 供应商资质证明文件
+  - 牛群健康管理记录
+  - 生产批次记录
+  - 产品残留检测报告
+  risk_factor_id: residue_hazard
+  risk_factor_name: 兽药残留
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 兽药残留主要源于养殖环节用药
+    stage: farm_and_raw_milk
+  - priority: high
+    rationale: 供应商管理决定原料安全性
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工过程需确保残留不增加
+    stage: production_and_processing
+  - priority: low
+    rationale: 冷链对兽药残留影响有限
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 兽药使用不规范或超量使用
+  - 休药期执行不严格
+  - 原料奶收购未进行残留检测
+  - 供应商提供不合格原料
+  - 交叉污染导致残留扩散
+  - 检测方法落后或覆盖不全
+- applicable_products:
+  - 水产品
+  - 海鲜
+  - 金枪鱼
+  - 旗鱼
+  - 鲨鱼
+  evidence_requirements:
+  - 原料鱼汞含量检测报告
+  - 原料鱼种来源地环境评估报告
+  - 供应商原料溯源证明
+  - 加工设备清洁维护记录
+  - 产品汞含量检测报告
+  - 原料储存温度记录
+  hazard_class: chemical
+  records_to_check:
+  - 原料采购合同及供应商资质
+  - 原料入库检验记录
+  - 原料来源及捕捞区域证明
+  - 加工过程控制记录
+  - 冷链温度监控记录
+  - 产品出厂检验报告
+  risk_factor_id: chemical_mercury
+  risk_factor_name: Mercury (汞)
+  source_basis: minimax_assisted
+  stage_candidates:
+  - priority: high
+    rationale: 汞通过水产品原料进入食品链
+    stage: raw_material_and_ingredients
+  - priority: medium
+    rationale: 加工过程需防止汞污染和扩散
+    stage: production_and_processing
+  - priority: low
+    rationale: 包装对汞含量影响较小
+    stage: packaging_and_filling
+  - priority: low
+    rationale: 冷链主要保障新鲜度
+    stage: cold_chain_and_logistics
+  typical_failure_points:
+  - 原料鱼来源海域汞污染严重
+  - 原料鱼种为高汞富集品种
+  - 加工设备汞污染
+  - 原料储存温度不当导致变质
+  - 检测遗漏高汞品种
+  - 供应商原料来源不透明
+- risk_factor_id: chemical_pcbs
+  risk_factor_name: PCBs (多氯联苯)
+  hazard_class: chemical
+  applicable_products:
+  - 水产品
+  - 肉类
+  - 乳制品
+  - 蛋类
+  - 动物脂肪
+  stage_candidates:
+  - stage: farm_and_raw_milk
+    priority: high
+    rationale: PCBs通过环境累积，奶牛摄入受污染牧草和饲料后在乳脂中
+  - stage: raw_material_and_ingredients
+    priority: high
+    rationale: 动物饲料和添加剂可能含有PCBs，需严格控制原料来源和检
+  - stage: production_and_processing
+    priority: medium
+    rationale: 加工设备和管道密封材料可能迁移PCBs，油脂高温加工增加
+  - stage: packaging_and_filling
+    priority: low
+    rationale: 包装材料迁移风险相对较低，但仍需关注油墨和粘合剂
+  typical_failure_points:
+  - 牧场土壤和水源PCBs污染超标
+  - 奶牛长期摄入受污染牧草饲料
+  - 饲料原料来自工业区周边
+  - 加工设备润滑油泄漏污染
+  - 管道和密封材料含PCBs
+  - 包装油墨或粘合剂迁移
+  evidence_requirements:
+  - 原料乳PCBs检测报告
+  - 饲料和牧草来源及检测证明
+  - 牧场环境评估报告
+  - 生产设备材料安全证明
+  - 成品PCBs含量检测报告
+  - 供应商资质和检测报告
+  records_to_check:
+  - 原料乳收购检验记录
+  - 饲料采购和检测台账
+  - 牧场环境监测报告
+  - 设备维护和润滑记录
+  - 生产过程关键控制点记录
+  - 产品出厂检验报告
+  source_basis: minimax_assisted
+- risk_factor_id: microbial_giardia
+  risk_factor_name: Giardia
+  hazard_class: microbial
+  applicable_products:
+  - 贝类
+  - 绿叶沙拉
+  - 肉类
+  - 蔬菜
+  - 冰块
+  - 软体贝类
+  stage_candidates:
+  - stage: farm_and_raw_milk
+    priority: high
+    rationale: 动物粪便可能污染原料乳水源
+  - stage: raw_material_and_ingredients
+    priority: high
+    rationale: 加工用水或原料可能带菌
+  - stage: production_and_processing
+    priority: medium
+    rationale: 加工环境和水源控制关键
+  - stage: cold_chain_and_logistics
+    priority: low
+    rationale: 低温可抑制原虫存活
+  typical_failure_points:
+  - 牧场水源受粪便污染
+  - 动物饮用水源不洁
+  - 原料乳储存温度不足
+  - 加工用水未充分消毒
+  - 原料验收未检测寄生虫
+  - 生产环境清洁不彻底
+  evidence_requirements:
+  - 水源检测报告
+  - 动物健康证明
+  - 原料乳微生物报告
+  - 加工用水消毒记录
+  - 环境监测报告
+  - 生产车间清洁记录
+  records_to_check:
+  - 牧场水质检测记录
+  - 原料奶验收记录
+  - 水源消毒记录
+  - 加工用水检测报告
+  - 环境清洁检查记录
+  - 员工卫生培训记录
+  source_basis: minimax_assisted
+- risk_factor_id: microbial_clostridium
+  risk_factor_name: Clostridium
+  hazard_class: microbial
+  applicable_products:
+  - 肉类
+  - 咖喱
+  - 米饭制品
+  - 沙拉
+  - 牛肉
+  - 咖喱类
+  stage_candidates:
+  - stage: production_and_processing
+    priority: high
+    rationale: 灭菌温度时间不足无法完全杀灭芽孢
+  - stage: packaging_and_filling
+    priority: high
+    rationale: 密封不严导致二次污染和芽孢进入
+  - stage: cold_chain_and_logistics
+    priority: medium
+    rationale: 温度控制不当芽孢可能萌发繁殖
+  - stage: retail_and_terminal_storage
+    priority: medium
+    rationale: 终端温度波动可能激活芽孢
+  typical_failure_points:
+  - 巴氏杀菌温度时间不达标
+  - 设备清洁消毒不彻底
+  - 管道阀门泄漏污染
+  - 包装密封性不良
+  - 冷链温度监控缺失
+  - 产品长时间暴露于常温
+  evidence_requirements:
+  - 巴氏杀菌工艺参数记录
+  - 设备清洗消毒验证报告
+  - 密封性检测记录
+  - 冷链温度监控数据
+  - 产品微生物检测报告
+  - 生产环境监控记录
+  records_to_check:
+  - 杀菌工艺记录
+  - CIP清洗记录
+  - 产品密封性测试报告
+  - 冷链温度记录
+  - 出厂检验报告
+  - 生产车间环境监测报告
+  source_basis: minimax_assisted

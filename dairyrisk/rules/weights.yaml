@@ -1,0 +1,75 @@
+# 风险评分权重配置
+# 所有权重之和应为1.0
+
+weights:
+  # 产品类别敏感度因子 (10%)
+  # 巴氏乳/酸奶等高冷链依赖产品分数更高
+  product_risk: 0.10
+
+  # 供应链复杂度因子 (10%)
+  # 关联边数越多，风险越高
+  supply_chain_risk: 0.10
+
+  # 供应商历史风险因子 (15%)
+  # 上游供应商违规记录
+  supplier_risk: 0.15
+
+  # 批次追溯完整性因子 (10%)
+  # 原料批次、供应商信息缺失程度
+  traceability_risk: 0.10
+
+  # 标签与标准一致性因子 (5%)
+  # 标签合规性
+  label_risk: 0.05
+
+  # 历史抽检异常因子 (20%)
+  # 检验不合格记录（最重要）
+  inspection_risk: 0.20
+
+  # 行政处罚次数因子 (15%)
+  # 监管处罚记录
+  regulatory_risk: 0.15
+
+  # 冷链要求敏感度因子 (10%)
+  # 温度异常、运输时长
+  cold_chain_risk: 0.10
+
+  # 销售区域扩散度因子 (5%)
+  # 下游销售节点数量
+  diffusion_risk: 0.05
+
+# 风险等级阈值
+thresholds:
+  high: 70      # >=70: 高风险（红色）
+  medium: 40    # >=40: 中风险（橙色）
+  low: 0        # <40: 低风险（绿色）
+
+# 各因子风险分数阈值
+factor_thresholds:
+  product_risk:
+    pasteurized: 80    # 巴氏杀菌乳
+    yogurt: 75         # 酸奶
+    raw_milk: 70       # 生乳
+    UHT: 40            # 灭菌乳
+    powder: 30         # 奶粉
+
+  supply_chain_risk:
+    high: 10           # >=10条边
+    medium: 5          # >=5条边
+    low: 3             # >=3条边
+
+  inspection_risk:
+    critical: 0.5      # 不合格率>=50%
+    high: 0.2          # 不合格率>=20%
+    low: 0.0           # 有不合格记录
+
+  regulatory_risk:
+    high: 2            # >=2次高风险事件
+    medium: 1          # >=1次高风险事件
+    low: 2             # >=2次中风险事件
+
+  cold_chain_risk:
+    critical_temp: 8   # >8°C为严重异常
+    warning_temp: 6    # >6°C为警告
+    critical_hours: 24 # >24小时为严重异常
+    warning_hours: 12  # >12小时为警告

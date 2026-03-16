@@ -1,0 +1,1962 @@
+version: vnext-formalized
+generated_at: '2026-03-08T17:11:46.878024+00:00'
+source: /home/yarizakurahime/data/standalone_food_risk_kb/knowledge/derived/risk_taxonomy_vnext/risk_taxonomy_vnext.jsonl
+risk_factors:
+- id: microbial_listeria_monocytogenes
+  name: Listeria monocytogenes
+  category: microbial
+  aliases:
+  - Listeria
+  - Listeria monocytogenes
+  - listeriosis
+  - listerial
+  description: Listeria monocytogenes是一种重要的食源性病原菌，可引起李斯特菌病，对高危人群构成严重健康威胁。
+  applicable_products:
+  - 奶酪
+  - 肉类
+  - 熟食
+  - 生鲜果蔬
+  - 沙拉
+  - 冷链食品
+  typical_symptoms:
+  - 发热
+  - 肌肉酸痛
+  - 胃肠道症状
+  - 败血症
+  - 脑膜炎
+  - 流产
+  - 新生儿感染
+  - 死亡
+  vulnerable_groups:
+  - 孕妇及新生儿
+  - 老年人
+  - 免疫功能低下者
+  - 慢性病患者
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - FDA
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - recall
+  - outbreak
+  - warning_letter
+  source_count: 6
+  evidence_count: 8904
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/30195829/
+  - https://pubmed.ncbi.nlm.nih.gov/41015237/
+  - https://pubmed.ncbi.nlm.nih.gov/33462722/
+  - https://pubmed.ncbi.nlm.nih.gov/36207178/
+  - https://pubmed.ncbi.nlm.nih.gov/29274970/
+  - https://pubmed.ncbi.nlm.nih.gov/28739228/
+  - https://pubmed.ncbi.nlm.nih.gov/28800821/
+  - https://pubmed.ncbi.nlm.nih.gov/28968532/
+  - https://pubmed.ncbi.nlm.nih.gov/21176989/
+  - https://pubmed.ncbi.nlm.nih.gov/35749910/
+  notes: 基于8904条证据记录和6个权威来源，适用于多种即食食品，尤其是未经巴氏消毒的奶酪和冷链食品。
+- id: microbial_salmonella
+  name: Salmonella
+  category: microbial
+  aliases:
+  - Salmonella enterica
+  - Salmonella spp.
+  - non-typhoidal Salmonella
+  - NTS
+  - salmonellosis
+  - Salmonella
+  description: 沙门氏菌是一种革兰氏阴性杆菌，可引起沙门氏菌病，常见表现为自限性胃肠炎，也可出现败血症等严重症状。
+  applicable_products:
+  - 坚果制品
+  - 种子类制品
+  - 水果
+  - 生鲜乳
+  - 奶酪
+  - 肉类
+  - 蔬菜
+  typical_symptoms:
+  - 腹泻
+  - 发热
+  - 腹痛
+  - 呕吐
+  - 肠胃炎
+  - 败血症
+  - 脱水
+  - 血便
+  vulnerable_groups:
+  - 老年人
+  - 婴儿
+  - 免疫功能低下者
+  - 孕妇
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - FDA
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - recall
+  - outbreak
+  - outbreak_report
+  - warning_letter
+  source_count: 7
+  evidence_count: 7922
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/29224803/
+  - https://pubmed.ncbi.nlm.nih.gov/8555920/
+  - https://pubmed.ncbi.nlm.nih.gov/39952766/
+  - https://pubmed.ncbi.nlm.nih.gov/36661142/
+  - https://pubmed.ncbi.nlm.nih.gov/40022374/
+  - https://pubmed.ncbi.nlm.nih.gov/41654268/
+  - https://pubmed.ncbi.nlm.nih.gov/40446107/
+  - https://pubmed.ncbi.nlm.nih.gov/36602750/
+  - https://pubmed.ncbi.nlm.nih.gov/1452840/
+  - https://pubmed.ncbi.nlm.nih.gov/35033976/
+  notes: 具有多种血清型，常见食源性致病菌，部分菌株具有多重耐药性。
+- id: microbial_norovirus
+  name: Norovirus
+  category: microbial
+  aliases:
+  - NoV
+  - HuNoV
+  - Human Norovirus
+  - Norovirus
+  description: Norovirus是一种高度传染性病毒，是全球急性胃肠炎和食源性疾病暴发的主要原因，主要通过人际传播和受污染的食物水传播。
+  applicable_products:
+  - 生菜
+  - 沙拉
+  - 三明治
+  - 贝类
+  - 水果
+  - 饮用水
+  - 即食食品
+  typical_symptoms:
+  - 胃肠炎
+  - 腹泻
+  - 呕吐
+  - 恶心
+  - 胃痉挛
+  - 发热
+  - 脱水
+  - 头痛
+  vulnerable_groups:
+  - 免疫功能低下者
+  - 老年人
+  - 儿童
+  - 旅行者
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - outbreak
+  source_count: 4
+  evidence_count: 7711
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/27211790/
+  - https://pubmed.ncbi.nlm.nih.gov/30109958/
+  - https://pubmed.ncbi.nlm.nih.gov/41754563/
+  - https://pubmed.ncbi.nlm.nih.gov/32008374/
+  - https://pubmed.ncbi.nlm.nih.gov/38262124/
+  - https://pubmed.ncbi.nlm.nih.gov/33249886/
+  - https://pubmed.ncbi.nlm.nih.gov/30841581/
+  - https://pubmed.ncbi.nlm.nih.gov/26219377/
+  - https://pubmed.ncbi.nlm.nih.gov/35905649/
+  - https://pubmed.ncbi.nlm.nih.gov/35305250/
+  notes: 基于7711篇文献，人传人为主，但食源性暴发有充分记录，新鲜产品和贝类是高风险食品。
+- id: microbial_escherichia_coli_stec
+  name: Escherichia coli / STEC
+  category: microbial
+  aliases:
+  - STEC
+  - VTEC
+  - Verocytotoxic-producing E. coli
+  - Shiga toxin-producing E. coli
+  - 出血性大肠杆菌
+  - Shiga toxin-producing Escherichia coli
+  description: 产志贺毒素大肠杆菌可引起出血性结肠炎和溶血性尿毒综合征，牛是主要宿主。
+  applicable_products:
+  - 生鲜农产品
+  - 乳制品
+  - 果汁
+  - 肉类
+  - 冷冻食品
+  - 生鲜农产品（如菠菜、芽菜）
+  - 奶酪
+  - 果汁（尤其是未经巴氏消毒的苹果酒）
+  typical_symptoms:
+  - 腹泻
+  - 出血性结肠炎
+  - 腹痛
+  - 呕吐
+  - 发热
+  - 溶血性尿毒综合征
+  - 志贺毒素感染
+  vulnerable_groups:
+  - 儿童
+  - 老年人
+  - 免疫功能低下者
+  - 孕妇
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - FDA
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - recall
+  - outbreak
+  - outbreak_report
+  source_count: 6
+  evidence_count: 2556
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/22939912/
+  - https://pubmed.ncbi.nlm.nih.gov/26221083/
+  - https://pubmed.ncbi.nlm.nih.gov/32519880/
+  - https://pubmed.ncbi.nlm.nih.gov/33382795/
+  - https://pubmed.ncbi.nlm.nih.gov/39226279/
+  - https://pubmed.ncbi.nlm.nih.gov/36270976/
+  - https://pubmed.ncbi.nlm.nih.gov/24560591/
+  - https://pubmed.ncbi.nlm.nih.gov/23551112/
+  - https://pubmed.ncbi.nlm.nih.gov/30624967/
+  - https://pubmed.ncbi.nlm.nih.gov/29659236/
+  notes: 主要通过受污染的食品和水传播，已有多起食源性疾病爆发记录。
+- id: physical_foreign_material
+  name: Foreign Material
+  category: physical
+  aliases:
+  - Physical Contamination
+  - Extraneous Material
+  - Foreign Object
+  - Adulteration - Foreign Matter
+  - 异物
+  - Foreign material
+  description: 食品中存在塑料、金属、玻璃、木材等异物，对消费者造成物理危害。
+  applicable_products:
+  - 糖果
+  - 乳制品
+  - 零食
+  - 饮料
+  - 调味品
+  - 生鲜农产品
+  - 预制食品
+  typical_symptoms:
+  - 窒息
+  - 牙齿损伤
+  - 口腔撕裂
+  - 内伤
+  - 胃肠不适
+  - 出血
+  vulnerable_groups:
+  - 儿童
+  - 老年人
+  - 牙齿脆弱者
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - FDA
+  evidence_types:
+  - annotation
+  - recall
+  source_count: 2
+  evidence_count: 2459
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/37803782/
+  - https://pubmed.ncbi.nlm.nih.gov/34232074/
+  - https://pubmed.ncbi.nlm.nih.gov/33152470/
+  - https://pubmed.ncbi.nlm.nih.gov/33861977/
+  - https://pubmed.ncbi.nlm.nih.gov/35327104/
+  - https://pubmed.ncbi.nlm.nih.gov/38246905/
+  - https://pubmed.ncbi.nlm.nih.gov/2185600/
+  - https://pubmed.ncbi.nlm.nih.gov/25633649/
+  - https://pubmed.ncbi.nlm.nih.gov/11346490/
+  - https://pubmed.ncbi.nlm.nih.gov/30301087/
+  notes: 污染可在生产、包装或处理过程中发生，来源包括FDA召回数据。
+- id: microbial_clostridium_perfringens
+  name: Clostridium perfringens
+  category: microbial
+  aliases:
+  - 产气荚膜梭菌
+  - 韦氏梭菌
+  - C. perfringens
+  - 产气梭菌
+  - Clostridium perfringens
+  - 产气荚膜杆菌
+  description: 重要食源性病原体，可导致严重食物中毒爆发，是家禽产业主要病原体。
+  applicable_products:
+  - 肉类
+  - 牛肉
+  - 猪肉
+  - 沙拉
+  - 烧烤食品
+  - 豆类
+  typical_symptoms:
+  - 食物中毒
+  - 肠胃炎
+  - 腹痛
+  - 腹泻
+  - 呕吐
+  - 死亡
+  vulnerable_groups:
+  - 一般人群
+  - 免疫功能低下者
+  - 老年人
+  - 儿童
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - CDC
+  - PubMed
+  - Europe PMC
+  evidence_types:
+  - annotation
+  - outbreak
+  - literature
+  source_count: 2
+  evidence_count: 1580
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/170567/
+  - https://pubmed.ncbi.nlm.nih.gov/67498/
+  - https://pubmed.ncbi.nlm.nih.gov/2868849/
+  - https://pubmed.ncbi.nlm.nih.gov/6243326/
+  - https://pubmed.ncbi.nlm.nih.gov/6293994/
+  - https://pubmed.ncbi.nlm.nih.gov/8799084/
+  - https://pubmed.ncbi.nlm.nih.gov/12870757/
+  - https://pubmed.ncbi.nlm.nih.gov/14325274/
+  - https://pubmed.ncbi.nlm.nih.gov/15270517/
+  - https://pubmed.ncbi.nlm.nih.gov/15286500/
+  notes: 数据来源于PubTator Central和CDC。
+- id: microbial_staphylococcus_aureus
+  name: Staphylococcus aureus
+  category: microbial
+  aliases:
+  - Staphylococcal enterotoxins
+  - Coagulase-positive Staphylococci
+  - SE
+  - Staphylococcal food poisoning
+  - Staphylococcus aureus
+  description: Gram-positive bacterium capable of producing heat-stable enterotoxins
+    during growth in contaminated food, leading to rapid-onset food poisoning characterized
+    by intense gastrointestinal symptoms.
+  applicable_products:
+  - 乳制品
+  - 奶酪
+  - 蛋白粉
+  - 肉类
+  - 加工食品
+  typical_symptoms:
+  - 呕吐
+  - 恶心
+  - 腹痛
+  - 腹泻
+  - 葡萄球菌性食物中毒
+  - 食物中毒
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - FDA
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - recall
+  - outbreak
+  source_count: 5
+  evidence_count: 1515
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/36287986/
+  - https://pubmed.ncbi.nlm.nih.gov/39021233/
+  - https://pubmed.ncbi.nlm.nih.gov/4221871/
+  - https://pubmed.ncbi.nlm.nih.gov/36461219/
+  - https://pubmed.ncbi.nlm.nih.gov/38049264/
+  - https://pubmed.ncbi.nlm.nih.gov/35889521/
+  - https://pubmed.ncbi.nlm.nih.gov/24151939/
+  - https://pubmed.ncbi.nlm.nih.gov/39308717/
+  - https://pubmed.ncbi.nlm.nih.gov/38346315/
+  - https://pubmed.ncbi.nlm.nih.gov/30817174/
+  notes: 'Evidence count: 1515 from 5 sources (PubMed, Europe PMC, PubTator Central,
+    FDA, CDC). Produces heat-stable enterotoxins that retain toxicity after cooking.
+    Associated with both recalls and outbreak events. Common in milk, dairy products,
+    and protein supplements.'
+- id: microbial_campylobacter
+  name: Campylobacter
+  category: microbial
+  aliases:
+  - Campylobacteriosis
+  - Campylobacter jejuni
+  - Campylobacter enteritis
+  - C. jejuni infection
+  - Campylobacter
+  description: Campylobacter is a Gram-negative, motile bacterium and the leading
+    cause of bacterial gastroenteritis in humans worldwide, with poultry meat as the
+    primary transmission vector.
+  applicable_products:
+  - 肉类
+  - 未经巴氏杀菌乳
+  - 水产品
+  - 蔬菜
+  typical_symptoms:
+  - 急性肠炎
+  - 细菌性胃肠炎
+  - 腹泻
+  - 痢疾样腹泻
+  - 弯曲菌肠炎
+  - 食源性感染
+  - 空肠弯曲菌感染
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - outbreak
+  source_count: 4
+  evidence_count: 1327
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/1976939/
+  - https://pubmed.ncbi.nlm.nih.gov/35905047/
+  - https://pubmed.ncbi.nlm.nih.gov/11764732/
+  - https://pubmed.ncbi.nlm.nih.gov/40155698/
+  - https://pubmed.ncbi.nlm.nih.gov/33585282/
+  - https://pubmed.ncbi.nlm.nih.gov/38719774/
+  - https://pubmed.ncbi.nlm.nih.gov/37847023/
+  - https://pubmed.ncbi.nlm.nih.gov/37165317/
+  - https://pubmed.ncbi.nlm.nih.gov/33337085/
+  - https://pubmed.ncbi.nlm.nih.gov/40516877/
+  notes: Gram-negative, helical-shaped bacteria with increasing antimicrobial resistance
+    concerns. Evidence base includes 1327 records from PubMed, Europe PMC, PubTator
+    Central, and CDC.
+- id: toxin_aflatoxins
+  name: Aflatoxins
+  category: toxin
+  aliases:
+  - Aflatoxin B1
+  - Aflatoxin M1
+  - AFB1
+  - AFM1
+  - Mycotoxins
+  - Aflatoxins
+  description: 黄曲霉毒素是由曲霉属真菌产生的有毒次级代谢产物，主要污染谷物、坚果、香料等农产品，具有强致癌性和肝毒性。
+  applicable_products:
+  - 谷物
+  - 坚果制品
+  - 香料
+  - 调味品
+  typical_symptoms:
+  - 肝癌
+  - 肝细胞癌
+  - 致癌
+  - 肝毒性
+  - 真菌污染
+  - 发育迟缓
+  - 毒性
+  vulnerable_groups:
+  - 儿童
+  - 老年人
+  - 肝病患者
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - FDA
+  - WHO/JECFA
+  evidence_types:
+  - literature
+  - annotation
+  - recall
+  - toxicology
+  source_count: 5
+  evidence_count: 1179
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/36729355/
+  - https://pubmed.ncbi.nlm.nih.gov/33984875/
+  - https://pubmed.ncbi.nlm.nih.gov/39304086/
+  - https://pubmed.ncbi.nlm.nih.gov/39591222/
+  - https://pubmed.ncbi.nlm.nih.gov/36000599/
+  - https://pubmed.ncbi.nlm.nih.gov/25853494/
+  - https://pubmed.ncbi.nlm.nih.gov/35964572/
+  - https://pubmed.ncbi.nlm.nih.gov/33920591/
+  - https://pubmed.ncbi.nlm.nih.gov/39111684/
+  - https://pubmed.ncbi.nlm.nih.gov/38008384/
+  notes: 证据来源包括PubMed、Europe PMC、PubTator Central、FDA及WHO/JECFA，共1179篇文献支持。
+- id: microbial_vibrio
+  name: Vibrio (弧菌)
+  category: microbial
+  aliases:
+  - Vibrio parahaemolyticus
+  - Vibrio vulnificus
+  - 副溶血弧菌
+  - 创伤弧菌
+  - 弧菌属
+  - Vibrio
+  description: 海洋环境致病菌属，主要经生食贝类感染，引起肠胃炎、败血症等严重症状。
+  applicable_products:
+  - 贝类
+  - 甲壳类
+  - 海产
+  typical_symptoms:
+  - 肠胃炎
+  - 腹泻
+  - 呕吐
+  - 发热
+  - 败血症
+  - 伤口感染
+  - 死亡
+  - 肝损伤
+  vulnerable_groups:
+  - 免疫缺陷者
+  - 肝病患者
+  - 老年人
+  - 孕妇
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - outbreak
+  source_count: 4
+  evidence_count: 1051
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/27459915/
+  - https://pubmed.ncbi.nlm.nih.gov/29150510/
+  - https://pubmed.ncbi.nlm.nih.gov/3667122/
+  - https://pubmed.ncbi.nlm.nih.gov/10339810/
+  - https://pubmed.ncbi.nlm.nih.gov/35638353/
+  - https://pubmed.ncbi.nlm.nih.gov/32363732/
+  - https://pubmed.ncbi.nlm.nih.gov/39447146/
+  - https://pubmed.ncbi.nlm.nih.gov/21367733/
+  - https://pubmed.ncbi.nlm.nih.gov/35226753/
+  - https://pubmed.ncbi.nlm.nih.gov/33221584/
+  notes: Vibrio vulnificus感染死亡率约60%，高危人群为免疫缺陷者和肝病患者。
+- id: chemical_heavy_metals_pb_cd_hg_as
+  name: 重金属 (Pb, Cd, Hg, As)
+  category: chemical
+  aliases:
+  - 铅
+  - 镉
+  - 汞
+  - 砷
+  - 重金属
+  - Heavy metal contamination
+  description: 有毒金属元素经食物链进入人体，造成神经系统、肾脏等多器官损伤。
+  applicable_products:
+  - 水产品
+  - 动物内脏
+  - 蔬菜
+  - 谷物
+  - 饮用水
+  - 饮料
+  - 烘焙食品
+  typical_symptoms:
+  - 神经系统损伤
+  - 肾功能衰竭
+  - 致癌
+  - 器官损伤
+  - 胃肠道症状
+  - 肺损伤
+  - 生殖损伤
+  - 贫血
+  vulnerable_groups:
+  - 儿童
+  - 孕妇
+  - 肾功能不全者
+  - 老年人
+  - 胎儿
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - outbreak
+  source_count: 4
+  evidence_count: 991
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/11274341/
+  - https://pubmed.ncbi.nlm.nih.gov/34937662/
+  - https://pubmed.ncbi.nlm.nih.gov/36078079/
+  - https://pubmed.ncbi.nlm.nih.gov/19252114/
+  - https://pubmed.ncbi.nlm.nih.gov/9337562/
+  - https://pubmed.ncbi.nlm.nih.gov/27454254/
+  - https://pubmed.ncbi.nlm.nih.gov/26588172/
+  - https://pubmed.ncbi.nlm.nih.gov/17000570/
+  - https://pubmed.ncbi.nlm.nih.gov/1107364/
+  - https://pubmed.ncbi.nlm.nih.gov/32889024/
+  notes: 证据来源：PubMed等，共991条文献证实重金属的食品污染及健康危害。
+- id: chemical_melamine
+  name: 三聚氰胺
+  category: chemical
+  aliases:
+  - Melamine
+  - 氰尿酸
+  - 三聚氰酸
+  - Ammeline
+  - Ammelide
+  - Cyanuric acid
+  description: 非法添加的含氮化合物，在肾脏沉积形成结石，导致肾损伤。
+  applicable_products:
+  - 婴儿配方奶粉
+  - 生鲜乳
+  - 乳制品
+  - 面粉
+  - 蛋白粉
+  typical_symptoms:
+  - 肾结石
+  - 急性肾衰竭
+  - 肾损伤
+  - 肾功能衰竭
+  - 高钾血症
+  - 尿路结石
+  - 肾毒性
+  vulnerable_groups:
+  - 婴儿
+  - 肾功能低下者
+  - 儿童
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  evidence_types:
+  - literature
+  - annotation
+  source_count: 3
+  evidence_count: 932
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/19669733/
+  - https://pubmed.ncbi.nlm.nih.gov/19399523/
+  - https://pubmed.ncbi.nlm.nih.gov/27845270/
+  - https://pubmed.ncbi.nlm.nih.gov/19193777/
+  - https://pubmed.ncbi.nlm.nih.gov/27702712/
+  - https://pubmed.ncbi.nlm.nih.gov/18956115/
+  - https://pubmed.ncbi.nlm.nih.gov/27324576/
+  - https://pubmed.ncbi.nlm.nih.gov/19196666/
+  - https://pubmed.ncbi.nlm.nih.gov/19060339/
+  - https://pubmed.ncbi.nlm.nih.gov/33047397/
+  notes: 2008年中国婴儿奶粉污染事件导致大量婴幼儿肾损伤和死亡。
+- id: microbial_clostridium_botulinum
+  name: Clostridium botulinum
+  category: microbial
+  aliases:
+  - Botulism
+  - C. botulinum
+  - Botulinum toxin
+  - 肉毒杆菌
+  - Botulinum neurotoxin
+  - clostridium_botulinum
+  description: 产芽孢厌氧菌，产生热不稳定性神经毒素，导致严重的神经麻痹性疾病。
+  applicable_products:
+  - 蛋白粉
+  - 胡萝卜汁
+  - 盐渍黑豆
+  - 腌制鲱鱼
+  - 熏鲱鱼
+  - 贝类
+  - 罐头食品
+  typical_symptoms:
+  - 神经肌肉阻断
+  - 肌肉无力
+  - 弛缓性麻痹
+  - 呼吸衰竭
+  - 食物中毒
+  - 进行性神经肌肉阻断
+  - 肌无力
+  vulnerable_groups:
+  - 婴儿
+  - 老年人
+  - 免疫功能低下者
+  - 高风险食品消费者
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - FDA
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - literature
+  - recall
+  - annotation
+  - outbreak
+  - outbreak_report
+  source_count: 3
+  evidence_count: 907
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/17314986/
+  - https://pubmed.ncbi.nlm.nih.gov/39138824/
+  - https://pubmed.ncbi.nlm.nih.gov/19759486/
+  - https://pubmed.ncbi.nlm.nih.gov/6772092/
+  - https://pubmed.ncbi.nlm.nih.gov/2405056/
+  - https://pubmed.ncbi.nlm.nih.gov/790507/
+  - https://pubmed.ncbi.nlm.nih.gov/20301016/
+  - https://pubmed.ncbi.nlm.nih.gov/16888919/
+  - https://pubmed.ncbi.nlm.nih.gov/3526634/
+  - https://pubmed.ncbi.nlm.nih.gov/22172328/
+  notes: 婴儿肉毒中毒是美国和加拿大最常见形式，蜂蜜和环境暴露是主要感染源。
+- id: microbial_bacillus_cereus
+  name: Bacillus cereus
+  category: microbial
+  aliases:
+  - B. cereus
+  - 蜡样芽孢杆菌
+  - Bacillus cereus sensu lato
+  - cereulide-producing Bacillus
+  - Bacillus cereus
+  description: 产芽孢细菌，可通过产生催吐毒素和腹泻毒素引起食物中毒。
+  applicable_products:
+  - 米饭制品
+  - 意面
+  - 禽肉
+  - 谷物
+  - 豆类
+  - 酱汁
+  - 洋葱
+  - 蔬菜
+  typical_symptoms:
+  - 呕吐
+  - 腹泻
+  - 食物中毒
+  - 腹泻综合征
+  - 呕吐综合征
+  vulnerable_groups:
+  - 一般人群
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - annotation
+  - outbreak
+  source_count: 2
+  evidence_count: 869
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/28714887/
+  - https://pubmed.ncbi.nlm.nih.gov/18592743/
+  - https://pubmed.ncbi.nlm.nih.gov/7811567/
+  - https://pubmed.ncbi.nlm.nih.gov/9039575/
+  - https://pubmed.ncbi.nlm.nih.gov/9849782/
+  - https://pubmed.ncbi.nlm.nih.gov/9874340/
+  - https://pubmed.ncbi.nlm.nih.gov/10419217/
+  - https://pubmed.ncbi.nlm.nih.gov/11848578/
+  - https://pubmed.ncbi.nlm.nih.gov/11883672/
+  - https://pubmed.ncbi.nlm.nih.gov/11921595/
+  notes: 产生两种不同毒素综合征：催吐型（ cereulide）和腹泻型。
+- id: microbial_cronobacter_sakazakii
+  name: Cronobacter sakazakii
+  category: microbial
+  aliases:
+  - Enterobacter sakazakii
+  - E. sakazakii
+  - 坂崎肠杆菌
+  - Cronobacter spp.
+  - Cronobacter
+  description: 机会性食源性病原体，对低水分活度食品尤其是婴儿配方奶粉构成严重风险。
+  applicable_products:
+  - 婴儿配方奶粉
+  - 营养补充剂
+  - 特医食品
+  - 乳制品
+  typical_symptoms:
+  - 新生儿脑膜炎
+  - 坏死性小肠结肠炎
+  - 败血症
+  - 脑膜炎
+  - 菌血症
+  - 全身性感染
+  - 阪崎肠杆菌感染
+  vulnerable_groups:
+  - 新生儿
+  - 早产儿
+  - 低体重婴儿
+  - 免疫功能低下者
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - FDA
+  evidence_types:
+  - literature
+  - annotation
+  - recall
+  source_count: 4
+  evidence_count: 841
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/35838158/
+  - https://pubmed.ncbi.nlm.nih.gov/38752114/
+  - https://pubmed.ncbi.nlm.nih.gov/25603362/
+  - https://pubmed.ncbi.nlm.nih.gov/36777432/
+  - https://pubmed.ncbi.nlm.nih.gov/22420458/
+  - https://pubmed.ncbi.nlm.nih.gov/35454680/
+  - https://pubmed.ncbi.nlm.nih.gov/29272187/
+  - https://pubmed.ncbi.nlm.nih.gov/22410240/
+  - https://pubmed.ncbi.nlm.nih.gov/26627860/
+  - https://pubmed.ncbi.nlm.nih.gov/33884389/
+  notes: 该菌在干燥环境下具有很强的适应能力。
+- id: chemical_hazard
+  name: 包装化学品
+  category: chemical
+  aliases:
+  - 邻苯二甲酸酯
+  - 增塑剂
+  - 内分泌干扰物
+  - 食品接触材料
+  - 食品接触材料化学品
+  - mPAEs
+  description: 食品包装材料中的化学品迁移至食品中，可对生殖健康和胎儿发育产生不良影响。
+  applicable_products:
+  - 塑料包装食品
+  - 罐头食品
+  - 一次性餐具
+  typical_symptoms:
+  - 内分泌干扰
+  - 生殖毒性
+  - 神经毒性
+  - 致癌性
+  - 认知障碍
+  - 运动障碍
+  - 毒性
+  vulnerable_groups:
+  - 孕妇
+  - 胎儿
+  - 儿童
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  evidence_types:
+  - literature
+  - annotation
+  source_count: 3
+  evidence_count: 702
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/34520948/
+  - https://pubmed.ncbi.nlm.nih.gov/39203868/
+  - https://pubmed.ncbi.nlm.nih.gov/39079634/
+  - https://pubmed.ncbi.nlm.nih.gov/19911313/
+  - https://pubmed.ncbi.nlm.nih.gov/37913820/
+  - https://pubmed.ncbi.nlm.nih.gov/38815394/
+  - https://pubmed.ncbi.nlm.nih.gov/38508420/
+  - https://pubmed.ncbi.nlm.nih.gov/36789797/
+  - https://pubmed.ncbi.nlm.nih.gov/36318880/
+  - https://pubmed.ncbi.nlm.nih.gov/38968838/
+  notes: 以邻苯二甲酸酯类增塑剂为主，702篇文献证实主要危害为内分泌干扰和发育毒性。
+- id: microbial_brucella
+  name: 布鲁氏菌
+  category: microbial
+  aliases:
+  - Brucella
+  - 布鲁氏菌属
+  - 马尔他热
+  - 波浪热
+  - Brucella spp.
+  - Brucella melitensis
+  description: 革兰氏阴性细菌导致布鲁氏菌病，主要通过食用未巴氏消毒乳制品或接触感染动物传播。
+  applicable_products:
+  - 生鲜乳
+  - 未经巴氏杀菌乳
+  - 奶酪
+  - 乳制品
+  typical_symptoms:
+  - 布鲁氏菌病
+  - 发热
+  - 头痛
+  - 肌肉痛
+  - 关节痛
+  - 疲劳
+  - 人畜共患感染
+  vulnerable_groups:
+  - 孕妇
+  - 免疫功能低下者
+  - 农业工人
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - literature
+  - annotation
+  - outbreak
+  source_count: 4
+  evidence_count: 648
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/15930423/
+  - https://pubmed.ncbi.nlm.nih.gov/16156056/
+  - https://pubmed.ncbi.nlm.nih.gov/31955745/
+  - https://pubmed.ncbi.nlm.nih.gov/30572264/
+  - https://pubmed.ncbi.nlm.nih.gov/36055973/
+  - https://pubmed.ncbi.nlm.nih.gov/2293833/
+  - https://pubmed.ncbi.nlm.nih.gov/35675662/
+  - https://pubmed.ncbi.nlm.nih.gov/33836444/
+  - https://pubmed.ncbi.nlm.nih.gov/33233125/
+  - https://pubmed.ncbi.nlm.nih.gov/5106315/
+  notes: 主要感染途径为食用未巴氏消毒的羊奶、牛奶或奶制品，648篇文献证实。
+- id: chemical_pfas_per_and_polyfluoroalkyl_substances
+  name: PFAS全氟烷基物质
+  category: chemical
+  aliases:
+  - 全氟烷基物质
+  - PFOA
+  - PFOS
+  - 持久性有机污染物
+  - Per- and Polyfluoroalkyl Substances
+  - Perfluorooctanoic Acid
+  description: 人工合成的持久性有机污染物，可在环境和生物体内长期累积并通过食物链进入人体。
+  applicable_products:
+  - 食品包装
+  - 水产品
+  - 肉类
+  - 乳制品
+  - 谷物
+  - 饮用水
+  - 食品包装材料
+  typical_symptoms:
+  - 生殖异常
+  - 发育异常
+  - 肿瘤
+  - 炎症
+  - 癌症
+  - 脂质代谢紊乱
+  - 生殖和发育异常
+  - 炎症反应
+  vulnerable_groups:
+  - 孕妇
+  - 儿童
+  - 免疫功能低下者
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  evidence_types:
+  - literature
+  - annotation
+  source_count: 3
+  evidence_count: 622
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/41411415/
+  - https://pubmed.ncbi.nlm.nih.gov/35863238/
+  - https://pubmed.ncbi.nlm.nih.gov/28073048/
+  - https://pubmed.ncbi.nlm.nih.gov/37806615/
+  - https://pubmed.ncbi.nlm.nih.gov/37966802/
+  - https://pubmed.ncbi.nlm.nih.gov/37368643/
+  - https://pubmed.ncbi.nlm.nih.gov/36529330/
+  - https://pubmed.ncbi.nlm.nih.gov/40967828/
+  - https://pubmed.ncbi.nlm.nih.gov/39476594/
+  - https://pubmed.ncbi.nlm.nih.gov/39667510/
+  notes: 环境中可存留数十年，622篇文献证实对生殖发育和代谢产生不良影响。
+- id: chemical_dioxins
+  name: Dioxins
+  category: chemical
+  aliases:
+  - PCDDs
+  - PCDFs
+  - Polychlorinated dibenzo-p-dioxins
+  - Polychlorinated dibenzofurans
+  - Dioxins and dioxin-like compounds
+  - Dioxins
+  description: Dioxins are persistent, bioaccumulative, and toxic environmental pollutants
+    including polychlorinated dibenzodioxins (PCDDs) and polychlorinated dibenzofurans
+    (PCDFs). Over 95% of human exposure occurs through food ingestion, particularly
+    fatty foods.
+  applicable_products:
+  - 水产品
+  - 乳制品
+  - 肉类
+  - 动物源性食品
+  - 高脂动物源性食品
+  typical_symptoms:
+  - 视觉损害
+  - 神经元退行性损伤
+  - 发育毒性
+  - 生殖毒性
+  - 免疫抑制
+  - 内分泌干扰
+  - 氯痤疮
+  - 癌症
+  vulnerable_groups:
+  - 婴儿
+  - 孕妇
+  - 哺乳期妇女
+  - 儿童
+  - 胎儿
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - literature
+  - annotation
+  - toxicology
+  source_count: 4
+  evidence_count: 610
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/8549852/
+  - https://pubmed.ncbi.nlm.nih.gov/24804623/
+  - https://pubmed.ncbi.nlm.nih.gov/30376917/
+  - https://pubmed.ncbi.nlm.nih.gov/17913692/
+  - https://pubmed.ncbi.nlm.nih.gov/17243464/
+  - https://pubmed.ncbi.nlm.nih.gov/17000571/
+  - https://pubmed.ncbi.nlm.nih.gov/28490068/
+  - https://pubmed.ncbi.nlm.nih.gov/24405321/
+  - https://pubmed.ncbi.nlm.nih.gov/28384582/
+  - https://pubmed.ncbi.nlm.nih.gov/10335378/
+  notes: 'Evidence count: 610. Sources include PubMed, Europe PMC, PubTator Central,
+    and WHO/JECFA. Often found in conjunction with PCBs. Breast milk contamination
+    has been a concern since the 1970s. Regulated by WHO/JECFA evaluations.'
+- id: toxin_deoxynivalenol
+  name: 脱氧雪腐镰刀菌烯醇（Deoxynivalenol）
+  category: toxin
+  aliases:
+  - 呕吐毒素
+  - DON
+  - Vomitotoxin
+  - 脱氧雪腐镰刀菌烯醇
+  - Deoxynivalenol
+  description: 由镰刀菌属（主要是Fusarium graminearum）产生的B型单端孢霉烯族真菌毒素，是自然界中最常见的霉菌毒素之一，主要污染小麦、大麦、玉米等谷物及其制品。
+  applicable_products:
+  - 小麦
+  - 大麦
+  - 谷物
+  typical_symptoms:
+  - 呕吐
+  - 腹泻
+  - 胃肠炎症
+  - 食欲不振
+  - 胃肠炎
+  - 免疫调节
+  - 动物健康受损
+  - 真菌污染
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - literature
+  - annotation
+  - toxicology
+  source_count: 4
+  evidence_count: 603
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/28411402/
+  - https://pubmed.ncbi.nlm.nih.gov/27866369/
+  - https://pubmed.ncbi.nlm.nih.gov/22098555/
+  - https://pubmed.ncbi.nlm.nih.gov/34520302/
+  - https://pubmed.ncbi.nlm.nih.gov/37313591/
+  - https://pubmed.ncbi.nlm.nih.gov/37368680/
+  - https://pubmed.ncbi.nlm.nih.gov/31683661/
+  - https://pubmed.ncbi.nlm.nih.gov/33729830/
+  - https://pubmed.ncbi.nlm.nih.gov/30312356/
+  - https://pubmed.ncbi.nlm.nih.gov/34357971/
+  notes: 属于单端孢霉烯族毒素B组，具有致呕作用。证据来源包括PubMed、Europe PMC、PubTator Central及WHO/JECFA，共603条文献记录。
+- id: toxin_fumonisins
+  name: Fumonisins
+  category: toxin
+  aliases:
+  - Fumonisins
+  description: Fumonisins are mycotoxins produced primarily by Fusarium moniliforme
+    and related fungi, commonly contaminating corn and cereals. They are known to
+    cause animal diseases including leukoencephalomalacia in horses and pulmonary
+    edema in swine.
+  applicable_products:
+  - 谷物
+  - 饲料
+  typical_symptoms:
+  - 动物疾病
+  - 肝癌
+  - 脑白质软化症
+  - 肺水肿综合征
+  - 癌症
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  evidence_types:
+  - literature
+  - annotation
+  source_count: 3
+  evidence_count: 577
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/8347425/
+  - https://pubmed.ncbi.nlm.nih.gov/35737080/
+  - https://pubmed.ncbi.nlm.nih.gov/39195760/
+  - https://pubmed.ncbi.nlm.nih.gov/30028638/
+  - https://pubmed.ncbi.nlm.nih.gov/37165150/
+  - https://pubmed.ncbi.nlm.nih.gov/39577933/
+  - https://pubmed.ncbi.nlm.nih.gov/23837439/
+  - https://pubmed.ncbi.nlm.nih.gov/32629954/
+  - https://pubmed.ncbi.nlm.nih.gov/35878160/
+  - https://pubmed.ncbi.nlm.nih.gov/28170235/
+  notes: ''
+- id: toxin_patulin
+  name: Patulin
+  category: toxin
+  aliases:
+  - 棒曲霉素
+  - 展青霉素
+  - Patulin
+  description: 由扩展青霉（Penicillium expansum）产生的真菌毒素，常见于霉烂苹果及苹果制品中，具有多系统毒性。
+  applicable_products:
+  - 苹果
+  - 果汁
+  - 苹果酱
+  - 果制品
+  - 水果
+  typical_symptoms:
+  - 毒性
+  - 胃肠道损伤
+  - 肝毒性
+  - 免疫毒性
+  - 心脏毒性
+  - 肾脏毒性
+  - 细胞毒性
+  - 线粒体功能障碍
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - literature
+  - annotation
+  - toxicology
+  source_count: 4
+  evidence_count: 521
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/30445713/
+  - https://pubmed.ncbi.nlm.nih.gov/38914035/
+  - https://pubmed.ncbi.nlm.nih.gov/23012343/
+  - https://pubmed.ncbi.nlm.nih.gov/33648261/
+  - https://pubmed.ncbi.nlm.nih.gov/38922133/
+  - https://pubmed.ncbi.nlm.nih.gov/25494337/
+  - https://pubmed.ncbi.nlm.nih.gov/28459226/
+  - https://pubmed.ncbi.nlm.nih.gov/33508606/
+  - https://pubmed.ncbi.nlm.nih.gov/30857445/
+  - https://pubmed.ncbi.nlm.nih.gov/33933519/
+  notes: 由Penicillium expansum侵染受伤苹果引起蓝霉腐烂而产生，FDA建议苹果汁中patulin行动水平为50 ppb。
+- id: chemical_nitrite_nitrate
+  name: nitrite_nitrate
+  category: chemical
+  aliases:
+  - nitrate
+  - nitrite
+  - 硝酸盐
+  - 亚硝酸盐
+  - nitrate_nitrite
+  - nitrite_nitrate
+  description: 硝酸盐和亚硝酸盐是天然存在的阴离子，广泛存在于食物和饮用水中，某些暴露条件下可能导致高铁血红蛋白血症等健康问题。
+  applicable_products:
+  - 蔬菜
+  - 腌制肉
+  - 饮用水
+  - 加工食品
+  - 肉类
+  typical_symptoms:
+  - 高铁血红蛋白血症
+  - 发绀
+  - 缺氧
+  - 婴儿蓝婴综合征
+  vulnerable_groups:
+  - 婴儿
+  - 孕妇
+  - 老年人
+  - 葡萄糖-6-磷酸脱氢酶缺乏者
+  evidence_strength: medium
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  evidence_types:
+  - literature
+  source_count: 2
+  evidence_count: 469
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/12611672/
+  - https://pubmed.ncbi.nlm.nih.gov/41242873/
+  - https://pubmed.ncbi.nlm.nih.gov/30041450/
+  - https://pubmed.ncbi.nlm.nih.gov/35397145/
+  - https://pubmed.ncbi.nlm.nih.gov/30956100/
+  - https://pubmed.ncbi.nlm.nih.gov/766341/
+  - https://pubmed.ncbi.nlm.nih.gov/19362177/
+  - https://pubmed.ncbi.nlm.nih.gov/35217009/
+  - https://pubmed.ncbi.nlm.nih.gov/7010353/
+  - https://pubmed.ncbi.nlm.nih.gov/8628918/
+  notes: 饮用水中硝酸盐监管限值主要针对婴儿高铁血红蛋白血症，蔬菜是硝酸盐主要膳食来源，加工肉类常添加亚硝酸盐作为防腐剂和发色剂。
+- id: residue_pesticide_residue
+  name: pesticide_residue
+  category: residue
+  aliases:
+  - pesticide residues
+  - pesticide contamination
+  - organophosphate residues
+  - 农药残留
+  - agricultural chemical residues
+  - pesticide_residue
+  description: 农药残留指在施用后可能残留在食品中或表面的微量农药，有机磷酸酯类主要通过抑制胆碱酯酶影响中枢神经系统。
+  applicable_products:
+  - 水果
+  - 蔬菜
+  - 谷物
+  - 豆类
+  - 香料
+  typical_symptoms:
+  - 头痛
+  - 头晕
+  - 恶心
+  - 呕吐
+  - 肌肉无力
+  - 癫痫
+  - 呼吸困难
+  - 胆碱能危象
+  vulnerable_groups:
+  - 农业工人
+  - 儿童
+  - 孕妇
+  - 老年人
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  evidence_types:
+  - literature
+  source_count: 2
+  evidence_count: 468
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/31560873/
+  - https://pubmed.ncbi.nlm.nih.gov/39742971/
+  - https://pubmed.ncbi.nlm.nih.gov/30647232/
+  - https://pubmed.ncbi.nlm.nih.gov/35475715/
+  - https://pubmed.ncbi.nlm.nih.gov/26916265/
+  - https://pubmed.ncbi.nlm.nih.gov/34329083/
+  - https://pubmed.ncbi.nlm.nih.gov/39644461/
+  - https://pubmed.ncbi.nlm.nih.gov/10597612/
+  - https://pubmed.ncbi.nlm.nih.gov/24515811/
+  - https://pubmed.ncbi.nlm.nih.gov/32466907/
+  notes: 基于PubMed和Europe PMC的468篇文献，有机磷酸酯和抗胆碱能农药暴露，法规因国家和具体农药化合物而异。
+- id: toxin_ochratoxin_a
+  name: ochratoxin_a
+  category: toxin
+  aliases:
+  - OTA
+  - ochratoxin_a
+  description: A stable mycotoxin produced by Aspergillus and Penicillium fungi, found
+    in dried fruit, coffee, spices, cereals, and wine.
+  applicable_products:
+  - 水果
+  - 咖啡
+  - 香辛料
+  - 谷物
+  - 葡萄酒
+  - 葡萄制品
+  - 果汁
+  - 果浆制品
+  typical_symptoms: []
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  evidence_types:
+  - literature
+  source_count: 2
+  evidence_count: 447
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/8411629/
+  - https://pubmed.ncbi.nlm.nih.gov/37607248/
+  - https://pubmed.ncbi.nlm.nih.gov/32392817/
+  - https://pubmed.ncbi.nlm.nih.gov/24779935/
+  - https://pubmed.ncbi.nlm.nih.gov/25571918/
+  - https://pubmed.ncbi.nlm.nih.gov/39033481/
+  - https://pubmed.ncbi.nlm.nih.gov/37517225/
+  - https://pubmed.ncbi.nlm.nih.gov/20141935/
+  - https://pubmed.ncbi.nlm.nih.gov/39008630/
+  - https://pubmed.ncbi.nlm.nih.gov/16716424/
+  notes: Probable human carcinogen based on 447 research items.
+- id: residue_veterinary_drug_residue
+  name: veterinary_drug_residue
+  category: residue
+  aliases:
+  - antibiotic_residue
+  - veterinary_antibiotic_residue
+  - antibiotic_residue_in_food
+  - veterinary_drug_residue
+  description: Residual veterinary antibiotics in food may cause direct illness through
+    low-dose exposure or indirect harm via antibiotic resistance.
+  applicable_products:
+  - 乳制品
+  - 肉类
+  - 动物源性食品
+  typical_symptoms: []
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  evidence_types:
+  - literature
+  source_count: 2
+  evidence_count: 383
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/31198037/
+  - https://pubmed.ncbi.nlm.nih.gov/25216955/
+  - https://pubmed.ncbi.nlm.nih.gov/37851252/
+  - https://pubmed.ncbi.nlm.nih.gov/34844891/
+  - https://pubmed.ncbi.nlm.nih.gov/12108026/
+  - https://pubmed.ncbi.nlm.nih.gov/38633178/
+  - https://pubmed.ncbi.nlm.nih.gov/9709262/
+  - https://pubmed.ncbi.nlm.nih.gov/10335379/
+  - https://pubmed.ncbi.nlm.nih.gov/30076635/
+  - https://pubmed.ncbi.nlm.nih.gov/29557672/
+  notes: Based on 383 PubMed and Europe PMC articles.
+- id: toxin_zearalenone
+  name: Zearalenone
+  category: toxin
+  aliases:
+  - ZEN
+  - zearalenone
+  - F-2 toxin
+  - 玉米赤霉烯酮
+  - Zearalenol
+  description: A heat-stable mycotoxin produced by Fusarium fungi, commonly contaminating
+    cereals and grain products.
+  applicable_products:
+  - 谷物
+  - 小麦
+  - 大麦
+  - 高粱
+  - 饲料
+  - 面粉
+  typical_symptoms:
+  - 雌激素样效应
+  - 生殖障碍
+  - 致癌性
+  - 肾毒性
+  - 免疫毒性
+  - 遗传毒性
+  - 细胞毒性
+  - 致畸性
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubMed
+  - Europe PMC
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - literature
+  - annotation
+  - toxicology
+  source_count: 4
+  evidence_count: 342
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/39102376/
+  - https://pubmed.ncbi.nlm.nih.gov/33331688/
+  - https://pubmed.ncbi.nlm.nih.gov/34952071/
+  - https://pubmed.ncbi.nlm.nih.gov/37011037/
+  - https://pubmed.ncbi.nlm.nih.gov/37322296/
+  - https://pubmed.ncbi.nlm.nih.gov/2931335/
+  - https://pubmed.ncbi.nlm.nih.gov/40679260/
+  - https://pubmed.ncbi.nlm.nih.gov/29701023/
+  - https://pubmed.ncbi.nlm.nih.gov/16214283/
+  - https://pubmed.ncbi.nlm.nih.gov/37561456/
+  notes: WHO/JECFA evaluated; metabolites include α-zearalenol and β-zearalenol.
+- id: toxin_aflatoxin_m1
+  name: Aflatoxin M1
+  category: toxin
+  aliases:
+  - 黄曲霉毒素M1
+  - AFM1
+  - Aflatoxin M1
+  description: 黄曲霉毒素B1的代谢产物，具有肝毒性和致癌性，主要污染乳及乳制品。
+  applicable_products:
+  - 生鲜乳
+  - 巴氏杀菌乳
+  - 奶酪
+  - 乳制品
+  typical_symptoms:
+  - 肝癌
+  - 肝毒性
+  - 致癌
+  - 真菌毒素中毒
+  - 癌症
+  - 致癌化合物
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - toxicology
+  source_count: 2
+  evidence_count: 270
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/7896226/
+  - https://pubmed.ncbi.nlm.nih.gov/9064242/
+  - https://pubmed.ncbi.nlm.nih.gov/10793855/
+  - https://pubmed.ncbi.nlm.nih.gov/11665741/
+  - https://pubmed.ncbi.nlm.nih.gov/12939091/
+  - https://pubmed.ncbi.nlm.nih.gov/14572228/
+  - https://pubmed.ncbi.nlm.nih.gov/15204538/
+  - https://pubmed.ncbi.nlm.nih.gov/16192073/
+  - https://pubmed.ncbi.nlm.nih.gov/16449063/
+  - https://pubmed.ncbi.nlm.nih.gov/17582102/
+  notes: 数据来源：PubTator Central、WHO/JECFA；证据条目270条
+- id: microbial_hepatitis_a_virus
+  name: Hepatitis A virus
+  category: microbial
+  aliases:
+  - HAV
+  - Hepatitis A
+  - 甲肝病毒
+  - Enteric virus
+  - Foodborne virus
+  - Hepatitis A virus
+  description: 通过粪口途径传播的食源性致病微生物，可导致急性肝炎。
+  applicable_products:
+  - 草莓
+  - 水果
+  - 葱
+  - 蔬菜
+  - 沙拉
+  - 三明治
+  - 绿葱/大葱
+  - 其他食品
+  typical_symptoms:
+  - 肝炎
+  - 黄疸
+  - 发热
+  - 恶心
+  - 腹痛
+  - 食欲不振
+  - 病毒感染
+  - 诺如病毒感染
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - annotation
+  - outbreak
+  source_count: 2
+  evidence_count: 225
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/20223543/
+  - https://pubmed.ncbi.nlm.nih.gov/23412716/
+  - https://pubmed.ncbi.nlm.nih.gov/25462922/
+  - https://pubmed.ncbi.nlm.nih.gov/31331104/
+  - https://pubmed.ncbi.nlm.nih.gov/34698989/
+  - https://pubmed.ncbi.nlm.nih.gov/35026446/
+  - https://pubmed.ncbi.nlm.nih.gov/38554558/
+  - https://pubmed.ncbi.nlm.nih.gov/21126194/
+  - https://pubmed.ncbi.nlm.nih.gov/21569936/
+  - https://pubmed.ncbi.nlm.nih.gov/25771512/
+  notes: 数据来源：PubTator Central和CDC；证据条目225条
+- id: toxin_ochratoxin_a_32
+  name: Ochratoxin A
+  category: toxin
+  aliases:
+  - OA
+  - Ochratoxin A
+  - 赭曲霉毒素A
+  - Ochratoxin
+  - Ochratoxigenic
+  description: 曲霉和青霉产生的肾毒性真菌毒素，污染谷物、咖啡豆等农产品。
+  applicable_products:
+  - 谷物
+  - 咖啡豆
+  - 葡萄干
+  - 葡萄酒
+  - 豆类
+  typical_symptoms:
+  - 肾毒性
+  - 致畸
+  - 免疫毒性
+  - 致癌
+  - 肾病
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - toxicology
+  source_count: 2
+  evidence_count: 210
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/16626769/
+  - https://pubmed.ncbi.nlm.nih.gov/29935247/
+  - https://pubmed.ncbi.nlm.nih.gov/791799/
+  - https://pubmed.ncbi.nlm.nih.gov/8411629/
+  - https://pubmed.ncbi.nlm.nih.gov/12113173/
+  - https://pubmed.ncbi.nlm.nih.gov/15712522/
+  - https://pubmed.ncbi.nlm.nih.gov/16332616/
+  - https://pubmed.ncbi.nlm.nih.gov/16712998/
+  - https://pubmed.ncbi.nlm.nih.gov/16713646/
+  - https://pubmed.ncbi.nlm.nih.gov/16716424/
+  notes: 数据来源：PubTator Central、WHO/JECFA；证据条目210条
+- id: chemical_lead
+  name: 铅 (Lead)
+  category: chemical
+  aliases:
+  - Pb
+  - 铅污染物
+  - 重金属铅
+  - Lead
+  description: 铅是毒性重金属，通过食品污染进入人体，损害神经、血液和肝脏等多系统。
+  applicable_products:
+  - 糖果
+  - 婴儿食品
+  - 水产品
+  - 加工食品
+  typical_symptoms:
+  - 神经毒性
+  - 肌肉震颤
+  - 抽搐
+  - 血液学异常
+  - 肝脏损伤
+  - 脑病
+  - 脑损伤
+  - 癌症
+  vulnerable_groups:
+  - 婴儿
+  - 孕妇
+  - 儿童
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - FDA
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - recall
+  - toxicology
+  source_count: 3
+  evidence_count: 204
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/6736396/
+  - https://pubmed.ncbi.nlm.nih.gov/318502/
+  - https://pubmed.ncbi.nlm.nih.gov/39193201/
+  - https://pubmed.ncbi.nlm.nih.gov/39751727/
+  - https://pubmed.ncbi.nlm.nih.gov/40284794/
+  - https://pubmed.ncbi.nlm.nih.gov/40807403/
+  - https://pubmed.ncbi.nlm.nih.gov/40981357/
+  - https://pubmed.ncbi.nlm.nih.gov/41295680/
+  - https://pubmed.ncbi.nlm.nih.gov/40097452/
+  - https://pubmed.ncbi.nlm.nih.gov/41555847/
+  notes: 数据来源包括PubTator Central、FDA召回记录及WHO/JECFA评估，共204条证据。
+- id: chemical_nitrite_nitrate_34
+  name: Nitrite/Nitrate
+  category: chemical
+  aliases:
+  - Nitrite
+  - Nitrate
+  - 亚硝酸盐
+  - 硝酸盐
+  - NO2-
+  - NO3-
+  description: 亚硝酸盐和硝酸盐是肉类加工防腐剂，在体内可转化为亚硝胺，具有致癌风险。
+  applicable_products:
+  - 肉类
+  - 腌制食品
+  - 香肠
+  - 火腿
+  typical_symptoms:
+  - 高铁血红蛋白血症
+  - 癌症
+  - 致癌
+  - 毒性
+  - 中毒
+  - 青紫
+  - 呼吸困难
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - toxicology
+  source_count: 2
+  evidence_count: 194
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/17995651/
+  - https://pubmed.ncbi.nlm.nih.gov/23664261/
+  - https://pubmed.ncbi.nlm.nih.gov/28885050/
+  - https://pubmed.ncbi.nlm.nih.gov/26735043/
+  - https://pubmed.ncbi.nlm.nih.gov/6751698/
+  - https://pubmed.ncbi.nlm.nih.gov/32623962/
+  - https://pubmed.ncbi.nlm.nih.gov/341810/
+  - https://pubmed.ncbi.nlm.nih.gov/40467211/
+  - https://pubmed.ncbi.nlm.nih.gov/766341/
+  - https://pubmed.ncbi.nlm.nih.gov/1621630/
+  notes: WHO/JECFA评估的食品添加剂，PubTator Central标注194条证据记录。
+- id: chemical_cadmium
+  name: Cadmium (镉)
+  category: chemical
+  aliases:
+  - cadmium
+  - Cd
+  - 镉
+  - cadmium poisoning
+  description: 镉是重金属污染物，通过食物链富集进入人体，具有肾毒性和致癌性。
+  applicable_products:
+  - 大米
+  - 蔬菜
+  - 水产品
+  - 贝类
+  typical_symptoms:
+  - 肾毒性
+  - 骨质疏松
+  - 肺癌
+  - 致畸
+  - 内分泌紊乱
+  - 慢性肾病
+  - 神经毒性
+  - 致癌
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - FDA
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - recall
+  - toxicology
+  source_count: 3
+  evidence_count: 98
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/1107364/
+  - https://pubmed.ncbi.nlm.nih.gov/3327851/
+  - https://pubmed.ncbi.nlm.nih.gov/10663382/
+  - https://pubmed.ncbi.nlm.nih.gov/17000570/
+  - https://pubmed.ncbi.nlm.nih.gov/26588172/
+  - https://pubmed.ncbi.nlm.nih.gov/27753294/
+  - https://pubmed.ncbi.nlm.nih.gov/28094058/
+  - https://pubmed.ncbi.nlm.nih.gov/35275370/
+  - https://pubmed.ncbi.nlm.nih.gov/488049/
+  - https://pubmed.ncbi.nlm.nih.gov/1778822/
+  notes: 数据来源：PubTator Central、FDA、WHO/JECFA，共98条证据。
+- id: chemical_arsenic
+  name: Arsenic
+  category: chemical
+  aliases:
+  - arsenical
+  - total arsenic
+  - inorganic arsenic
+  - arsenate
+  - arsenite
+  - Arsenic
+  description: 砷是自然环境中的类金属元素，通过土壤和水污染进入食品链，长期摄入可能导致皮肤损伤、癌症等健康问题。
+  applicable_products:
+  - 果汁
+  - 婴儿米糊
+  - 瓶装矿泉水
+  - 果汁浓缩物
+  - 婴儿米糊/米制婴儿食品
+  - 果汁饮料
+  typical_symptoms:
+  - 砷皮肤病变
+  - 皮肤损伤
+  - 癌症
+  - 肺癌
+  - 膀胱癌
+  - 肝癌
+  - 胰腺癌
+  - 肾癌
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - FDA
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - recall
+  - toxicology
+  source_count: 3
+  evidence_count: 91
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/3142162/
+  - https://pubmed.ncbi.nlm.nih.gov/7440438/
+  - https://pubmed.ncbi.nlm.nih.gov/12635823/
+  - https://pubmed.ncbi.nlm.nih.gov/17952782/
+  - https://pubmed.ncbi.nlm.nih.gov/21431798/
+  - https://pubmed.ncbi.nlm.nih.gov/23070905/
+  - https://pubmed.ncbi.nlm.nih.gov/23906855/
+  - https://pubmed.ncbi.nlm.nih.gov/30342114/
+  - https://pubmed.ncbi.nlm.nih.gov/33213038/
+  - https://pubmed.ncbi.nlm.nih.gov/33492570/
+  notes: 数据来源包括PubTator Central、FDA和WHO/JECFA；主要涉及产品为苹果汁、婴儿食品和矿泉水。
+- id: residue_hazard
+  name: 兽药残留
+  category: residue
+  aliases:
+  - 兽药残留物
+  - 药物残留
+  - 抗生素残留
+  - 激素残留
+  - 兽药残留
+  description: 食品中残留的兽药成分可能导致人体耐药性增加、过敏反应及其他健康危害。
+  applicable_products:
+  - 肉类
+  - 乳制品
+  - 水产品
+  - 蜂产品
+  typical_symptoms:
+  - 细菌感染
+  - 过敏反应
+  - 致癌性
+  - 再生障碍性贫血
+  - 骨髓发育不良
+  - 白血病
+  - 毒性反应
+  - 沙门氏菌病
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - toxicology
+  source_count: 2
+  evidence_count: 83
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/3807951/
+  - https://pubmed.ncbi.nlm.nih.gov/2792465/
+  - https://pubmed.ncbi.nlm.nih.gov/12779220/
+  - https://pubmed.ncbi.nlm.nih.gov/16631764/
+  - https://pubmed.ncbi.nlm.nih.gov/18473209/
+  - https://pubmed.ncbi.nlm.nih.gov/19330633/
+  - https://pubmed.ncbi.nlm.nih.gov/22239562/
+  - https://pubmed.ncbi.nlm.nih.gov/24032469/
+  - https://pubmed.ncbi.nlm.nih.gov/25682427/
+  - https://pubmed.ncbi.nlm.nih.gov/26025616/
+  notes: 具体监管限量因国家和地区而异，需参考各国现行食品安全标准。
+- id: chemical_mercury
+  name: Mercury (汞)
+  category: chemical
+  aliases:
+  - Mercury
+  - Hg
+  - Methylmercury
+  - 有机汞
+  - 汞元素
+  description: 重金属污染物，通过食物链在鱼类和海鲜中蓄积，主要损害神经系统、肾脏和血液系统。
+  applicable_products:
+  - 水产品
+  - 海鲜
+  - 金枪鱼
+  - 旗鱼
+  - 鲨鱼
+  typical_symptoms:
+  - 神经毒性
+  - 肾功能损害
+  - 贫血
+  - 认知能力下降
+  - 智力损伤
+  - 血液毒性
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - toxicology
+  source_count: 2
+  evidence_count: 57
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/12415023/
+  - https://pubmed.ncbi.nlm.nih.gov/15230985/
+  - https://pubmed.ncbi.nlm.nih.gov/15370826/
+  - https://pubmed.ncbi.nlm.nih.gov/20825977/
+  - https://pubmed.ncbi.nlm.nih.gov/22534496/
+  - https://pubmed.ncbi.nlm.nih.gov/31063889/
+  - https://pubmed.ncbi.nlm.nih.gov/33014081/
+  - https://pubmed.ncbi.nlm.nih.gov/37149958/
+  - https://pubmed.ncbi.nlm.nih.gov/30392313/
+  - https://pubmed.ncbi.nlm.nih.gov/35668141/
+  notes: 数据来源：PubTator Central、WHO/JECFA。
+- id: chemical_pcbs
+  name: PCBs (多氯联苯)
+  category: chemical
+  aliases:
+  - 多氯联苯
+  - Polychlorinated Biphenyls
+  - PCBs
+  description: 多氯联苯是可在食物链中累积的工业化学品，具有神经毒性、发育毒性和致癌性。
+  applicable_products:
+  - 水产品
+  - 肉类
+  - 乳制品
+  - 蛋类
+  - 动物脂肪
+  typical_symptoms:
+  - 神经毒性
+  - 发育毒性
+  - 致癌性
+  - 智力下降
+  - 胎儿毒性
+  - 先天畸形
+  - 唇腭裂
+  - 中毒
+  vulnerable_groups: []
+  evidence_strength: high
+  authority_sources:
+  - PubTator Central
+  - WHO/JECFA
+  evidence_types:
+  - annotation
+  - toxicology
+  source_count: 2
+  evidence_count: 26
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/10499576/
+  - https://pubmed.ncbi.nlm.nih.gov/17000571/
+  - https://pubmed.ncbi.nlm.nih.gov/808853/
+  - https://pubmed.ncbi.nlm.nih.gov/1903219/
+  - https://pubmed.ncbi.nlm.nih.gov/8187710/
+  - https://pubmed.ncbi.nlm.nih.gov/11896663/
+  - https://pubmed.ncbi.nlm.nih.gov/17396213/
+  - https://pubmed.ncbi.nlm.nih.gov/25308601/
+  - https://pubmed.ncbi.nlm.nih.gov/11333188/
+  - https://pubmed.ncbi.nlm.nih.gov/15450716/
+  notes: 数据来源：PubTator Central, WHO/JECFA，证据数量：26
+- id: microbial_giardia
+  name: Giardia
+  category: microbial
+  aliases:
+  - Giardia lamblia
+  - Giardia intestinalis
+  - Giardia
+  - Giardia duodenalis
+  description: Giardia是一种通过污染食物或水传播的寄生虫原虫，可导致贾第虫病。
+  applicable_products:
+  - 贝类
+  - 绿叶沙拉
+  - 肉类
+  - 蔬菜
+  - 冰块
+  - 软体贝类
+  typical_symptoms:
+  - 贾第虫病
+  - 腹泻
+  - 腹痛
+  - 腹胀
+  - 胀气
+  - 痢疾
+  - 十二指肠炎
+  - 空肠炎
+  vulnerable_groups: []
+  evidence_strength: medium
+  authority_sources:
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - annotation
+  - outbreak
+  source_count: 2
+  evidence_count: 25
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/12108026/
+  - nors_362
+  - nors_3716
+  - nors_4893
+  - nors_7940
+  - nors_8495
+  - nors_8529
+  - nors_8762
+  - nors_8795
+  - nors_8889
+  notes: 多起疫情记录于华盛顿、纽约及加州
+- id: microbial_clostridium
+  name: Clostridium
+  category: microbial
+  aliases:
+  - Clostridium spp.
+  - 梭菌属
+  - Clostridium
+  - Clostridia
+  description: 革兰氏阳性芽孢杆菌属，可产生强烈毒素导致肉毒杆菌中毒等严重疾病。
+  applicable_products:
+  - 肉类
+  - 咖喱
+  - 米饭制品
+  - 沙拉
+  - 牛肉
+  - 咖喱类
+  typical_symptoms:
+  - 肉毒杆菌中毒
+  - 毒素中毒
+  - 神经麻痹
+  - 瘫痪
+  - 感染
+  - 死亡
+  - 破伤风
+  - 中毒
+  vulnerable_groups: []
+  evidence_strength: medium
+  authority_sources:
+  - PubTator Central
+  - CDC
+  evidence_types:
+  - annotation
+  - outbreak
+  source_count: 2
+  evidence_count: 9
+  sample_source_ids:
+  - https://pubmed.ncbi.nlm.nih.gov/15364467/
+  - https://pubmed.ncbi.nlm.nih.gov/32959610/
+  - https://pubmed.ncbi.nlm.nih.gov/39200505/
+  - https://pubmed.ncbi.nlm.nih.gov/41368664/
+  - https://pubmed.ncbi.nlm.nih.gov/41551357/
+  - nors_16800
+  - nors_20270
+  - nors_23394
+  - nors_24121
+  notes: 数据来源：PubTator Central及CDC爆发记录

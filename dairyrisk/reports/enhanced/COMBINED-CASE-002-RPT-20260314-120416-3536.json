@@ -1,0 +1,342 @@
+{
+  "report_id": "RPT-20260314-120416-3536",
+  "created_at": "2026-03-14T12:04:16.653794",
+  "risk_hypothesis": {
+    "risk_factors": [
+      "Staphylococcus aureus",
+      "pesticide_residue",
+      "Salmonella",
+      "Escherichia coli / STEC",
+      "Clostridium perfringens",
+      "Hepatitis A virus"
+    ],
+    "suspected_stage": "生产加工",
+    "confidence": 0.9,
+    "target_candidates": [],
+    "suggested_checks": [],
+    "symptom_evidence": {
+      "query": "呕吐、腹痛、头晕、恶心",
+      "symptoms_detected": [
+        {
+          "term": "腹痛",
+          "symptom_id": "symptom_腹痛",
+          "risk_factors": [
+            "microbial_salmonella",
+            "microbial_escherichia_coli_stec",
+            "microbial_clostridium_perfringens",
+            "microbial_staphylococcus_aureus",
+            "microbial_hepatitis_a_virus",
+            "microbial_giardia"
+          ]
+        },
+        {
+          "term": "呕吐",
+          "symptom_id": "symptom_呕吐",
+          "risk_factors": [
+            "microbial_salmonella",
+            "microbial_norovirus",
+            "microbial_escherichia_coli_stec",
+            "microbial_clostridium_perfringens",
+            "microbial_staphylococcus_aureus",
+            "microbial_vibrio",
+            "microbial_bacillus_cereus",
+            "toxin_deoxynivalenol",
+            "residue_pesticide_residue"
+          ]
+        },
+        {
+          "term": "恶心",
+          "symptom_id": "symptom_恶心",
+          "risk_factors": [
+            "microbial_norovirus",
+            "microbial_staphylococcus_aureus",
+            "residue_pesticide_residue",
+            "microbial_hepatitis_a_virus"
+          ]
+        },
+        {
+          "term": "头晕",
+          "symptom_id": "symptom_头晕",
+          "risk_factors": [
+            "residue_pesticide_residue"
+          ]
+        }
+      ],
+      "risk_factors": [
+        {
+          "risk_factor_id": "microbial_staphylococcus_aureus",
+          "score": 1.5,
+          "name": "Staphylococcus aureus",
+          "category": "microbial",
+          "description": "Gram-positive bacterium capable of producing heat-stable enterotoxins during growth in contaminated food, leading to rapid-onset food poisoning characterized by intense gastrointestinal symptoms.",
+          "applicable_products": [
+            "乳制品",
+            "奶酪",
+            "蛋白粉",
+            "肉类",
+            "加工食品"
+          ],
+          "typical_symptoms": [
+            "呕吐",
+            "恶心",
+            "腹痛",
+            "腹泻",
+            "葡萄球菌性食物中毒",
+            "食物中毒"
+          ],
+          "vulnerable_groups": [],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹痛 weight=0.5",
+            "symptom:呕吐 weight=0.5",
+            "symptom:恶心 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "residue_pesticide_residue",
+          "score": 1.5,
+          "name": "pesticide_residue",
+          "category": "residue",
+          "description": "农药残留指在施用后可能残留在食品中或表面的微量农药，有机磷酸酯类主要通过抑制胆碱酯酶影响中枢神经系统。",
+          "applicable_products": [
+            "水果",
+            "蔬菜",
+            "谷物",
+            "豆类",
+            "香料"
+          ],
+          "typical_symptoms": [
+            "头痛",
+            "头晕",
+            "恶心",
+            "呕吐",
+            "肌肉无力",
+            "癫痫",
+            "呼吸困难",
+            "胆碱能危象"
+          ],
+          "vulnerable_groups": [
+            "农业工人",
+            "儿童",
+            "孕妇",
+            "老年人"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:呕吐 weight=0.5",
+            "symptom:恶心 weight=0.5",
+            "symptom:头晕 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_salmonella",
+          "score": 1.0,
+          "name": "Salmonella",
+          "category": "microbial",
+          "description": "沙门氏菌是一种革兰氏阴性杆菌，可引起沙门氏菌病，常见表现为自限性胃肠炎，也可出现败血症等严重症状。",
+          "applicable_products": [
+            "坚果制品",
+            "种子类制品",
+            "水果",
+            "生鲜乳",
+            "奶酪",
+            "肉类",
+            "蔬菜"
+          ],
+          "typical_symptoms": [
+            "腹泻",
+            "发热",
+            "腹痛",
+            "呕吐",
+            "肠胃炎",
+            "败血症",
+            "脱水",
+            "血便"
+          ],
+          "vulnerable_groups": [
+            "老年人",
+            "婴儿",
+            "免疫功能低下者",
+            "孕妇"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹痛 weight=0.5",
+            "symptom:呕吐 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_escherichia_coli_stec",
+          "score": 1.0,
+          "name": "Escherichia coli / STEC",
+          "category": "microbial",
+          "description": "产志贺毒素大肠杆菌可引起出血性结肠炎和溶血性尿毒综合征，牛是主要宿主。",
+          "applicable_products": [
+            "生鲜农产品",
+            "乳制品",
+            "果汁",
+            "肉类",
+            "冷冻食品",
+            "生鲜农产品（如菠菜、芽菜）",
+            "奶酪",
+            "果汁（尤其是未经巴氏消毒的苹果酒）"
+          ],
+          "typical_symptoms": [
+            "腹泻",
+            "出血性结肠炎",
+            "腹痛",
+            "呕吐",
+            "发热",
+            "溶血性尿毒综合征",
+            "志贺毒素感染"
+          ],
+          "vulnerable_groups": [
+            "儿童",
+            "老年人",
+            "免疫功能低下者",
+            "孕妇"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹痛 weight=0.5",
+            "symptom:呕吐 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_clostridium_perfringens",
+          "score": 1.0,
+          "name": "Clostridium perfringens",
+          "category": "microbial",
+          "description": "重要食源性病原体，可导致严重食物中毒爆发，是家禽产业主要病原体。",
+          "applicable_products": [
+            "肉类",
+            "牛肉",
+            "猪肉",
+            "沙拉",
+            "烧烤食品",
+            "豆类"
+          ],
+          "typical_symptoms": [
+            "食物中毒",
+            "肠胃炎",
+            "腹痛",
+            "腹泻",
+            "呕吐",
+            "死亡"
+          ],
+          "vulnerable_groups": [
+            "一般人群",
+            "免疫功能低下者",
+            "老年人",
+            "儿童"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹痛 weight=0.5",
+            "symptom:呕吐 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_hepatitis_a_virus",
+          "score": 1.0,
+          "name": "Hepatitis A virus",
+          "category": "microbial",
+          "description": "通过粪口途径传播的食源性致病微生物，可导致急性肝炎。",
+          "applicable_products": [
+            "草莓",
+            "水果",
+            "葱",
+            "蔬菜",
+            "沙拉",
+            "三明治",
+            "绿葱/大葱",
+            "其他食品"
+          ],
+          "typical_symptoms": [
+            "肝炎",
+            "黄疸",
+            "发热",
+            "恶心",
+            "腹痛",
+            "食欲不振",
+            "病毒感染",
+            "诺如病毒感染"
+          ],
+          "vulnerable_groups": [],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹痛 weight=0.5",
+            "symptom:恶心 weight=0.5"
+          ]
+        }
+      ],
+      "stage_candidates": [
+        {
+          "stage_id": "production_and_processing",
+          "stage": "生产加工",
+          "score": 2.1,
+          "description": "配料、混合、杀菌、发酵、干燥、清洗消毒等厂内工艺。",
+          "evidence_types": [],
+          "reasons": [
+            "default:microbial_staphylococcus_aureus",
+            "default:residue_pesticide_residue",
+            "default:microbial_salmonella",
+            "default:microbial_escherichia_coli_stec",
+            "default:microbial_clostridium_perfringens",
+            "default:microbial_hepatitis_a_virus"
+          ]
+        }
+      ],
+      "evidence": {
+        "standards": [],
+        "management": [],
+        "methods": []
+      },
+      "linked_enterprises": [],
+      "gb_references": [],
+      "risk_level": "medium",
+      "confidence": 0.9,
+      "suggested_actions": [
+        "重点关注微生物指标：菌落总数、大肠菌群、沙门氏菌、金黄色葡萄球菌",
+        "检查企业卫生管理制度执行情况",
+        "重点检查HACCP控制点"
+      ]
+    },
+    "related_gb_rules": [],
+    "created_at": "2026-03-14T12:04:16.653704",
+    "symptom_description": "呕吐、腹痛、头晕、恶心",
+    "affected_population": {}
+  },
+  "enterprise_assessments": [],
+  "overall_risk_level": "low",
+  "overall_risk_score": 20.0,
+  "evidence_chain": {
+    "symptom_input": "呕吐、腹痛、头晕、恶心",
+    "risk_factors": [
+      "Staphylococcus aureus",
+      "pesticide_residue",
+      "Salmonella",
+      "Escherichia coli / STEC",
+      "Clostridium perfringens",
+      "Hepatitis A virus"
+    ],
+    "suspected_stage": "生产加工",
+    "affected_population": {},
+    "linked_enterprises": []
+  },
+  "gb_basis": [],
+  "action_suggestions": [
+    {
+      "priority": "medium",
+      "action_type": "环节溯源",
+      "target": "生产加工",
+      "reason": "症状模式指向 生产加工 环节异常"
+    },
+    {
+      "priority": "high",
+      "action_type": "风险预警",
+      "target": "同批次/同时段产品",
+      "reason": "高置信度 (90%) 风险假设"
+    }
+  ]
+}
