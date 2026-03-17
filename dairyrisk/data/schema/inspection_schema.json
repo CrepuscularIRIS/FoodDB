@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inspection Records Schema",
+  "description": "原料/成品检验记录表",
+  "type": "object",
+  "required": [
+    "inspection_id",
+    "enterprise_id",
+    "inspection_type",
+    "inspection_date",
+    "test_result"
+  ],
+  "properties": {
+    "inspection_id": {
+      "type": "string",
+      "description": "检验记录唯一标识",
+      "pattern": "^INS-[0-9]{6}$"
+    },
+    "batch_id": {
+      "type": ["string", "null"],
+      "description": "关联批次ID",
+      "pattern": "^BATCH-[0-9]{6}$"
+    },
+    "enterprise_id": {
+      "type": "string",
+      "description": "被检企业ID",
+      "pattern": "^ENT-[0-9]{4}$"
+    },
+    "inspection_type": {
+      "type": "string",
+      "enum": ["raw", "product", "routine", "risk", "supervision"],
+      "description": "检验类型: 原料/成品/常规/风险/监督抽检"
+    },
+    "inspection_date": {
+      "type": "string",
+      "description": "检验日期(YYYY-MM-DD)",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "protein_g_100g": {
+      "type": ["number", "null"],
+      "description": "蛋白质(g/100g)",
+      "minimum": 0
+    },
+    "fat_g_100g": {
+      "type": ["number", "null"],
+      "description": "脂肪(g/100g)",
+      "minimum": 0
+    },
+    "aerobic_count_cfu_ml": {
+      "type": ["number", "null"],
+      "description": "菌落总数(CFU/mL)",
+      "minimum": 0
+    },
+    "coliforms_mpn_100ml": {
+      "type": ["number", "null"],
+      "description": "大肠菌群(MPN/100mL)",
+      "minimum": 0
+    },
+    "aflatoxin_m1_ug_kg": {
+      "type": ["number", "null"],
+      "description": "黄曲霉毒素M1(μg/kg)",
+      "minimum": 0
+    },
+    "lead_mg_kg": {
+      "type": ["number", "null"],
+      "description": "铅(mg/kg)",
+      "minimum": 0
+    },
+    "total_bacteria_count": {
+      "type": ["number", "null"],
+      "description": "细菌总数 - 可选",
+      "minimum": 0
+    },
+    "acid_degree": {
+      "type": ["number", "null"],
+      "description": "酸度(°T) - 可选",
+      "minimum": 0
+    },
+    "melamine_mg_kg": {
+      "type": ["number", "null"],
+      "description": "三聚氰胺(mg/kg) - 可选",
+      "minimum": 0
+    },
+    "preservative_presence": {
+      "type": ["boolean", "null"],
+      "description": "防腐剂检出 - 可选"
+    },
+    "test_result": {
+      "type": "string",
+      "enum": ["qualified", "unqualified"],
+      "description": "检验结果"
+    },
+    "unqualified_items": {
+      "type": ["string", "null"],
+      "description": "不合格项目列表，逗号分隔"
+    },
+    "inspection_agency": {
+      "type": ["string", "null"],
+      "description": "检验机构 - 可选"
+    },
+    "standard_ref": {
+      "type": ["string", "null"],
+      "description": "参考标准 - 可选"
+    },
+    "risk_level": {
+      "type": ["string", "null"],
+      "enum": ["high", "medium", "low"],
+      "description": "风险等级评估 - 可选"
+    }
+  }
+}

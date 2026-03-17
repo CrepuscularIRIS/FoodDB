@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GB Standards Rules Schema",
+  "description": "GB标准规则库表",
+  "type": "object",
+  "required": [
+    "rule_id",
+    "gb_no",
+    "product_type",
+    "check_item",
+    "threshold",
+    "operator",
+    "risk_type",
+    "severity",
+    "action_suggestion"
+  ],
+  "properties": {
+    "rule_id": {
+      "type": "string",
+      "description": "规则唯一标识",
+      "pattern": "^RULE-[0-9]{4}$"
+    },
+    "gb_no": {
+      "type": "string",
+      "description": "标准编号，如GB 19301-2010"
+    },
+    "gb_name": {
+      "type": ["string", "null"],
+      "description": "标准名称 - 可选"
+    },
+    "product_type": {
+      "type": "string",
+      "enum": ["pasteurized", "UHT", "yogurt", "powder", "raw_milk", "all"],
+      "description": "适用产品类型"
+    },
+    "check_item": {
+      "type": "string",
+      "description": "检测项目，如蛋白质、菌落总数"
+    },
+    "threshold": {
+      "type": "number",
+      "description": "阈值/限量值",
+      "minimum": 0
+    },
+    "operator": {
+      "type": "string",
+      "enum": ["<=", ">=", "<", ">", "="],
+      "description": "比较运算符"
+    },
+    "unit": {
+      "type": ["string", "null"],
+      "description": "单位 - 可选"
+    },
+    "risk_type": {
+      "type": "string",
+      "enum": ["微生物", "理化", "安全", "标签", "添加剂", "营养"],
+      "description": "风险类别"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "风险等级"
+    },
+    "action_suggestion": {
+      "type": "string",
+      "description": "建议处置措施"
+    },
+    "test_method": {
+      "type": ["string", "null"],
+      "description": "检测方法 - 可选"
+    },
+    "sampling_requirement": {
+      "type": ["string", "null"],
+      "description": "抽样要求 - 可选"
+    },
+    "note": {
+      "type": ["string", "null"],
+      "description": "备注说明 - 可选"
+    }
+  }
+}

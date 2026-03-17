@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Batch Records Schema",
+  "description": "生产批次记录表",
+  "type": "object",
+  "required": [
+    "batch_id",
+    "enterprise_id",
+    "product_name",
+    "product_type",
+    "batch_no",
+    "production_date",
+    "shelf_life"
+  ],
+  "properties": {
+    "batch_id": {
+      "type": "string",
+      "description": "批次唯一标识",
+      "pattern": "^BATCH-[0-9]{6}$"
+    },
+    "enterprise_id": {
+      "type": "string",
+      "description": "生产企业ID",
+      "pattern": "^ENT-[0-9]{4}$"
+    },
+    "product_name": {
+      "type": "string",
+      "description": "产品名称"
+    },
+    "product_type": {
+      "type": "string",
+      "enum": ["pasteurized", "UHT", "yogurt", "powder", "raw_milk"],
+      "description": "产品类型: 巴氏杀菌乳/灭菌乳/酸奶/奶粉/生乳"
+    },
+    "batch_no": {
+      "type": "string",
+      "description": "批次号"
+    },
+    "production_date": {
+      "type": "string",
+      "description": "生产日期(YYYY-MM-DD)",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "shelf_life": {
+      "type": "integer",
+      "description": "保质期(天)",
+      "minimum": 1
+    },
+    "raw_material_batch": {
+      "type": ["string", "null"],
+      "description": "原料批次号"
+    },
+    "raw_material_supplier_id": {
+      "type": ["string", "null"],
+      "description": "原料供应商ID",
+      "pattern": "^ENT-[0-9]{4}$"
+    },
+    "production_line": {
+      "type": ["string", "null"],
+      "description": "生产线编号"
+    },
+    "storage_temp_avg": {
+      "type": ["number", "null"],
+      "description": "平均储存温度(℃) - 模拟数据",
+      "minimum": -30,
+      "maximum": 50
+    },
+    "transport_temp_avg": {
+      "type": ["number", "null"],
+      "description": "平均运输温度(℃) - 模拟数据",
+      "minimum": -30,
+      "maximum": 50
+    },
+    "transport_duration_hours": {
+      "type": ["number", "null"],
+      "description": "运输时长(小时) - 模拟数据",
+      "minimum": 0
+    },
+    "storage_location": {
+      "type": ["string", "null"],
+      "description": "储存地点 - 模拟数据"
+    },
+    "target_market": {
+      "type": ["string", "null"],
+      "description": "目标销售市场 - 模拟数据"
+    },
+    "production_volume_tons": {
+      "type": ["number", "null"],
+      "description": "生产量(吨) - 模拟数据",
+      "minimum": 0
+    }
+  }
+}

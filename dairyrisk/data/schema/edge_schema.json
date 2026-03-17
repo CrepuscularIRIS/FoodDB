@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Supply Chain Edges Schema",
+  "description": "供应链关系边表",
+  "type": "object",
+  "required": [
+    "edge_id",
+    "edge_type",
+    "source_id",
+    "target_id",
+    "source_type",
+    "target_type",
+    "weight",
+    "evidence_type"
+  ],
+  "properties": {
+    "edge_id": {
+      "type": "string",
+      "description": "边唯一标识",
+      "pattern": "^EDGE-[0-9]{6}$"
+    },
+    "edge_type": {
+      "type": "string",
+      "enum": ["supply", "transport", "storage", "sale", "process", "raw_material"],
+      "description": "边类型: 供货/运输/仓储/销售/加工/原料"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "源节点ID（企业或批次）",
+      "pattern": "^(ENT|BATCH)-[0-9]+$"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "目标节点ID（企业或批次）",
+      "pattern": "^(ENT|BATCH)-[0-9]+$"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["牧场", "乳企", "物流", "仓储", "零售", "批次"],
+      "description": "源节点类型"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": ["牧场", "乳企", "物流", "仓储", "零售", "批次"],
+      "description": "目标节点类型"
+    },
+    "weight": {
+      "type": "number",
+      "description": "边权重(0-1)，表示关联强度",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "evidence_type": {
+      "type": "string",
+      "enum": ["public_record", "rule_inferred", "simulated"],
+      "description": "证据类型: 公开记录/规则推断/模拟生成"
+    },
+    "start_date": {
+      "type": ["string", "null"],
+      "description": "关系开始日期(YYYY-MM-DD) - 可选",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "end_date": {
+      "type": ["string", "null"],
+      "description": "关系结束日期(YYYY-MM-DD) - 可选",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "transport_distance_km": {
+      "type": ["number", "null"],
+      "description": "运输距离(km) - 可选",
+      "minimum": 0
+    },
+    "transport_duration_hours": {
+      "type": ["number", "null"],
+      "description": "运输时长(小时) - 可选",
+      "minimum": 0
+    },
+    "cold_chain_maintained": {
+      "type": ["boolean", "null"],
+      "description": "冷链是否持续 - 可选"
+    },
+    "transaction_volume": {
+      "type": ["number", "null"],
+      "description": "交易量(吨) - 可选",
+      "minimum": 0
+    },
+    "frequency_monthly": {
+      "type": ["integer", "null"],
+      "description": "月均交易频次 - 可选",
+      "minimum": 0
+    }
+  }
+}
