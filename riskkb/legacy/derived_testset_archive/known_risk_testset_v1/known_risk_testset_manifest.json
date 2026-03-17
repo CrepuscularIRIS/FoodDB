@@ -1,1 +1,0 @@
-{"cases": 12, "cases_per_factor_target": 2, "generated_at": "2026-03-09T03:26:57.032752+00:00", "output_jsonl": "knowledge/derived/known_risk_testset_v1/known_risk_testset.jsonl", "output_yaml": "knowledge/derived/known_risk_testset_v1/known_risk_testset.yaml", "risk_factor_count": 6, "status": "completed"}
