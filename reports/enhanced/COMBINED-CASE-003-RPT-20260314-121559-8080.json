@@ -1,0 +1,313 @@
+{
+  "report_id": "RPT-20260314-121559-8080",
+  "created_at": "2026-03-14T12:15:59.144384",
+  "risk_hypothesis": {
+    "risk_factors": [
+      "Norovirus",
+      "Salmonella",
+      "Escherichia coli / STEC",
+      "Clostridium perfringens",
+      "Staphylococcus aureus",
+      "Campylobacter"
+    ],
+    "suspected_stage": "生产加工",
+    "confidence": 0.9,
+    "target_candidates": [],
+    "suggested_checks": [],
+    "symptom_evidence": {
+      "query": "皮疹、瘙痒、腹泻、头痛、乏力",
+      "symptoms_detected": [
+        {
+          "term": "腹泻",
+          "symptom_id": "symptom_腹泻",
+          "risk_factors": [
+            "microbial_salmonella",
+            "microbial_norovirus",
+            "microbial_escherichia_coli_stec",
+            "microbial_clostridium_perfringens",
+            "microbial_staphylococcus_aureus",
+            "microbial_campylobacter",
+            "microbial_vibrio",
+            "microbial_bacillus_cereus",
+            "toxin_deoxynivalenol",
+            "microbial_giardia"
+          ]
+        },
+        {
+          "term": "头痛",
+          "symptom_id": "symptom_头痛",
+          "risk_factors": [
+            "microbial_norovirus",
+            "microbial_brucella",
+            "residue_pesticide_residue"
+          ]
+        }
+      ],
+      "risk_factors": [
+        {
+          "risk_factor_id": "microbial_norovirus",
+          "score": 1.0,
+          "name": "Norovirus",
+          "category": "microbial",
+          "description": "Norovirus是一种高度传染性病毒，是全球急性胃肠炎和食源性疾病暴发的主要原因，主要通过人际传播和受污染的食物水传播。",
+          "applicable_products": [
+            "生菜",
+            "沙拉",
+            "三明治",
+            "贝类",
+            "水果",
+            "饮用水",
+            "即食食品"
+          ],
+          "typical_symptoms": [
+            "胃肠炎",
+            "腹泻",
+            "呕吐",
+            "恶心",
+            "胃痉挛",
+            "发热",
+            "脱水",
+            "头痛"
+          ],
+          "vulnerable_groups": [
+            "免疫功能低下者",
+            "老年人",
+            "儿童",
+            "旅行者"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹泻 weight=0.5",
+            "symptom:头痛 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_salmonella",
+          "score": 0.5,
+          "name": "Salmonella",
+          "category": "microbial",
+          "description": "沙门氏菌是一种革兰氏阴性杆菌，可引起沙门氏菌病，常见表现为自限性胃肠炎，也可出现败血症等严重症状。",
+          "applicable_products": [
+            "坚果制品",
+            "种子类制品",
+            "水果",
+            "生鲜乳",
+            "奶酪",
+            "肉类",
+            "蔬菜"
+          ],
+          "typical_symptoms": [
+            "腹泻",
+            "发热",
+            "腹痛",
+            "呕吐",
+            "肠胃炎",
+            "败血症",
+            "脱水",
+            "血便"
+          ],
+          "vulnerable_groups": [
+            "老年人",
+            "婴儿",
+            "免疫功能低下者",
+            "孕妇"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹泻 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_escherichia_coli_stec",
+          "score": 0.5,
+          "name": "Escherichia coli / STEC",
+          "category": "microbial",
+          "description": "产志贺毒素大肠杆菌可引起出血性结肠炎和溶血性尿毒综合征，牛是主要宿主。",
+          "applicable_products": [
+            "生鲜农产品",
+            "乳制品",
+            "果汁",
+            "肉类",
+            "冷冻食品",
+            "生鲜农产品（如菠菜、芽菜）",
+            "奶酪",
+            "果汁（尤其是未经巴氏消毒的苹果酒）"
+          ],
+          "typical_symptoms": [
+            "腹泻",
+            "出血性结肠炎",
+            "腹痛",
+            "呕吐",
+            "发热",
+            "溶血性尿毒综合征",
+            "志贺毒素感染"
+          ],
+          "vulnerable_groups": [
+            "儿童",
+            "老年人",
+            "免疫功能低下者",
+            "孕妇"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹泻 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_clostridium_perfringens",
+          "score": 0.5,
+          "name": "Clostridium perfringens",
+          "category": "microbial",
+          "description": "重要食源性病原体，可导致严重食物中毒爆发，是家禽产业主要病原体。",
+          "applicable_products": [
+            "肉类",
+            "牛肉",
+            "猪肉",
+            "沙拉",
+            "烧烤食品",
+            "豆类"
+          ],
+          "typical_symptoms": [
+            "食物中毒",
+            "肠胃炎",
+            "腹痛",
+            "腹泻",
+            "呕吐",
+            "死亡"
+          ],
+          "vulnerable_groups": [
+            "一般人群",
+            "免疫功能低下者",
+            "老年人",
+            "儿童"
+          ],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹泻 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_staphylococcus_aureus",
+          "score": 0.5,
+          "name": "Staphylococcus aureus",
+          "category": "microbial",
+          "description": "Gram-positive bacterium capable of producing heat-stable enterotoxins during growth in contaminated food, leading to rapid-onset food poisoning characterized by intense gastrointestinal symptoms.",
+          "applicable_products": [
+            "乳制品",
+            "奶酪",
+            "蛋白粉",
+            "肉类",
+            "加工食品"
+          ],
+          "typical_symptoms": [
+            "呕吐",
+            "恶心",
+            "腹痛",
+            "腹泻",
+            "葡萄球菌性食物中毒",
+            "食物中毒"
+          ],
+          "vulnerable_groups": [],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹泻 weight=0.5"
+          ]
+        },
+        {
+          "risk_factor_id": "microbial_campylobacter",
+          "score": 0.5,
+          "name": "Campylobacter",
+          "category": "microbial",
+          "description": "Campylobacter is a Gram-negative, motile bacterium and the leading cause of bacterial gastroenteritis in humans worldwide, with poultry meat as the primary transmission vector.",
+          "applicable_products": [
+            "肉类",
+            "未经巴氏杀菌乳",
+            "水产品",
+            "蔬菜"
+          ],
+          "typical_symptoms": [
+            "急性肠炎",
+            "细菌性胃肠炎",
+            "腹泻",
+            "痢疾样腹泻",
+            "弯曲菌肠炎",
+            "食源性感染",
+            "空肠弯曲菌感染"
+          ],
+          "vulnerable_groups": [],
+          "evidence_strength": "high",
+          "reasons": [
+            "symptom:腹泻 weight=0.5"
+          ]
+        }
+      ],
+      "stage_candidates": [
+        {
+          "stage_id": "production_and_processing",
+          "stage": "生产加工",
+          "score": 1.05,
+          "description": "配料、混合、杀菌、发酵、干燥、清洗消毒等厂内工艺。",
+          "evidence_types": [],
+          "reasons": [
+            "default:microbial_norovirus",
+            "default:microbial_salmonella",
+            "default:microbial_escherichia_coli_stec",
+            "default:microbial_clostridium_perfringens",
+            "default:microbial_staphylococcus_aureus",
+            "default:microbial_campylobacter"
+          ]
+        }
+      ],
+      "evidence": {
+        "standards": [],
+        "management": [],
+        "methods": []
+      },
+      "linked_enterprises": [],
+      "gb_references": [],
+      "risk_level": "low",
+      "confidence": 0.9,
+      "suggested_actions": [
+        "重点关注微生物指标：菌落总数、大肠菌群、沙门氏菌、金黄色葡萄球菌",
+        "检查企业卫生管理制度执行情况",
+        "重点检查HACCP控制点"
+      ]
+    },
+    "related_gb_rules": [],
+    "created_at": "2026-03-14T12:15:59.140963",
+    "symptom_description": "皮疹、瘙痒、腹泻、头痛、乏力",
+    "affected_population": {}
+  },
+  "enterprise_assessments": [],
+  "overall_risk_level": "low",
+  "overall_risk_score": 20.0,
+  "evidence_chain": {
+    "symptom_input": "皮疹、瘙痒、腹泻、头痛、乏力",
+    "risk_factors": [
+      "Norovirus",
+      "Salmonella",
+      "Escherichia coli / STEC",
+      "Clostridium perfringens",
+      "Staphylococcus aureus",
+      "Campylobacter"
+    ],
+    "suspected_stage": "生产加工",
+    "affected_population": {},
+    "linked_enterprises": []
+  },
+  "gb_basis": [],
+  "action_suggestions": [
+    {
+      "priority": "medium",
+      "action_type": "环节溯源",
+      "target": "生产加工",
+      "reason": "症状模式指向 生产加工 环节异常"
+    },
+    {
+      "priority": "high",
+      "action_type": "风险预警",
+      "target": "同批次/同时段产品",
+      "reason": "高置信度 (90%) 风险假设"
+    }
+  ]
+}

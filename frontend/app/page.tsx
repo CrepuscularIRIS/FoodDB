@@ -14,6 +14,8 @@ import { useStreamingAgent, useStreamingAgentSSE } from '@/hooks/useStreamingAge
 import LLMStreamDisplay from '@/components/LLMStreamDisplay';
 import { ExclamationTriangleIcon, PlayIcon, ArrowsRightLeftIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { addHistory } from '@/lib/history';
+import Link from 'next/link';
+import { PresentationChartLineIcon } from '@heroicons/react/24/outline';
 
 type AssessmentMode = 'supply_chain' | 'symptom_driven' | 'linked';
 
@@ -124,6 +126,31 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
+      {/* 可视化大屏入口 */}
+      <Link 
+        href="/dashboard"
+        className="block bg-gradient-to-r from-blue-900/50 to-cyan-900/50 border border-blue-700/50 rounded-xl p-6 hover:from-blue-800/50 hover:to-cyan-800/50 transition-all group"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl bg-blue-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <PresentationChartLineIcon className="w-7 h-7 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-1">供应链风险可视化大屏</h2>
+              <p className="text-gray-400 text-sm">
+                实时展示 768 家企业节点的风险分布与传播态势 · 异构网络可视化 · 热力图分析
+              </p>
+            </div>
+          </div>
+          <div className="text-blue-400 group-hover:translate-x-1 transition-transform">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </Link>
+
       {/* 模式切换器 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1">
         <div className="flex space-x-1">

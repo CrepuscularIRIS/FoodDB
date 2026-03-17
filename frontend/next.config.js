@@ -2,14 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  async rewrites() {
-    return [
-      {
-        source: '/api/python/:path*',
-        destination: 'http://localhost:8000/:path*',
-      },
-    ];
+  images: {
+    unoptimized: true,
   },
-};
+  // 配置路径别名
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': __dirname,
+    };
+    return config;
+  },
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

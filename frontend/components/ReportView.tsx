@@ -17,7 +17,7 @@ import {
   HomeIcon,
 } from '@heroicons/react/24/outline';
 import RiskRadarChart from './RiskRadarChart';
-import SupplyChainGraph from './SupplyChainGraph';
+import SupplyChainGraph from './SupplyChainGraphSimple';
 import EnterpriseModal from './EnterpriseModal';
 import BatchModal from './BatchModal';
 import CaseAnalogies from './CaseAnalogies';

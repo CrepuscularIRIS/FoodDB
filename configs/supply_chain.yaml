@@ -1,0 +1,304 @@
+# 乳制品供应链风险预测系统配置
+# 使用 Hydra/OmegaConf 风格
+
+# =============================================================================
+# 数据配置
+# =============================================================================
+data:
+  # 数据路径
+  raw_data_path: "data/raw"
+  processed_data_path: "data/processed"
+  
+  # 数据划分
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  
+  # 批次配置
+  batch_size: 32
+  num_workers: 4
+  
+  # 平衡采样配置
+  use_balanced_sampling: true
+  positive_ratio: 0.3  # 平衡采样时的正样本比例
+  
+  # 数据增强
+  augmentation:
+    enabled: true
+    noise_std: 0.01
+    drop_prob: 0.1
+    mixup_alpha: 0.2
+
+# =============================================================================
+# 图结构配置
+# =============================================================================
+graph:
+  # 节点类型
+  node_types:
+    - enterprise
+    - raw_material
+    - production_line
+    - batch
+    - logistics
+    - retail
+  
+  # 边类型
+  edge_types:
+    - supplies
+    - purchases
+    - produces
+    - used_in
+    - transported_by
+    - delivers_to
+    - sold_at
+    - temporal_next
+  
+  # 时序配置
+  temporal_window: 7  # 时间窗口大小（天）
+  prediction_horizon: 1  # 预测horizon（快照数）
+  history_length: 3  # 历史序列长度
+  
+  # 风险传导系数配置
+  risk_transmission:
+    supplies:
+      base_coeff: 0.7
+      factors: ["supply_volume", "supply_frequency", "quality_history"]
+    used_in:
+      base_coeff: 0.8
+      factors: ["usage_ratio", "raw_material_quality"]
+    produces:
+      base_coeff: 0.75
+      factors: ["production_volume", "equipment_status"]
+    transported_by:
+      base_coeff: 0.6
+      factors: ["transport_duration", "temp_control", "distance"]
+    temporal_next:
+      base_coeff: 0.5
+      factors: ["time_interval", "same_production_line"]
+
+# =============================================================================
+# 弱监督标签配置
+# =============================================================================
+weak_supervision:
+  enabled: true
+  
+  # 规则配置
+  rules:
+    high_temp_reproduction:
+      enabled: true
+      temp_threshold: 8.0
+      temp_max: 18.0
+      weight: 1.0
+    
+    duration_risk:
+      enabled: true
+      temp_threshold: 6.0
+      duration_threshold: 4.0
+      duration_max: 8.0
+      weight: 1.0
+    
+    cleanliness_risk:
+      enabled: true
+      level_a: 0.0
+      level_b: 0.1
+      level_c: 0.5
+      level_d: 0.8
+      weight: 1.0
+    
+    sterilization_fluctuation:
+      enabled: true
+      fluctuation_threshold: 3.0
+      fluctuation_max: 6.0
+      weight: 1.0
+    
+    summer_risk:
+      enabled: true
+      summer_months: [6, 7, 8]
+      base_risk: 0.3
+      weight: 0.5
+    
+    raw_material_contamination:
+      enabled: true
+      colony_threshold: 50000
+      colony_max: 100000
+      weight: 1.0
+  
+  # 标签融合配置
+  fusion:
+    method: "weighted_average"  # weighted_average, max, bayesian
+    layer_weights:
+      explicit: 1.0
+      weak: 0.6
+      self_supervised: 0.4
+      generative: 0.3
+
+# =============================================================================
+# 模型配置 (占位 - GNN模型本身不实现)
+# =============================================================================
+model:
+  # 模型类型（使用Mock）
+  type: "MockGNN"
+  
+  # 架构参数（供参考）
+  hidden_dim: 128
+  num_layers: 2
+  num_heads: 4
+  dropout: 0.1
+  
+  # 目标节点类型
+  target_node_type: "batch"
+  
+  # 输入维度（根据特征自动计算）
+  # in_channels_dict 在运行时根据数据生成
+
+# =============================================================================
+# 训练配置
+# =============================================================================
+training:
+  # 基本训练参数
+  num_epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  
+  # 优化器配置
+  optimizer:
+    type: "adamw"
+    betas: [0.9, 0.999]
+    eps: 1.0e-8
+  
+  # 学习率调度器配置
+  scheduler:
+    type: "cosine"  # reduce_on_plateau, cosine, step, exponential
+    # Cosine Annealing 参数
+    T_max: 100
+    eta_min: 0.0
+    # ReduceLROnPlateau 参数
+    mode: "min"
+    factor: 0.5
+    patience: 5
+    min_lr: 1.0e-7
+  
+  # 早停配置
+  early_stopping:
+    enabled: true
+    monitor: "val_loss"
+    mode: "min"
+    patience: 10
+    min_delta: 0.0
+    restore_best_weights: true
+  
+  # 梯度裁剪
+  gradient_clip:
+    enabled: true
+    max_norm: 1.0
+  
+  # 检查点配置
+  checkpoint:
+    save_best_only: true
+    save_weights_only: false
+    monitor: "val_loss"
+    mode: "min"
+  
+  # 损失函数配置
+  loss:
+    type: "supply_chain_risk"
+    regression_weight: 1.0
+    classification_weight: 0.5
+    confidence_weight: 0.1
+    pos_weight: 10.0
+    risk_thresholds: [0.3, 0.7]
+    label_smoothing: 0.0
+
+# =============================================================================
+# 评估配置
+# =============================================================================
+evaluation:
+  # 评估指标
+  metrics:
+    - recall
+    - precision
+    - f1
+    - auc_roc
+    - auc_pr
+    - brier_score
+  
+  # 分类阈值
+  threshold: 0.5
+  
+  # Top-K命中率
+  top_k: [10, 50, 100]
+  
+  # 风险等级阈值
+  risk_thresholds: [0.3, 0.7]
+  
+  # 分层验证
+  stratified_validation:
+    enabled: true
+    by_enterprise_scale: true
+    by_risk_type: true
+  
+  # 目标值
+  targets:
+    recall: 0.80
+    auc_pr: 0.60
+    brier_score: 0.15
+    top_50_hit_rate: 0.30
+
+# =============================================================================
+# 风险预测配置
+# =============================================================================
+risk_prediction:
+  # 风险等级阈值
+  low_risk_threshold: 0.3
+  medium_risk_threshold: 0.7
+  high_risk_threshold: 1.0
+  
+  # 置信度阈值
+  confidence_threshold: 0.6
+  
+  # 标签来源
+  use_explicit_labels: true
+  use_weak_supervision: true
+  use_self_supervised: false
+  use_generative: false
+  
+  # 预警配置
+  alert:
+    enabled: true
+    min_risk_level: 1  # 0=低, 1=中, 2=高
+    min_confidence: 0.5
+
+# =============================================================================
+# 输出配置
+# =============================================================================
+output:
+  # 目录配置
+  checkpoint_dir: "checkpoints"
+  log_dir: "logs"
+  result_dir: "results"
+  report_dir: "reports"
+  
+  # 日志配置
+  log_level: "INFO"
+  use_color: true
+  use_json: false
+  
+  # 报告配置
+  save_valuation_report: true
+  report_format: "markdown"  # markdown, json
+
+# =============================================================================
+# 运行时配置
+# =============================================================================
+runtime:
+  # 设备配置
+  device: "auto"  # auto, cpu, cuda
+  
+  # 随机种子
+  random_seed: 42
+  
+  # 调试模式
+  debug: false
+  
+  # 实验名称
+  experiment_name: null  # null表示自动生成

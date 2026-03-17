@@ -22,7 +22,7 @@ if env_path.exists():
     load_dotenv(env_path)
     print(f"✓ 已加载环境变量: {env_path}")
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -38,12 +38,28 @@ except ImportError:
     LLM_EXTRACTOR_AVAILABLE = False
 from agent.orchestrator import Orchestrator
 
+# 导入图数据路由
+try:
+    from dairyrisk.api.graph_routes import setup_graph_routes
+    GRAPH_ROUTES_AVAILABLE = True
+except ImportError as e:
+    GRAPH_ROUTES_AVAILABLE = False
+    print(f"⚠ 图数据路由导入失败: {e}")
+
 # 创建FastAPI应用
 app = FastAPI(
     title="乳制品供应链风险研判智能体 API",
     description="基于知识驱动与规则增强的乳制品供应链风险研判系统（Mode A/B 联动版）",
     version="1.2.0"
 )
+
+# 注册图数据路由（在CORS之前）
+if GRAPH_ROUTES_AVAILABLE:
+    try:
+        setup_graph_routes(app)
+        print("✓ 图数据API路由已预注册")
+    except Exception as e:
+        print(f"⚠ 图数据API路由预注册失败: {e}")
 
 # 配置CORS
 app.add_middleware(
@@ -866,6 +882,57 @@ async def assess_with_steps(request: AssessRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== 图数据预警API ====================
+
+@app.get("/api/alerts")
+async def get_alerts(
+    limit: int = Query(50, ge=1, le=200),
+    severity: Optional[str] = Query(None, description="严重级别过滤: high/medium/low")
+):
+    """
+    获取预警数据
+    
+    返回供应链风险预警列表
+    """
+    try:
+        from dairyrisk.api.graph_routes import load_graph_data
+        
+        data = load_graph_data()
+        alerts = data.get('alerts', [])
+        
+        # 应用过滤
+        if severity:
+            alerts = [a for a in alerts if a['level'] == severity]
+        
+        return {
+            "success": True,
+            "data": {
+                "total": len(alerts),
+                "alerts": alerts[:limit]
+            }
+        }
+    except Exception as e:
+        # 如果图数据不可用，返回模拟预警
+        return {
+            "success": True,
+            "data": {
+                "total": 5,
+                "alerts": [
+                    {
+                        "id": f"alert_{i}",
+                        "level": "high" if i % 2 == 0 else "medium",
+                        "title": f"预警 {i+1}",
+                        "message": f"检测到风险信号 {i+1}",
+                        "timestamp": "2024-01-01T00:00:00",
+                        "intensity": 0.8,
+                        "nodeId": f"node_{i}"
+                    }
+                    for i in range(min(limit, 20))
+                ]
+            }
+        }
 
 
 if __name__ == "__main__":

@@ -120,6 +120,72 @@ FoodDB/
 | GB语料 | 4056条 | 标准文本检索块 |
 | 检测方法 | 959条 | 检测标准 |
 
+## 🧩 非GNN模块说明
+
+本项目的非GNN模块已完成开发，包含以下核心组件：
+
+### 弱监督标签生成 (`dairyrisk/data/labels.py`)
+
+基于微生物生长机理的规则引擎，支持6种风险规则：
+- 高温繁殖风险 (温度>8°C)
+- 时长风险 (运输>4h且温度>6°C)
+- 洁净度风险 (GMP等级)
+- 杀菌波动风险 (温度波动>3°C)
+- 夏季风险 (6-8月)
+- 原料污染风险 (菌落数>50000)
+
+### 评估验证 (`dairyrisk/evaluation/`)
+
+完整的评估指标体系：
+- **核心指标**: Recall, Precision, F1, AUC-ROC, AUC-PR, Brier Score
+- **业务指标**: Top-K命中率
+- **分层验证**: 按企业规模、风险类型分层
+- **验证报告**: Markdown/JSON格式
+
+### 训练模块 (`dairyrisk/training/`)
+
+- **损失函数**: SupplyChainRiskLoss (回归+分类+置信度)
+- **回调函数**: ModelCheckpoint, EarlyStopping, LRScheduler
+- **支持损失**: FocalLoss, DiceLoss, WeightedBCE, TverskyLoss
+
+### 配置管理 (`configs/supply_chain.yaml`)
+
+完整的Hydra/OmegaConf风格配置，包含：
+- 数据配置
+- 图结构配置
+- 弱监督规则配置
+- 训练配置
+- 评估配置
+- 风险预测配置
+
+### 使用示例
+
+```bash
+# 完整工作流程
+python examples/complete_workflow.py
+
+# 训练模型
+python scripts/train_supply_chain.py \
+    --config configs/supply_chain.yaml \
+    --train-data data/train.pt
+
+# 评估模型
+python scripts/evaluate_supply_chain.py \
+    --config configs/supply_chain.yaml \
+    --data data/test.pt \
+    --output reports/evaluation.md
+```
+
+### 模块验证
+
+```bash
+# 验证所有模块可导入
+python -c "from dairyrisk.data.labels import fuse_labels; print('✓ labels OK')"
+python -c "from dairyrisk.evaluation.metrics import calculate_auc_pr; print('✓ metrics OK')"
+python -c "from dairyrisk.training.losses import SupplyChainRiskLoss; print('✓ losses OK')"
+python -c "from dairyrisk.utils.config import load_config; print('✓ config OK')"
+```
+
 ## 🛠️ 详细安装指南
 
 ### 安装 RiskKB (知识库)

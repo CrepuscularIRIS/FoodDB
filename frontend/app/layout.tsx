@@ -35,6 +35,12 @@ export default function RootLayout({
                     首页
                   </Link>
                   <Link
+                    href="/dashboard"
+                    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    可视化大屏
+                  </Link>
+                  <Link
                     href="/history"
                     className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
                   >

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>供应链风险监控与扩散推演系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #0B1120;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-stat {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        .animate-pulse-red { animation: pulse-red 2s infinite; }
+
+        .node-enterprise { fill: #3b82f6; }
+        .node-raw { fill: #22c55e; }
+        .node-line { fill: #a855f7; }
+        .node-batch { fill: #06b6d4; }
+        .node-logistics { fill: #f59e0b; }
+        .node-retail { fill: #ef4444; }
+        
+        .risk-high { stroke: #ef4444; stroke-width: 3; }
+        .risk-medium { stroke: #f59e0b; stroke-width: 2; }
+        .risk-low { stroke: #22c55e; stroke-width: 1; }
+        
+        .link-supply { stroke: #3b82f6; stroke-dasharray: none; }
+        .link-transport { stroke: #f59e0b; stroke-dasharray: 5,5; }
+        .link-sale { stroke: #22c55e; stroke-dasharray: 10,5; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="h-16 bg-[#0f172a] border-b border-slate-700 flex items-center justify-between px-6 z-20 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0121 18.382V7.618a1 1 0 01-.447-.894L15 7m0 13V7"></path>
+                </svg>
+            </div>
+            <h1 class="text-xl font-bold tracking-wide text-white">乳制品供应链风险监控与扩散推演系统</h1>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="text-sm text-slate-400">
+                <span class="text-blue-400 font-semibold">系统状态:</span> 实时监测中
+            </div>
+            <div class="text-xl font-mono text-white" id="clock">00:00:00</div>
+            <button class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-sm transition shadow-lg shadow-blue-500/30">
+                导出报告
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex overflow-hidden relative">
+        
+        <!-- Left Sidebar: Controls -->
+        <aside class="w-80 bg-[#0f172a] border-r border-slate-700 flex flex-col z-10 overflow-y-auto">
+            <div class="p-5 border-b border-slate-700">
+                <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                    </svg>
+                    仿真控制台
+                </h2>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">网络随机种子</label>
+                        <div class="flex bg-slate-800 rounded border border-slate-600">
+                            <input type="number" value="42" class="bg-transparent w-full px-3 py-2 text-sm text-white outline-none">
+                            <div class="flex flex-col border-l border-slate-600">
+                                <button class="px-2 hover:bg-slate-700 text-slate-400 text-xs">+</button>
+                                <button class="px-2 hover:bg-slate-700 text-slate-400 text-xs">-</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">节点总数</label>
+                        <div class="flex bg-slate-800 rounded border border-slate-600">
+                            <input type="number" id="node-count" value="768" class="bg-transparent w-full px-3 py-2 text-sm text-white outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="p-5 space-y-6">
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" checked class="accent-red-500 w-4 h-4 rounded border-slate-600 bg-slate-700">
+                        <span class="text-sm text-slate-300 group-hover:text-white transition">显示风险热力图</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" checked class="accent-blue-500 w-4 h-4 rounded border-slate-600 bg-slate-700">
+                        <span class="text-sm text-slate-300 group-hover:text-white transition">显示传播连边</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" checked class="accent-green-500 w-4 h-4 rounded border-slate-600 bg-slate-700">
+                        <span class="text-sm text-slate-300 group-hover:text-white transition">显示节点标签</span>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="text-xs text-slate-400 block mb-2">风险等级筛选</label>
+                    <div class="flex gap-2">
+                        <button class="flex-1 py-1 px-2 bg-red-500/20 border border-red-500/50 rounded text-xs text-red-400 hover:bg-red-500/30">高风险</button>
+                        <button class="flex-1 py-1 px-2 bg-yellow-500/20 border border-yellow-500/50 rounded text-xs text-yellow-400 hover:bg-yellow-500/30">中风险</button>
+                        <button class="flex-1 py-1 px-2 bg-green-500/20 border border-green-500/50 rounded text-xs text-green-400 hover:bg-green-500/30">低风险</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="mt-auto p-5 bg-slate-900/50 border-t border-slate-700">
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-3">节点类型</h3>
+                <ul class="space-y-2 text-xs text-slate-300">
+                    <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span> 企业 (Enterprise)</li>
+                    <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span> 原料 (Raw Material)</li>
+                    <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500"></span> 生产线 (Production)</li>
+                    <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-cyan-500"></span> 批次 (Batch)</li>
+                    <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span> 物流 (Logistics)</li>
+                    <li class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span> 零售 (Retail)</li>
+                </ul>
+                <div class="mt-4 pt-4 border-t border-slate-700 text-[10px] text-slate-500 leading-relaxed">
+                    <p class="mb-1"><span class="text-red-400">红色边框</span> = 高风险节点</p>
+                    <p class="mb-1"><span class="text-yellow-400">黄色边框</span> = 中风险节点</p>
+                    <p><span class="text-green-400">绿色边框</span> = 低风险节点</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main: Map Visualization -->
+        <main class="flex-1 flex flex-col relative bg-[#0B1120]">
+            
+            <!-- Time Control Bar -->
+            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-[600px] glass-panel rounded-lg p-4">
+                <div class="flex justify-between items-end mb-2">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white tracking-wider">供应链网络拓扑</h2>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                        节点数: <span class="text-blue-400 font-mono" id="total-nodes">768</span>
+                        | 边数: <span class="text-blue-400 font-mono" id="total-edges">1078</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="flex-1 relative bg-[#1e293b] overflow-hidden">
+                <div id="map-container" class="w-full h-full relative cursor-move">
+                    <!-- Grid Background -->
+                    <div class="absolute inset-0 opacity-30" style="background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 30px 30px;"></div>
+                    
+                    <!-- SVG Network Layer -->
+                    <svg id="network-svg" class="absolute inset-0 w-full h-full">
+                        <defs>
+                            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="3" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+                            </marker>
+                        </defs>
+                        <g id="links-layer"></g>
+                        <g id="nodes-layer"></g>
+                    </svg>
+                    
+                    <!-- Map Controls -->
+                    <div class="absolute right-6 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 z-20">
+                        <button onclick="zoomIn()" class="w-8 h-8 bg-slate-800 border border-slate-600 text-white flex items-center justify-center hover:bg-slate-700 rounded shadow-lg text-lg">+</button>
+                        <button onclick="zoomOut()" class="w-8 h-8 bg-slate-800 border border-slate-600 text-white flex items-center justify-center hover:bg-slate-700 rounded shadow-lg text-lg">-</button>
+                        <button onclick="resetView()" class="w-8 h-8 bg-slate-800 border border-slate-600 text-white flex items-center justify-center hover:bg-slate-700 rounded shadow-lg mt-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar: Stats & Alerts -->
+        <aside class="w-96 bg-[#0f172a] border-l border-slate-700 flex flex-col z-10 overflow-hidden">
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-3 gap-2 p-4 border-b border-slate-700 bg-[#0B1120]">
+                <div class="card-stat p-3 rounded flex flex-col items-center justify-center text-center">
+                    <span class="text-xs text-slate-400 mb-1">总节点</span>
+                    <span class="text-2xl font-bold text-white font-mono">768</span>
+                </div>
+                <div class="card-stat p-3 rounded flex flex-col items-center justify-center text-center">
+                    <span class="text-xs text-slate-400 mb-1">高风险</span>
+                    <span class="text-2xl font-bold text-red-500 font-mono" id="high-risk-count">138</span>
+                </div>
+                <div class="card-stat p-3 rounded flex flex-col items-center justify-center text-center">
+                    <span class="text-xs text-slate-400 mb-1">数据质量</span>
+                    <span class="text-2xl font-bold text-green-500 font-mono">97</span>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Risk Distribution Chart -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-white mb-3">风险等级分布</h3>
+                    <div id="risk-chart" style="height: 200px;"></div>
+                </div>
+
+                <!-- Node Type Chart -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-white mb-3">节点类型分布</h3>
+                    <div id="type-chart" style="height: 200px;"></div>
+                </div>
+
+                <!-- Alert List -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                        实时预警
+                    </h3>
+                    <div class="space-y-2 max-h-48 overflow-y-auto" id="alert-list">
+                        <div class="p-2 bg-red-500/10 border border-red-500/30 rounded text-xs">
+                            <div class="text-red-400 font-semibold">高风险预警</div>
+                            <div class="text-slate-400">批次 BATCH_00042 风险值 0.92</div>
+                            <div class="text-slate-500 text-[10px]">2分钟前</div>
+                        </div>
+                        <div class="p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs">
+                            <div class="text-yellow-400 font-semibold">中风险提醒</div>
+                            <div class="text-slate-400">企业 ENT_SMALL_0005 风险上升</div>
+                            <div class="text-slate-500 text-[10px]">5分钟前</div>
+                        </div>
+                        <div class="p-2 bg-red-500/10 border border-red-500/30 rounded text-xs">
+                            <div class="text-red-400 font-semibold">冷链断裂</div>
+                            <div class="text-slate-400">物流 LOG_00023 运输温度异常</div>
+                            <div class="text-slate-500 text-[10px]">8分钟前</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('zh-CN', {hour12: false});
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Generate Mock Supply Chain Graph Data
+        const nodeTypes = ['enterprise', 'raw_material', 'production_line', 'batch', 'logistics', 'retail'];
+        const nodeColors = {
+            'enterprise': '#3b82f6',
+            'raw_material': '#22c55e',
+            'production_line': '#a855f7',
+            'batch': '#06b6d4',
+            'logistics': '#f59e0b',
+            'retail': '#ef4444'
+        };
+
+        const nodes = [];
+        const links = [];
+
+        // Generate nodes
+        for (let i = 0; i < 100; i++) {
+            const type = nodeTypes[Math.floor(Math.random() * nodeTypes.length)];
+            const risk = Math.random();
+            let riskLevel = 'low';
+            if (risk > 0.7) riskLevel = 'high';
+            else if (risk > 0.3) riskLevel = 'medium';
+            
+            nodes.push({
+                id: `node_${i}`,
+                type: type,
+                x: Math.random() * 800 + 100,
+                y: Math.random() * 600 + 50,
+                risk: risk,
+                riskLevel: riskLevel,
+                label: `${type}_${i}`
+            });
+        }
+
+        // Generate links
+        for (let i = 0; i < 150; i++) {
+            const source = Math.floor(Math.random() * nodes.length);
+            const target = Math.floor(Math.random() * nodes.length);
+            if (source !== target) {
+                links.push({
+                    source: source,
+                    target: target,
+                    type: Math.random() > 0.5 ? 'supply' : 'transport'
+                });
+            }
+        }
+
+        // Render SVG
+        const svg = document.getElementById('network-svg');
+        const linksLayer = document.getElementById('links-layer');
+        const nodesLayer = document.getElementById('nodes-layer');
+
+        // Render links
+        links.forEach(link => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', nodes[link.source].x);
+            line.setAttribute('y1', nodes[link.source].y);
+            line.setAttribute('x2', nodes[link.target].x);
+            line.setAttribute('y2', nodes[link.target].y);
+            line.setAttribute('class', `link-${link.type}`);
+            line.setAttribute('stroke-opacity', '0.4');
+            linksLayer.appendChild(line);
+        });
+
+        // Render nodes
+        nodes.forEach(node => {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+            g.style.cursor = 'pointer';
+            
+            // Node circle
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('r', node.type === 'batch' ? 12 : 8);
+            circle.setAttribute('fill', nodeColors[node.type]);
+            circle.setAttribute('class', `risk-${node.riskLevel}`);
+            circle.setAttribute('filter', 'url(#glow)');
+            
+            // Risk indicator ring
+            if (node.riskLevel === 'high') {
+                const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                ring.setAttribute('r', 16);
+                ring.setAttribute('fill', 'none');
+                ring.setAttribute('stroke', '#ef4444');
+                ring.setAttribute('stroke-width', '2');
+                ring.setAttribute('opacity', '0.6');
+                ring.innerHTML = '<animate attributeName="r" values="12;18;12" dur="2s" repeatCount="indefinite"/>';
+                g.appendChild(ring);
+            }
+            
+            // Label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('dy', 25);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('fill', '#94a3b8');
+            text.setAttribute('font-size', '10');
+            text.textContent = node.label;
+            
+            g.appendChild(circle);
+            g.appendChild(text);
+            
+            // Click handler
+            g.addEventListener('click', () => {
+                alert(`节点: ${node.label}\n类型: ${node.type}\n风险值: ${node.risk.toFixed(3)}`);
+            });
+            
+            nodesLayer.appendChild(g);
+        });
+
+        // Zoom controls
+        let scale = 1;
+        function zoomIn() {
+            scale *= 1.2;
+            svg.style.transform = `scale(${scale})`;
+        }
+        function zoomOut() {
+            scale /= 1.2;
+            svg.style.transform = `scale(${scale})`;
+        }
+        function resetView() {
+            scale = 1;
+            svg.style.transform = `scale(1)`;
+        }
+
+        // ECharts
+        const riskChart = echarts.init(document.getElementById('risk-chart'));
+        riskChart.setOption({
+            tooltip: { trigger: 'item' },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                data: [
+                    { value: 138, name: '高风险', itemStyle: { color: '#ef4444' } },
+                    { value: 295, name: '中风险', itemStyle: { color: '#f59e0b' } },
+                    { value: 335, name: '低风险', itemStyle: { color: '#22c55e' } }
+                ],
+                label: { color: '#94a3b8', fontSize: 10 }
+            }]
+        });
+
+        const typeChart = echarts.init(document.getElementById('type-chart'));
+        typeChart.setOption({
+            tooltip: { trigger: 'axis' },
+            xAxis: { 
+                type: 'category', 
+                data: ['企业', '原料', '生产线', '批次', '物流', '零售'],
+                axisLabel: { color: '#94a3b8', fontSize: 10 }
+            },
+            yAxis: { 
+                type: 'value',
+                axisLabel: { color: '#94a3b8', fontSize: 10 }
+            },
+            series: [{
+                data: [160, 120, 80, 150, 130, 128],
+                type: 'bar',
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: '#3b82f6' },
+                        { offset: 1, color: '#1d4ed8' }
+                    ])
+                }
+            }]
+        });
+
+        window.addEventListener('resize', () => {
+            riskChart.resize();
+            typeChart.resize();
+        });
+    </script>
+</body>
+</html>
