@@ -13,7 +13,7 @@ import {
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:18080',
   timeout: 90000, // 90秒超时 - LLM调用需要更长时间
   headers: {
     'Content-Type': 'application/json',
@@ -301,7 +301,7 @@ export const linkedWorkflowApi = {
     onComplete: (result: LinkedWorkflowResponse) => void,
     onError: (error: string) => void
   ) => {
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:18080';
     const url = new URL('/linked_workflow_stream', baseURL);
 
     const eventSource = new EventSource(url.toString(), {
@@ -504,7 +504,7 @@ export const graphApi = {
 
   // WebSocket连接（用于实时更新）
   connectWebSocket: (onMessage: (data: any) => void, onError?: (error: any) => void): WebSocket => {
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:18080';
     const wsUrl = baseURL.replace('http://', 'ws://').replace('https://', 'wss://') + '/api/graph/ws';
     
     const ws = new WebSocket(wsUrl);

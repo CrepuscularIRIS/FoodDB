@@ -14,6 +14,7 @@ export default function ChinaMap({ children }: ChinaMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -99,10 +100,12 @@ export default function ChinaMap({ children }: ChinaMapProps) {
         };
 
         chart.setOption(option);
+        setLoadError(null);
         setLoading(false);
       })
       .catch((err) => {
         console.error('Failed to load China map:', err);
+        setLoadError('地图底图加载失败，已切换到简化展示');
         setLoading(false);
       });
 
@@ -136,6 +139,12 @@ export default function ChinaMap({ children }: ChinaMapProps) {
             <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-cyan-400 text-sm">加载中国地图数据...</p>
           </div>
+        </div>
+      )}
+
+      {!loading && loadError && (
+        <div className="absolute top-4 right-4 z-20 bg-yellow-900/70 border border-yellow-500/50 text-yellow-200 text-xs px-3 py-2 rounded">
+          {loadError}
         </div>
       )}
 

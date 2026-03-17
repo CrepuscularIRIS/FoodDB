@@ -849,7 +849,7 @@ export default function SimpleDashboard() {
                   <p><span className="text-gray-400">数据来源:</span> {dataSource === 'api' ? '后端API (实时)' : '本地缓存'}</p>
                   <p><span className="text-gray-400">节点总数:</span> {nodes.length}</p>
                   <p><span className="text-gray-400">边总数:</span> {edges.length}</p>
-                  <p><span className="text-gray-400">API地址:</span> {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}</p>
+                  <p><span className="text-gray-400">API地址:</span> {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:18080'}</p>
                 </div>
               </div>
             </div>

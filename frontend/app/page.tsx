@@ -16,6 +16,7 @@ import { ExclamationTriangleIcon, PlayIcon, ArrowsRightLeftIcon, LinkIcon } from
 import { addHistory } from '@/lib/history';
 import Link from 'next/link';
 import { PresentationChartLineIcon } from '@heroicons/react/24/outline';
+import { buildDashboardUrl, detectRegionFromText, saveDashboardAutoFilter } from '@/lib/region';
 
 type AssessmentMode = 'supply_chain' | 'symptom_driven' | 'linked';
 
@@ -81,6 +82,13 @@ export default function Home() {
       const result = await assessmentApi.assess(query, withPropagation);
       if (result.success && result.data) {
         setReport(result.data);
+        const text = [
+          result.data.target_name || '',
+          result.data.conclusion || '',
+          result.data.evidence_summary || '',
+        ].join(' ');
+        const district = detectRegionFromText(text);
+        if (district) saveDashboardAutoFilter(district, query);
         // 保存到历史记录
         addHistory({
           query,
@@ -113,15 +121,17 @@ export default function Home() {
   // 症状驱动评估
   const handleSymptomAssess = (result: SymptomAssessResult) => {
     setSymptomResult(result);
+    const text = [
+      result.query || '',
+      ...result.linked_enterprises.map(e => e.enterprise_name || ''),
+    ].join(' ');
+    const district = detectRegionFromText(text);
+    if (district) saveDashboardAutoFilter(district, result.query);
     setSymptomLoading(false);
   };
 
   const switchMode = (newMode: AssessmentMode) => {
     setMode(newMode);
-    // 清除之前的结果
-    setReport(null);
-    setSymptomResult(null);
-    setShowStreaming(false);
   };
 
   return (
@@ -193,7 +203,7 @@ export default function Home() {
       </div>
 
       {/* Mode A: 供应链研判 */}
-      {mode === 'supply_chain' && (
+      <div className={mode === 'supply_chain' ? 'block' : 'hidden'}>
         <>
           {/* 搜索面板 */}
           <SearchPanel
@@ -310,13 +320,26 @@ export default function Home() {
 
           {/* 报告展示 */}
           {report && (
-            <ReportView report={report} />
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <Link
+                  href={buildDashboardUrl(
+                    report.target_name || report.report_id,
+                    detectRegionFromText(`${report.target_name || ''} ${report.conclusion || ''}`)
+                  )}
+                  className="inline-flex items-center px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  研判完成后一键跳转到大屏（自动应用筛选）
+                </Link>
+              </div>
+              <ReportView report={report} />
+            </div>
           )}
         </>
-      )}
+      </div>
 
       {/* Mode B: 症状驱动研判 */}
-      {mode === 'symptom_driven' && (
+      <div className={mode === 'symptom_driven' ? 'block' : 'hidden'}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 左侧：搜索面板 */}
           <div>
@@ -329,6 +352,21 @@ export default function Home() {
           {/* 右侧：结果展示 */}
           <div>
             <SymptomRiskResult result={symptomResult} />
+            {symptomResult && (
+              <div className="mt-3 flex justify-end">
+                <Link
+                  href={buildDashboardUrl(
+                    symptomResult.query,
+                    detectRegionFromText(
+                      `${symptomResult.query} ${symptomResult.linked_enterprises.map(e => e.enterprise_name).join(' ')}`
+                    )
+                  )}
+                  className="inline-flex items-center px-5 py-2.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 transition-colors shadow-sm"
+                >
+                  诊断完成后一键跳转到大屏（自动应用筛选）
+                </Link>
+              </div>
+            )}
             {!symptomResult && !symptomLoading && (
               <div className="bg-gray-50 rounded-xl p-8 text-center border border-gray-200 border-dashed">
                 <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -346,12 +384,12 @@ export default function Home() {
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Mode A+B: 联动研判 */}
-      {mode === 'linked' && (
+      <div className={mode === 'linked' ? 'block' : 'hidden'}>
         <LinkedWorkflowPanel />
-      )}
+      </div>
     </div>
   );
 }

@@ -13,7 +13,7 @@ export default function TestStreamPage() {
     setIsRunning(true);
 
     try {
-      const response = await fetch('http://localhost:8000/assess_stream', {
+      const response = await fetch('http://localhost:18080/assess_stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: 'ENT-0005', with_propagation: false }),

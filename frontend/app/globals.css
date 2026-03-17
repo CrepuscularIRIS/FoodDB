@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 249, 250, 251;
-  --background-rgb: 10, 15, 26;
+  --foreground-rgb: 17, 24, 39;
+  --background-rgb: 249, 250, 251;
 }
 
 * {
@@ -21,18 +21,18 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* 深色主题滚动条 */
+/* 默认浅色滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: #e5e7eb;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: #9ca3af;
   border-radius: 3px;
 }
 
@@ -40,7 +40,7 @@ body {
   background: #6b7280;
 }
 
-/* 风险等级颜色 - 深色主题 */
+/* 风险等级颜色 */
 .risk-high {
   @apply text-red-400 bg-red-900/30 border-red-700/50;
 }

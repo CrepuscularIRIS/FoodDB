@@ -18,13 +18,14 @@ import {
 import { linkedWorkflowApi } from '@/lib/api';
 import {
   WorkflowStepEvent,
-  LinkedWorkflowRequest,
   LinkedReport,
   WorkflowStep,
   StepStatus,
   RiskAssessmentReport,
 } from '@/types';
 import ReportView from './ReportView';
+import Link from 'next/link';
+import { buildDashboardUrl, detectRegionFromText, saveDashboardAutoFilter } from '@/lib/region';
 
 interface StepConfig {
   id: WorkflowStep;
@@ -257,8 +258,14 @@ export default function LinkedWorkflowPanel() {
     const reportData = data.result || data.output;
     if (reportData) {
       setResult(reportData);
+      const region = detectRegionFromText(
+        `${locationHint} ${query} ${reportData.combined_conclusion || ''} ${reportData.conclusion || ''}`
+      );
+      if (region) {
+        saveDashboardAutoFilter(region, query);
+      }
     }
-  }, []);
+  }, [locationHint, query]);
 
   const handleError = useCallback((err: string) => {
     setError(err);
@@ -274,7 +281,7 @@ export default function LinkedWorkflowPanel() {
     setResult(null);
     setError(null);
 
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:18080';
 
     // Convert population string to object format expected by backend
     const populationObj = population
@@ -644,9 +651,17 @@ export default function LinkedWorkflowPanel() {
       {/* Final Report */}
       {reportForView && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-emerald-600">
-            <CheckCircleIcon className="h-5 w-5" />
-            <span className="font-medium">研判完成，以下是完整报告</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-emerald-600">
+              <CheckCircleIcon className="h-5 w-5" />
+              <span className="font-medium">研判完成，以下是完整报告</span>
+            </div>
+            <Link
+              href={buildDashboardUrl(query, locationHint || detectRegionFromText(query))}
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors"
+            >
+              跳转可视化大屏（A+B）
+            </Link>
           </div>
           <ReportView report={reportForView} />
         </div>

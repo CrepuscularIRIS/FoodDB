@@ -107,7 +107,7 @@ export default function SymptomSearchPanel({ onAssess, loading: externalLoading 
     abortControllerRef.current = new AbortController();
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:18080';
       console.log(`[SymptomSearch] Starting stream to ${apiUrl}/symptom/assess_stream`);
 
       const response = await fetch(`${apiUrl}/symptom/assess_stream`, {

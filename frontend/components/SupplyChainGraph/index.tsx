@@ -23,6 +23,7 @@ const CHINA_BOUNDS = {
   latMin: 18,
   latMax: 54,
 };
+const CHINA_GEOJSON_URL = 'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json';
 
 export default function SupplyChainGraph({
   nodes,
@@ -39,6 +40,10 @@ export default function SupplyChainGraph({
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [viewMode, setViewMode] = useState<'echarts' | 'd3'>('echarts');
+  const geoViewStateRef = useRef<{ zoom?: number; center?: [number, number] }>({
+    zoom: 1.2,
+    center: [105, 36],
+  });
   
   // 过滤节点
   const filteredNodes = React.useMemo(() => {
@@ -60,16 +65,12 @@ export default function SupplyChainGraph({
   // ECharts 模式渲染
   useEffect(() => {
     if (viewMode !== 'echarts' || !containerRef.current) return;
+    let disposed = false;
 
     // 清理之前的图表
     if (chartRef.current) {
       chartRef.current.dispose();
     }
-
-    const chart = echarts.init(containerRef.current, 'dark', {
-      renderer: 'canvas',
-    });
-    chartRef.current = chart;
 
     // 转换节点为 ECharts 散点数据
     const nodeData = filteredNodes.map(node => ({
@@ -108,6 +109,19 @@ export default function SupplyChainGraph({
       };
     }).filter(Boolean);
 
+    const initChart = async () => {
+      if (!echarts.getMap('china')) {
+        const res = await fetch(CHINA_GEOJSON_URL);
+        const geoJson = await res.json();
+        echarts.registerMap('china', geoJson);
+      }
+      if (disposed || !containerRef.current) return;
+
+      const chart = echarts.init(containerRef.current, 'dark', {
+        renderer: 'canvas',
+      });
+      chartRef.current = chart;
+      const hasChinaMap = !!echarts.getMap('china');
     const option: echarts.EChartsOption = {
       backgroundColor: 'transparent',
       tooltip: {
@@ -141,32 +155,49 @@ export default function SupplyChainGraph({
           return '';
         },
       },
-      geo: {
-        map: 'china',
-        roam: true,
-        zoom: 1.2,
-        center: [105, 36],
-        label: {
-          show: true,
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: 9,
-        },
-        itemStyle: {
-          areaColor: 'rgba(20, 40, 80, 0.3)',
-          borderColor: '#1e3a5f',
-          borderWidth: 1,
-        },
-        emphasis: {
-          itemStyle: {
-            areaColor: 'rgba(30, 80, 150, 0.5)',
-          },
-        },
-      },
+      ...(hasChinaMap
+        ? {
+            geo: {
+              map: 'china',
+              roam: true,
+              zoom: geoViewStateRef.current.zoom ?? 1.2,
+              center: geoViewStateRef.current.center ?? [105, 36],
+              label: {
+                show: true,
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: 9,
+              },
+              itemStyle: {
+                areaColor: 'rgba(20, 40, 80, 0.3)',
+                borderColor: '#1e3a5f',
+                borderWidth: 1,
+              },
+              emphasis: {
+                itemStyle: {
+                  areaColor: 'rgba(30, 80, 150, 0.5)',
+                },
+              },
+            },
+          }
+        : {
+            xAxis: {
+              type: 'value',
+              min: CHINA_BOUNDS.lngMin,
+              max: CHINA_BOUNDS.lngMax,
+              show: false,
+            },
+            yAxis: {
+              type: 'value',
+              min: CHINA_BOUNDS.latMin,
+              max: CHINA_BOUNDS.latMax,
+              show: false,
+            },
+          }),
       series: [
         // 连线
         {
           type: 'lines',
-          coordinateSystem: 'geo',
+          coordinateSystem: hasChinaMap ? 'geo' : 'cartesian2d',
           data: edgeData as any,
           silent: true,
           zlevel: 1,
@@ -174,7 +205,7 @@ export default function SupplyChainGraph({
         // 节点
         {
           type: 'effectScatter',
-          coordinateSystem: 'geo',
+          coordinateSystem: hasChinaMap ? 'geo' : 'cartesian2d',
           data: nodeData,
           rippleEffect: {
             brushType: 'stroke',
@@ -183,12 +214,52 @@ export default function SupplyChainGraph({
           zlevel: 2,
         },
       ],
-    };
+      };
 
     chart.setOption(option);
 
+    // 持久化当前地图视角，避免筛选变更后重置
+    chart.on('georoam', () => {
+      try {
+        const opt: any = chart.getOption();
+        const geo = opt?.geo?.[0];
+        if (!geo) return;
+        if (typeof geo.zoom === 'number') {
+          geoViewStateRef.current.zoom = geo.zoom;
+        }
+        if (Array.isArray(geo.center) && geo.center.length === 2) {
+          geoViewStateRef.current.center = [geo.center[0], geo.center[1]];
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    // 支持在空白背景区域滚轮缩放（不仅限于节点上）
+      const dom = chart.getDom();
+      const handleWheel = (event: WheelEvent) => {
+      if (viewMode !== 'echarts') return;
+      event.preventDefault();
+
+      const rect = dom.getBoundingClientRect();
+      const originX = event.clientX - rect.left;
+      const originY = event.clientY - rect.top;
+      const zoom = event.deltaY < 0 ? 1.08 : 0.92;
+
+      if (hasChinaMap) {
+        chart.dispatchAction({
+          type: 'geoRoam',
+          componentType: 'geo',
+          zoom,
+          originX,
+          originY,
+        });
+      }
+      };
+      dom.addEventListener('wheel', handleWheel, { passive: false });
+
     // 点击事件
-    chart.on('click', (params: any) => {
+      chart.on('click', (params: any) => {
       if (params.componentType === 'series' && params.seriesType === 'effectScatter') {
         const nodeId = params.value[5];
         const node = filteredNodes.find(n => n.id === nodeId);
@@ -196,10 +267,10 @@ export default function SupplyChainGraph({
           onNodeSelect(node);
         }
       }
-    });
+      });
 
     // 鼠标悬停
-    chart.on('mouseover', (params: any) => {
+      chart.on('mouseover', (params: any) => {
       if (params.componentType === 'series' && params.seriesType === 'effectScatter') {
         const nodeId = params.value[5];
         const node = filteredNodes.find(n => n.id === nodeId);
@@ -207,21 +278,35 @@ export default function SupplyChainGraph({
           onNodeHover(node);
         }
       }
-    });
+      });
 
-    chart.on('mouseout', () => {
+      chart.on('mouseout', () => {
       onNodeHover(null);
-    });
+      });
 
     // 响应式
-    const handleResize = () => {
+      const handleResize = () => {
       chart.resize();
+      };
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        dom.removeEventListener('wheel', handleWheel);
+        window.removeEventListener('resize', handleResize);
+        chart.dispose();
+      };
     };
-    window.addEventListener('resize', handleResize);
+
+    let cleanup: (() => void) | undefined;
+    initChart().then((fn) => {
+      cleanup = fn;
+    }).catch((err) => {
+      console.error('加载中国地图失败:', err);
+    });
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.dispose();
+      disposed = true;
+      cleanup?.();
     };
   }, [filteredNodes, filteredEdges, selectedNode, highlightedPath, onNodeSelect, onNodeHover, viewMode]);
 
