@@ -29,6 +29,8 @@ from pydantic import BaseModel
 
 from agent.workflow import RiskAssessmentAgent
 from agent.symptom_router import get_symptom_router, SymptomRiskResult
+from agent.risk_predictor import RiskPredictor, get_risk_predictor
+from agent.risk_propagation import TemporalRiskPropagator
 
 # 检查 LLM 提取器是否可用
 try:
@@ -72,6 +74,8 @@ app.add_middleware(
 agent: Optional[RiskAssessmentAgent] = None
 symptom_router = None
 orchestrator: Optional[Orchestrator] = None
+risk_propagator: Optional[TemporalRiskPropagator] = None
+latest_risk_timeline: List[Dict[str, Any]] = []
 
 
 # 数据模型
@@ -91,6 +95,14 @@ class SamplingRequest(BaseModel):
 class PropagationRequest(BaseModel):
     node_id: str
     max_hops: int = 3
+
+
+class TemporalPropagationRequest(BaseModel):
+    node_id: str
+    max_steps: int = 3
+    initial_risk: Optional[float] = None
+    decay_rate: float = 0.55
+    min_risk_threshold: float = 0.03
 
 
 class SymptomAssessRequest(BaseModel):
@@ -115,7 +127,7 @@ class PopulationInfo(BaseModel):
 # 初始化Agent
 @app.on_event("startup")
 async def startup_event():
-    global agent, symptom_router, orchestrator
+    global agent, symptom_router, orchestrator, risk_propagator
 
     # 日志输出当前数据源
     data_dir = os.environ.get("DATA_DIR", "自动解析")
@@ -137,6 +149,10 @@ async def startup_event():
     print("正在初始化 Mode A/B 联动编排器...")
     orchestrator = Orchestrator(data_dir=agent.retriever.data_dir)
     print("✓ 联动编排器初始化完成")
+
+    print("正在初始化时序风险传播器...")
+    risk_propagator = TemporalRiskPropagator(agent.retriever, agent.scoring_engine)
+    print("✓ 时序风险传播器初始化完成")
 
 
 # 健康检查
@@ -460,6 +476,42 @@ async def analyze_propagation(request: PropagationRequest):
     return {
         "success": True,
         "data": result
+    }
+
+
+@app.post("/api/risk/propagate")
+async def propagate_risk_timeline(request: TemporalPropagationRequest):
+    """时序风险传播接口。"""
+    global latest_risk_timeline
+
+    if not risk_propagator:
+        raise HTTPException(status_code=503, detail="时序风险传播器未初始化")
+
+    try:
+        result = risk_propagator.propagate(
+            node_id=request.node_id,
+            max_steps=request.max_steps,
+            initial_risk=request.initial_risk,
+            decay_rate=request.decay_rate,
+            min_risk_threshold=request.min_risk_threshold,
+        )
+        latest_risk_timeline = result.get("timeline", [])
+        return {"success": True, "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"时序传播失败: {str(e)}")
+
+
+@app.get("/api/risk/timeline")
+async def get_risk_timeline():
+    """获取最近一次传播计算的风险时间线。"""
+    return {
+        "success": True,
+        "data": {
+            "timeline": latest_risk_timeline,
+            "steps": len(latest_risk_timeline),
+        },
     }
 
 
@@ -864,6 +916,224 @@ async def assess_with_steps(request: AssessRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== V2 图特征 API ====================
+
+import os
+from pathlib import Path
+
+# V2 数据路径
+V2_DATA_DIR = Path(__file__).parent.parent / "data" / "v2"
+
+# 缓存图特征数据
+_graph_features_cache = None
+_graph_stats_cache = None
+
+
+def _load_graph_features():
+    """加载图特征数据"""
+    global _graph_features_cache
+    if _graph_features_cache is None:
+        features_path = V2_DATA_DIR / "node_features_64d.json"
+        if features_path.exists():
+            with open(features_path, 'r', encoding='utf-8') as f:
+                _graph_features_cache = json.load(f)
+        else:
+            _graph_features_cache = {"features": {}}
+    return _graph_features_cache
+
+
+def _load_graph_stats():
+    """加载图统计数据"""
+    global _graph_stats_cache
+    if _graph_stats_cache is None:
+        stats_path = V2_DATA_DIR / "graph_statistics.json"
+        if stats_path.exists():
+            with open(stats_path, 'r', encoding='utf-8') as f:
+                _graph_stats_cache = json.load(f)
+        else:
+            _graph_stats_cache = {
+                "node_count": 0,
+                "edge_count": 0,
+                "density": 0,
+                "avg_clustering": 0,
+                "avg_path_length": 0
+            }
+    return _graph_stats_cache
+
+
+@app.get("/api/graph/features")
+async def get_graph_features(node_id: Optional[str] = None):
+    """
+    获取图节点特征
+    
+    - 无参数: 返回所有节点特征
+    - node_id: 返回指定节点的特征
+    """
+    features_data = _load_graph_features()
+    
+    if node_id:
+        # 返回指定节点
+        features = features_data.get("features", {})
+        if node_id in features:
+            return {
+                "success": True,
+                "data": {
+                    "node_id": node_id,
+                    "feature_dim": features_data.get("feature_dim", 64),
+                    **features[node_id]
+                }
+            }
+        else:
+            raise HTTPException(status_code=404, detail=f"节点 {node_id} 不存在")
+    
+    # 返回所有节点
+    return {
+        "success": True,
+        "data": {
+            "feature_dim": features_data.get("feature_dim", 64),
+            "node_count": features_data.get("node_count", 0),
+            "features": features_data.get("features", {})
+        }
+    }
+
+
+@app.get("/api/graph/stats")
+async def get_graph_stats():
+    """获取图统计信息"""
+    stats = _load_graph_stats()
+    
+    return {
+        "success": True,
+        "data": stats
+    }
+
+
+@app.post("/api/graph/features/generate")
+async def regenerate_features():
+    """重新生成图特征"""
+    import subprocess
+    import sys
+    
+    try:
+        # 运行特征生成脚本
+        script_path = Path(__file__).parent.parent / "scripts" / "generate_features.py"
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
+        if result.returncode == 0:
+            # 清除缓存
+            global _graph_features_cache
+            _graph_features_cache = None
+            
+            features_data = _load_graph_features()
+            return {
+                "success": True,
+                "message": "特征生成完成",
+                "data": {
+                    "feature_dim": features_data.get("feature_dim", 64),
+                    "node_count": features_data.get("node_count", 0)
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail=f"特征生成失败: {result.stderr}")
+    
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="特征生成超时")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"特征生成错误: {str(e)}")
+
+
+@app.post("/api/graph/compute")
+async def compute_graph_features():
+    """重新计算图特征"""
+    import subprocess
+    import sys
+    
+    try:
+        # 运行图特征计算脚本
+        script_path = Path(__file__).parent.parent / "scripts" / "compute_graph_features.py"
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=180
+        )
+        
+        if result.returncode == 0:
+            # 清除缓存
+            global _graph_stats_cache
+            _graph_stats_cache = None
+            
+            stats = _load_graph_stats()
+            return {
+                "success": True,
+                "message": "图特征计算完成",
+                "data": stats
+            }
+        else:
+            raise HTTPException(status_code=500, detail=f"图特征计算失败: {result.stderr}")
+    
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="图特征计算超时")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"图特征计算错误: {str(e)}")
+
+
+# ==================== 风险预测 API ====================
+
+@app.post("/api/risk/predict")
+async def predict_risk(node_id: str):
+    """
+    预测单个节点的风险
+    
+    - node_id: 节点ID
+    """
+    try:
+        predictor = get_risk_predictor()
+        result = predictor.predict(node_id)
+        
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"节点 {node_id} 不存在")
+        
+        return {
+            "success": True,
+            "data": {
+                "node_id": result.node_id,
+                "enterprise_name": result.enterprise_name,
+                "node_type": result.node_type,
+                "scale": result.scale,
+                "region": result.region,
+                "risk_probability": result.risk_probability,
+                "risk_level": result.risk_level,
+                "confidence": result.confidence,
+                "risk_factors": result.risk_factors
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"风险预测失败: {str(e)}")
+
+
+@app.get("/api/risk/stats")
+async def get_risk_stats():
+    """
+    获取风险统计信息
+    """
+    try:
+        predictor = get_risk_predictor()
+        stats = predictor.get_statistics()
+        
+        return {
+            "success": True,
+            "data": stats
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取统计失败: {str(e)}")
 
 
 if __name__ == "__main__":

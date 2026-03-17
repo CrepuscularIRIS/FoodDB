@@ -23,6 +23,7 @@ import BatchModal from './BatchModal';
 import CaseAnalogies from './CaseAnalogies';
 import GraphMetrics from './GraphMetrics';
 import LLMAnalysis from './LLMAnalysis';
+import RiskTimeline from './RiskTimeline';
 
 interface ReportViewProps {
   report: RiskAssessmentReport;
@@ -192,6 +193,9 @@ export default function ReportView({ report }: ReportViewProps) {
 
             {/* 供应链网络图 */}
             <SupplyChainGraph supplyChainPath={report.supply_chain_path || []} />
+
+            {/* 风险演化时间线 */}
+            <RiskTimeline sourceNodeId={report.target_id} />
 
             {/* 触发规则柱状图 */}
             {report.triggered_rules && report.triggered_rules.length > 0 && (
