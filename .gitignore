@@ -30,6 +30,20 @@ node_modules/
 .next/
 out/
 
+# Project datasets (keep local, do not push)
+data/
+!data/.gitkeep
+!data/README.md
+
+dairyrisk/data/merged/
+dairyrisk/data/mock/
+dairyrisk/data/raw/
+dairyrisk/data/real/
+dairyrisk/data/release_v1_1/
+dairyrisk/data/scraped/
+dairyrisk/data/v2/
+dairyrisk/data/v2_scale/
+
 # Logs
 *.log
 logs/
