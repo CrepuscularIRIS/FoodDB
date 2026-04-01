@@ -24,6 +24,7 @@ ENV/
 
 # Environment
 .env
+frontend/.env.local
 
 # Node
 node_modules/
@@ -56,7 +57,15 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+frontend/test-results/
 
 # Misc
 *.bak
 *.tmp
+reports/
+
+# Embedded MediaCrawler local runtime artifacts
+external/MediaCrawler/.venv/
+external/MediaCrawler/browser_data/
+external/MediaCrawler/data/
+external/MediaCrawler/output_analysis/

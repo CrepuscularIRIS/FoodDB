@@ -46,6 +46,24 @@ export default function RootLayout({
                   >
                     历史记录
                   </Link>
+                  <Link
+                    href="/subgraph"
+                    className="text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg transition-colors font-medium"
+                  >
+                    子图分析
+                  </Link>
+                  <Link
+                    href="/modela-v2"
+                    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    ModelA v2
+                  </Link>
+                  <Link
+                    href="/modeb-opinion"
+                    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    ModeB 舆情
+                  </Link>
                 </nav>
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                   v1.1

@@ -21,6 +21,19 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* 防止图标/emoji 在不同页面出现异常放大 */
+svg {
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.emoji-inline {
+  display: inline-block;
+  font-size: 1em;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 /* 默认浅色滚动条 */
 ::-webkit-scrollbar {
   width: 6px;

@@ -335,3 +335,467 @@ export interface LinkedWorkflowResponse {
   result?: LinkedReport;
   error?: string;
 }
+
+// ==================== 子图 & LLM 评估类型 ====================
+
+export interface SubgraphNodeRiskVector {
+  non_food_additives: number;
+  pesticide_vet_residue: number;
+  food_additive_excess: number;
+  microbial_contamination: number;
+  heavy_metal: number;
+  physical_damage: number;
+  other_contaminants: number;
+}
+
+export interface SubgraphNode {
+  node_id: string;
+  name: string;
+  node_type: string;
+  longitude: number | null;
+  latitude: number | null;
+  enterprise_scale: string;
+  region: string;
+  district: string | null;
+  product_tag: string;
+  observed_edge_count: number;
+  risk_score: number;
+  risk_level: RiskLevel;
+  risk_vector: SubgraphNodeRiskVector;
+}
+
+export interface SubgraphEdge {
+  edge_id: string;
+  source: string;
+  target: string;
+  source_name: string;
+  target_name: string;
+  source_type: string;
+  target_type: string;
+  timestamp: string;
+  transit_hours: number | null;
+  logistics_company: string;
+  logistics_scale: string;
+  risk_labels: number[];
+  risk_positive_count: number;
+  edge_type: string;
+}
+
+export interface SubgraphMeta {
+  region: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  seed_node: string | null;
+  k_hop: number;
+  node_count: number;
+  edge_count: number;
+  capped: boolean;
+}
+
+export interface SubgraphResponse {
+  meta: SubgraphMeta;
+  nodes: SubgraphNode[];
+  edges: SubgraphEdge[];
+}
+
+export interface TopNodeSummary {
+  node_id: string;
+  name: string;
+  risk_level: RiskLevel;
+  risk_score: number;
+}
+
+export interface RuleSummary {
+  risk_level: RiskLevel;
+  risk_score: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  top_nodes: TopNodeSummary[];
+}
+
+export interface LLMResult {
+  success: boolean;
+  latency_ms: number;
+  error: string | null;
+  content: any;
+  usage: any;
+  mock: boolean;
+}
+
+export interface LLMAssessResponse {
+  query: {
+    region: string | null;
+    time_window: number;
+    k_hop: number;
+    seed_node: string | null;
+  };
+  subgraph_meta: SubgraphMeta;
+  rule_summary: RuleSummary;
+  llm: LLMResult;
+}
+
+export interface SubgraphQueryParams {
+  region?: string;
+  time_window?: number;
+  k_hop?: number;
+  seed_node?: string;
+  max_nodes?: number;
+  max_edges?: number;
+}
+
+// ==================== ModelA v2 类型 ====================
+
+export interface ModelARiskVector {
+  non_food_additives: number;
+  pesticide_vet_residue: number;
+  food_additive_excess: number;
+  microbial_contamination: number;
+  heavy_metal: number;
+  biotoxin: number;
+  other_contaminants: number;
+}
+
+export interface ModelAV2Node {
+  node_id: string;
+  name: string;
+  node_type: string;
+  enterprise_scale: string;
+  longitude: number | null;
+  latitude: number | null;
+  region: string;
+  risk_score: number;
+  risk_level: RiskLevel;
+  risk_probabilities: number[];
+  risk_vector: ModelARiskVector;
+  category: string;
+  category_risk_probabilities: number[];
+  category_risk_vector: ModelARiskVector;
+  category_risk_score: number;
+  category_risk_level: RiskLevel;
+  profile_features: Record<string, number>;
+  top5_flags?: Record<string, boolean>;
+  top5_count?: number;
+  is_top5_any?: boolean;
+  view_scope?: 'full' | 'product';
+  view_product_type?: string | null;
+  view_risk_probabilities?: number[];
+  view_risk_score?: number;
+  view_risk_level?: RiskLevel;
+  risk_proxy?: number;
+  credibility_proxy?: number;
+  uncertainty_proxy?: number;
+  priority_base_score?: number;
+  priority_piecewise_score?: number;
+  priority_score?: number;
+  exploit_score?: number;
+  explore_score?: number;
+  budget_cost?: number;
+  budget_utility?: number;
+  coverage_gain?: number;
+  source_mix?: Record<string, number>;
+  formula_contrib?: {
+    risk: Record<string, number>;
+    credibility: Record<string, number>;
+    uncertainty: Record<string, number>;
+    priority?: Record<string, number>;
+  };
+  kqv_overlay?: {
+    enabled: boolean;
+    base: number;
+    delta: number;
+    enhanced: number;
+    mu: number;
+    tau: number;
+    weights: Record<string, number>;
+    values: Record<string, number>;
+  };
+}
+
+export interface ModelAV2Edge {
+  edge_id: string;
+  batch_id: number;
+  source: string;
+  target: string;
+  source_name: string;
+  target_name: string;
+  source_type: string;
+  target_type: string;
+  timestamp: string;
+  dairy_product_type: string;
+  transit_hours: number;
+  origin_stay_hours: number;
+  target_stay_hours: number;
+  retail_stay_hours: number;
+  logistics_company: string;
+  logistics_scale: string;
+  risk_probabilities: number[];
+  risk_vector: ModelARiskVector;
+  top5_flags?: Record<string, boolean>;
+  top5_count?: number;
+  is_top5_any?: boolean;
+  view_scope?: 'full' | 'product';
+  view_product_type?: string | null;
+  view_risk_probabilities?: number[];
+  view_risk_score?: number;
+  view_risk_level?: RiskLevel;
+  time_fragility?: number;
+  edge_risk_proxy?: number;
+  edge_uncertainty?: number;
+  edge_priority?: number;
+}
+
+export interface ModelAV2Meta {
+  version: string;
+  source_dataset: string;
+  node_count: number;
+  edge_count: number;
+  risk_dimensions: string[];
+  risk_dimensions_zh: string[];
+  product_categories: string[];
+  notes: string[];
+}
+
+export interface ModelAV2Subgraph {
+  meta: {
+    product_type: string;
+    k_hop: number;
+    seed_node: string | null;
+    node_count: number;
+    edge_count: number;
+    risk_dimensions: string[];
+    risk_dimensions_zh: string[];
+  };
+  nodes: ModelAV2Node[];
+  edges: ModelAV2Edge[];
+}
+
+export interface ModelAV2GraphView {
+  meta: {
+    view_mode: 'full' | 'product';
+    product_type: string | null;
+    seed_node: string | null;
+    k_hop: number;
+    node_count: number;
+    edge_count: number;
+    risk_dimensions: string[];
+    risk_dimensions_zh: string[];
+    top5_thresholds: {
+      ratio: number;
+      node: Record<string, number>;
+      edge: Record<string, number>;
+    };
+    capped_nodes: boolean;
+    capped_edges: boolean;
+    formula?: {
+      formula_version: string;
+      parameter_set_id?: string;
+      data_version?: string;
+      piecewise_enabled?: boolean;
+      kqv_enabled?: boolean;
+      params?: Record<string, number>;
+      query_context?: Record<string, unknown>;
+    };
+  };
+  nodes: ModelAV2Node[];
+  edges: ModelAV2Edge[];
+}
+
+export interface ModelAModeAReportResponse {
+  query: {
+    view_mode: 'full' | 'product';
+    product_type?: string;
+    seed_node?: string;
+    k_hop: number;
+    max_nodes: number;
+    max_edges: number;
+    top_ratio: number;
+    use_mock_llm: boolean;
+  };
+  view_meta: ModelAV2GraphView['meta'];
+  rule_summary: {
+    risk_level: RiskLevel;
+    risk_score: number;
+    high_count: number;
+    low_count: number;
+    avg_node_risk: number;
+    avg_priority?: number;
+    avg_edge_risk: number;
+    avg_uncertainty: number;
+    avg_credibility?: number;
+    top_nodes: Array<{
+      node_id: string;
+      name: string;
+      risk_level: RiskLevel;
+      risk_score: number;
+    }>;
+  };
+  llm: {
+    success: boolean;
+    latency_ms?: number;
+    error?: string;
+    content?: string;
+    usage?: Record<string, unknown>;
+    mock: boolean;
+  };
+}
+
+export interface ModelAScreeningItem {
+  node_id: string;
+  name: string;
+  node_type: string;
+  enterprise_scale: string;
+  risk_score: number;
+  uncertainty: number;
+  priority_score: number;
+  priority_base_score?: number;
+  priority_piecewise_score?: number;
+  profile_features: Record<string, number>;
+  sample_cost?: number;
+  budget_utility?: number;
+  coverage_gain?: number;
+  source_mix?: Record<string, number>;
+  formula_contrib?: {
+    risk: Record<string, number>;
+    credibility: Record<string, number>;
+    uncertainty: Record<string, number>;
+    priority?: Record<string, number>;
+  };
+  kqv_overlay?: {
+    enabled: boolean;
+    base: number;
+    delta: number;
+    enhanced: number;
+    mu: number;
+    tau: number;
+    weights: Record<string, number>;
+    values: Record<string, number>;
+  };
+}
+
+export interface ModelAScreeningResponse {
+  total_candidates: number;
+  top_n: number;
+  items: ModelAScreeningItem[];
+}
+
+export interface ModelARankingEvalResponse {
+  total: number;
+  top_k: number;
+  positive_total_proxy: number;
+  positive_in_top_k_proxy: number;
+  precision_at_k: number;
+  recall_at_k: number;
+}
+
+export interface ModelAResourcePlanResponse {
+  budget: number;
+  budget_used: number;
+  budget_left: number;
+  selected_count: number;
+  expected_risk_covered: number;
+  items: ModelAScreeningItem[];
+}
+
+// ==================== ModeB 舆情模块类型 ====================
+
+export interface ModeBOpinionImportPayload {
+  media_root?: string;
+  enterprise_csv?: string;
+  platform?: string;
+  days?: number;
+}
+
+export interface ModeBOpinionCrawlStartPayload {
+  mediacrawler_root?: string;
+  platform?: string;
+  crawler_type?: 'search' | 'detail' | 'creator';
+  login_type?: 'qrcode' | 'phone' | 'cookie';
+  keywords?: string;
+  headless?: boolean;
+  get_comment?: boolean;
+  get_sub_comment?: boolean;
+  start_page?: number;
+  max_comments_count_singlenotes?: number;
+  save_data_option?: 'json' | 'csv' | 'excel' | 'sqlite' | 'db' | 'mongodb' | 'postgres';
+}
+
+export interface ModeBOpinionCrawlStatus {
+  status: 'idle' | 'running' | 'success' | 'failed' | 'stopped' | string;
+  run_id?: string | null;
+  pid?: number | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  return_code?: number | null;
+  command?: string[];
+  log_path?: string;
+  mediacrawler_root?: string;
+  platform_request?: string;
+  platform_cli?: string;
+  crawler_type?: string;
+  keywords?: string;
+  log_tail?: string[];
+}
+
+export interface ModeBOpinionTopItem {
+  enterprise_id: string;
+  enterprise_name: string;
+  platform: string;
+  mention_count_30d: string;
+  post_count_30d: string;
+  comment_count_30d: string;
+  total_engagement_30d: string;
+  negative_count_30d: string;
+  negative_ratio_30d: string;
+  risk_keyword_hits_30d: string;
+  hot_negative_count_30d: string;
+  opinion_risk_index: string;
+  latest_mention_time: string;
+}
+
+export interface ModeBOpinionSummary {
+  platform: string;
+  platforms_scanned?: string[];
+  days_window: number;
+  scanned_records: number;
+  matched_records: number;
+  matched_enterprises: number;
+  files_scanned: string[];
+  media_root: string;
+  enterprise_csv: string;
+  opinion_feature_loaded_count?: number;
+  outputs: {
+    feature_csv: string;
+    summary_json: string;
+    raw_jsonl: string;
+  };
+  top_enterprises?: ModeBOpinionTopItem[];
+}
+
+export interface ModeBSymptomLinkedEnterprise {
+  enterprise_id: string;
+  enterprise_name: string;
+  node_type: string;
+  risk_score: number;
+  combined_risk_score?: number;
+  risk_level: RiskLevel | string;
+  reasons: string[];
+  credit_rating?: string;
+  historical_violations?: number;
+  opinion_risk_index?: number;
+  opinion_mentions_30d?: number;
+  opinion_negative_ratio_30d?: number;
+  opinion_risk_keyword_hits_30d?: number;
+}
+
+export interface ModeBSymptomAssessData {
+  query: string;
+  risk_level: string;
+  confidence: number;
+  risk_factors: any[];
+  stage_candidates: any[];
+  linked_enterprises: ModeBSymptomLinkedEnterprise[];
+  suggested_actions: string[];
+  opinion_enabled?: boolean;
+  opinion_feature_loaded_count?: number;
+}

@@ -8,12 +8,22 @@ import os
 import sys
 import json
 import asyncio
+import csv
+import subprocess
+import threading
+from collections import defaultdict, deque
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dataclasses import asdict
 
 # 添加项目路径
-sys.path.insert(0, str(Path(__file__).parent.parent))
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+# 添加 scripts 路径（用于子图模块导入）
+SCRIPTS_DIR = PROJECT_ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 # 加载环境变量
 from dotenv import load_dotenv
@@ -45,6 +55,52 @@ try:
 except ImportError as e:
     GRAPH_ROUTES_AVAILABLE = False
     print(f"⚠ 图数据路由导入失败: {e}")
+
+try:
+    from modela_v2_pipeline import (
+        build_modela_v2_graph,
+        extract_category_subgraph,
+    )
+    MODELA_V2_AVAILABLE = True
+except ImportError as e:
+    MODELA_V2_AVAILABLE = False
+    print(f"⚠ ModelA v2 模块导入失败: {e}")
+
+try:
+    from modea_formula_engine import (
+        compute_formula_scores,
+        rank_nodes_by_priority,
+        build_budget_plan,
+    )
+    MODELA_FORMULA_AVAILABLE = True
+except ImportError as e:
+    MODELA_FORMULA_AVAILABLE = False
+    print(f"⚠ ModeA 公式引擎导入失败: {e}")
+
+try:
+    from backend.opinion_module import (
+        DEFAULT_ENTERPRISE_CSV,
+        DEFAULT_MEDIA_ROOT,
+        SUMMARY_JSON as OPINION_SUMMARY_JSON,
+        FEATURE_CSV as OPINION_FEATURE_CSV,
+        build_opinion_features,
+        load_opinion_feature_map,
+    )
+    MODEB_OPINION_AVAILABLE = True
+except ImportError as e:
+    try:
+        from opinion_module import (
+            DEFAULT_ENTERPRISE_CSV,
+            DEFAULT_MEDIA_ROOT,
+            SUMMARY_JSON as OPINION_SUMMARY_JSON,
+            FEATURE_CSV as OPINION_FEATURE_CSV,
+            build_opinion_features,
+            load_opinion_feature_map,
+        )
+        MODEB_OPINION_AVAILABLE = True
+    except ImportError:
+        MODEB_OPINION_AVAILABLE = False
+        print(f"⚠ ModeB 舆情模块导入失败: {e}")
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -92,6 +148,51 @@ agent: Optional[RiskAssessmentAgent] = None
 symptom_router = None
 orchestrator: Optional[Orchestrator] = None
 
+# LLM 子图评估全局状态
+LLM_GRAPH_PATH = PROJECT_ROOT / "data" / "llm_graph" / "graph_llm_ready.json"
+llm_graph: Optional[Dict[str, Any]] = None
+
+# ModelA v2 全局状态
+MODELA_V2_GRAPH_PATH = PROJECT_ROOT / "data" / "modela_v2" / "modela_v2_graph.json"
+MODELA_V2_DEFAULT_INPUT = PROJECT_ROOT.parent / "HandOff" / "乳制品供应链异构图数据和国标语料.zip"
+modela_v2_graph: Optional[Dict[str, Any]] = None
+
+# ModeB 舆情全局状态
+opinion_feature_by_id: Dict[str, Dict[str, Any]] = {}
+opinion_feature_by_name: Dict[str, Dict[str, Any]] = {}
+MODEB_CRAWLER_DEFAULT_ROOT = Path("/home/yarizakurahime/Agents/winteragent/MediaCrawler")
+MODEB_CRAWL_LOG_DIR = PROJECT_ROOT / "data" / "opinion" / "crawl_logs"
+MODEB_PLATFORM_TO_CRAWLER = {
+    "weibo": "wb",
+    "wb": "wb",
+    "douyin": "dy",
+    "dy": "dy",
+    "kuaishou": "ks",
+    "ks": "ks",
+    "xhs": "xhs",
+    "bili": "bili",
+    "zhihu": "zhihu",
+    "tieba": "tieba",
+}
+modeb_crawl_lock = threading.Lock()
+modeb_crawl_state: Dict[str, Any] = {
+    "status": "idle",
+    "run_id": None,
+    "pid": None,
+    "started_at": None,
+    "ended_at": None,
+    "return_code": None,
+    "command": [],
+    "log_path": "",
+    "mediacrawler_root": str(MODEB_CRAWLER_DEFAULT_ROOT),
+    "platform_request": None,
+    "platform_cli": None,
+    "crawler_type": None,
+    "keywords": None,
+    "process": None,
+    "log_handle": None,
+}
+
 
 # 数据模型
 class AssessRequest(BaseModel):
@@ -118,6 +219,29 @@ class SymptomAssessRequest(BaseModel):
     product_type: Optional[str] = None  # 可选的产品类型过滤
 
 
+class OpinionImportRequest(BaseModel):
+    """ModeB 舆情导入请求"""
+    media_root: Optional[str] = None
+    enterprise_csv: Optional[str] = None
+    platform: str = "weibo"
+    days: int = 30
+
+
+class OpinionCrawlStartRequest(BaseModel):
+    """ModeB 舆情抓取请求"""
+    mediacrawler_root: Optional[str] = None
+    platform: str = "weibo"
+    crawler_type: str = "search"
+    login_type: str = "qrcode"
+    keywords: str = "乳制品安全,奶粉腹泻,牛奶变质,牛奶变质投诉"
+    headless: bool = True
+    get_comment: bool = True
+    get_sub_comment: bool = False
+    start_page: int = 1
+    max_comments_count_singlenotes: int = 20
+    save_data_option: str = "json"
+
+
 class LinkedWorkflowRequest(BaseModel):
     """Mode A/B 联动工作流请求"""
     symptom_description: str
@@ -135,6 +259,7 @@ class PopulationInfo(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     global agent, symptom_router, orchestrator
+    global opinion_feature_by_id, opinion_feature_by_name
 
     # 日志输出当前数据源
     data_dir = os.environ.get("DATA_DIR", "自动解析")
@@ -157,11 +282,154 @@ async def startup_event():
     orchestrator = Orchestrator(data_dir=agent.retriever.data_dir)
     print("✓ 联动编排器初始化完成")
 
+    if MODEB_OPINION_AVAILABLE:
+        opinion_feature_by_id, opinion_feature_by_name = load_opinion_feature_map(OPINION_FEATURE_CSV)
+        print(f"✓ ModeB 舆情特征已加载: {len(opinion_feature_by_id)} 家企业")
+
 
 # 健康检查
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "version": "1.1.0"}
+
+
+def _to_float(v: Any, default: float = 0.0) -> float:
+    try:
+        return float(v)
+    except Exception:
+        return default
+
+
+def _now_iso() -> str:
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def _normalize_crawler_platform(platform: str) -> str:
+    p = str(platform or "").strip().lower()
+    return MODEB_PLATFORM_TO_CRAWLER.get(p, p or "wb")
+
+
+def _build_modeb_crawl_cmd(request: OpinionCrawlStartRequest, platform_cli: str) -> List[str]:
+    cmd: List[str] = [
+        "uv",
+        "run",
+        "main.py",
+        "--platform",
+        platform_cli,
+        "--lt",
+        request.login_type,
+        "--type",
+        request.crawler_type,
+        "--headless",
+        "true" if request.headless else "false",
+        "--get_comment",
+        "true" if request.get_comment else "false",
+        "--get_sub_comment",
+        "true" if request.get_sub_comment else "false",
+        "--save_data_option",
+        request.save_data_option,
+        "--max_comments_count_singlenotes",
+        str(max(1, int(request.max_comments_count_singlenotes))),
+    ]
+
+    if request.crawler_type == "search":
+        kw = str(request.keywords or "").strip()
+        if kw:
+            cmd.extend(["--keywords", kw])
+    if request.start_page and int(request.start_page) > 1:
+        cmd.extend(["--start", str(int(request.start_page))])
+    return cmd
+
+
+def _read_log_tail(log_path: str, tail_lines: int = 80) -> List[str]:
+    p = Path(log_path) if log_path else None
+    if not p or not p.exists():
+        return []
+    try:
+        lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception:
+        return []
+    if tail_lines <= 0:
+        return []
+    return lines[-tail_lines:]
+
+
+def _sync_modeb_crawl_state_locked() -> None:
+    proc = modeb_crawl_state.get("process")
+    if proc is None:
+        return
+    ret = proc.poll()
+    if ret is None:
+        return
+
+    modeb_crawl_state["return_code"] = ret
+    modeb_crawl_state["ended_at"] = modeb_crawl_state.get("ended_at") or _now_iso()
+    if modeb_crawl_state.get("status") == "running":
+        modeb_crawl_state["status"] = "success" if ret == 0 else "failed"
+    modeb_crawl_state["process"] = None
+
+    log_handle = modeb_crawl_state.get("log_handle")
+    if log_handle is not None:
+        try:
+            log_handle.flush()
+            log_handle.close()
+        except Exception:
+            pass
+        modeb_crawl_state["log_handle"] = None
+
+
+def _modeb_crawl_snapshot_locked(tail_lines: int = 80) -> Dict[str, Any]:
+    _sync_modeb_crawl_state_locked()
+    return {
+        "status": modeb_crawl_state.get("status"),
+        "run_id": modeb_crawl_state.get("run_id"),
+        "pid": modeb_crawl_state.get("pid"),
+        "started_at": modeb_crawl_state.get("started_at"),
+        "ended_at": modeb_crawl_state.get("ended_at"),
+        "return_code": modeb_crawl_state.get("return_code"),
+        "command": modeb_crawl_state.get("command") or [],
+        "log_path": modeb_crawl_state.get("log_path"),
+        "mediacrawler_root": modeb_crawl_state.get("mediacrawler_root"),
+        "platform_request": modeb_crawl_state.get("platform_request"),
+        "platform_cli": modeb_crawl_state.get("platform_cli"),
+        "crawler_type": modeb_crawl_state.get("crawler_type"),
+        "keywords": modeb_crawl_state.get("keywords"),
+        "log_tail": _read_log_tail(modeb_crawl_state.get("log_path") or "", tail_lines=tail_lines),
+    }
+
+
+def _enrich_linked_enterprises_with_opinion(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not items:
+        return items
+    if not MODEB_OPINION_AVAILABLE:
+        return items
+
+    enriched: List[Dict[str, Any]] = []
+    for ent in items:
+        e = dict(ent)
+        eid = str(e.get("enterprise_id") or "")
+        name = str(e.get("enterprise_name") or "")
+        feat = opinion_feature_by_id.get(eid) or opinion_feature_by_name.get(name) or {}
+
+        opinion_idx = _to_float(feat.get("opinion_risk_index"), 0.0)
+        mention_cnt = int(_to_float(feat.get("mention_count_30d"), 0))
+        neg_ratio = _to_float(feat.get("negative_ratio_30d"), 0.0)
+        risk_hits = int(_to_float(feat.get("risk_keyword_hits_30d"), 0))
+
+        # Mode B 基础分 + 舆情增强（上限控制）
+        base_score = _to_float(e.get("risk_score"), 0.0)
+        opinion_boost = min(5.0, opinion_idx * 5.0)
+        combined_score = round(base_score + opinion_boost, 2)
+
+        e["opinion_risk_index"] = round(opinion_idx, 6)
+        e["opinion_mentions_30d"] = mention_cnt
+        e["opinion_negative_ratio_30d"] = round(neg_ratio, 6)
+        e["opinion_risk_keyword_hits_30d"] = risk_hits
+        e["combined_risk_score"] = combined_score
+        enriched.append(e)
+
+    enriched.sort(key=lambda x: float(x.get("combined_risk_score", x.get("risk_score", 0.0))), reverse=True)
+    return enriched
 
 
 # 风险研判
@@ -234,6 +502,65 @@ def load_case_library():
 @app.on_event("startup")
 async def load_cases_on_startup():
     load_case_library()
+
+
+# 启动时加载 LLM 就绪子图
+@app.on_event("startup")
+async def load_llm_graph_on_startup():
+    global llm_graph
+    if LLM_GRAPH_PATH.exists():
+        try:
+            llm_graph = json.loads(LLM_GRAPH_PATH.read_text(encoding="utf-8"))
+            print(f"✓ LLM 子图已加载: {len(llm_graph['nodes'])} 节点, {len(llm_graph['edges'])} 边")
+        except Exception as e:
+            print(f"⚠ 加载 LLM 子图失败: {e}")
+    else:
+        print(f"⚠ LLM 子图文件不存在: {LLM_GRAPH_PATH}，请先运行 scripts/prepare_llm_hetero_graph.py")
+
+
+def _ensure_modela_v2_graph(force_rebuild: bool = False) -> Dict[str, Any]:
+    """加载（或构建）ModelA v2 图谱数据。"""
+    global modela_v2_graph
+    if not MODELA_V2_AVAILABLE:
+        raise RuntimeError("ModelA v2 模块不可用")
+
+    if modela_v2_graph is not None and not force_rebuild:
+        return modela_v2_graph
+
+    if force_rebuild or not MODELA_V2_GRAPH_PATH.exists():
+        if not MODELA_V2_DEFAULT_INPUT.exists():
+            raise FileNotFoundError(
+                f"未找到 ModelA v2 输入数据: {MODELA_V2_DEFAULT_INPUT}"
+            )
+        print("⏳ 正在构建 ModelA v2 图谱数据...")
+        modela_v2_graph = build_modela_v2_graph(
+            input_path=MODELA_V2_DEFAULT_INPUT,
+            output_dir=MODELA_V2_GRAPH_PATH.parent,
+        )
+        print(
+            f"✓ ModelA v2 构建完成: {modela_v2_graph['meta']['node_count']} 节点, "
+            f"{modela_v2_graph['meta']['edge_count']} 边"
+        )
+        return modela_v2_graph
+
+    modela_v2_graph = json.loads(MODELA_V2_GRAPH_PATH.read_text(encoding="utf-8"))
+    return modela_v2_graph
+
+
+@app.on_event("startup")
+async def load_modela_v2_on_startup():
+    if not MODELA_V2_AVAILABLE:
+        print("⚠ 跳过 ModelA v2 启动加载：模块不可用")
+        return
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        print(
+            f"✓ ModelA v2 已加载: {graph['meta']['node_count']} 节点, "
+            f"{graph['meta']['edge_count']} 边, "
+            f"{len(graph['meta']['product_categories'])} 品类"
+        )
+    except Exception as e:
+        print(f"⚠ 加载 ModelA v2 失败: {e}")
 
 # 获取演示案例
 @app.get("/demo_cases")
@@ -583,6 +910,196 @@ async def get_data_source():
     }
 
 
+# ==================== ModeB 舆情输入 API ====================
+
+@app.post("/modeb/opinion/crawl/start")
+async def modeb_opinion_crawl_start(request: OpinionCrawlStartRequest):
+    """
+    启动 MediaCrawler 抓取任务（单任务模式）
+    """
+    media_root = Path(request.mediacrawler_root) if request.mediacrawler_root else MODEB_CRAWLER_DEFAULT_ROOT
+    main_file = media_root / "main.py"
+    if not media_root.exists():
+        raise HTTPException(status_code=400, detail=f"MediaCrawler 根目录不存在: {media_root}")
+    if not main_file.exists():
+        raise HTTPException(status_code=400, detail=f"未找到 main.py: {main_file}")
+
+    platform_cli = _normalize_crawler_platform(request.platform)
+    if platform_cli not in {"xhs", "dy", "ks", "bili", "wb", "tieba", "zhihu"}:
+        raise HTTPException(status_code=400, detail=f"不支持的平台: {request.platform}")
+    if request.crawler_type not in {"search", "detail", "creator"}:
+        raise HTTPException(status_code=400, detail=f"不支持的抓取类型: {request.crawler_type}")
+    if request.login_type not in {"qrcode", "phone", "cookie"}:
+        raise HTTPException(status_code=400, detail=f"不支持的登录类型: {request.login_type}")
+
+    cmd = _build_modeb_crawl_cmd(request, platform_cli)
+    MODEB_CRAWL_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = MODEB_CRAWL_LOG_DIR / f"mediacrawler_{run_id}.log"
+
+    with modeb_crawl_lock:
+        _sync_modeb_crawl_state_locked()
+        if modeb_crawl_state.get("status") == "running":
+            raise HTTPException(status_code=409, detail="已有进行中的抓取任务，请先停止或等待完成")
+
+        old_log_handle = modeb_crawl_state.get("log_handle")
+        if old_log_handle is not None:
+            try:
+                old_log_handle.close()
+            except Exception:
+                pass
+
+        try:
+            log_handle = log_path.open("a", encoding="utf-8")
+            proc = subprocess.Popen(
+                cmd,
+                cwd=str(media_root),
+                stdout=log_handle,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"启动 MediaCrawler 失败: {e}")
+
+        modeb_crawl_state.update(
+            {
+                "status": "running",
+                "run_id": run_id,
+                "pid": proc.pid,
+                "started_at": _now_iso(),
+                "ended_at": None,
+                "return_code": None,
+                "command": cmd,
+                "log_path": str(log_path),
+                "mediacrawler_root": str(media_root),
+                "platform_request": request.platform,
+                "platform_cli": platform_cli,
+                "crawler_type": request.crawler_type,
+                "keywords": request.keywords,
+                "process": proc,
+                "log_handle": log_handle,
+            }
+        )
+        snapshot = _modeb_crawl_snapshot_locked(tail_lines=40)
+    return {"success": True, "data": snapshot}
+
+
+@app.get("/modeb/opinion/crawl/status")
+async def modeb_opinion_crawl_status(tail_lines: int = Query(80, ge=0, le=500)):
+    """
+    获取抓取任务状态与日志尾部
+    """
+    with modeb_crawl_lock:
+        snapshot = _modeb_crawl_snapshot_locked(tail_lines=tail_lines)
+    return {"success": True, "data": snapshot}
+
+
+@app.post("/modeb/opinion/crawl/stop")
+async def modeb_opinion_crawl_stop():
+    """
+    停止当前抓取任务
+    """
+    with modeb_crawl_lock:
+        _sync_modeb_crawl_state_locked()
+        proc = modeb_crawl_state.get("process")
+        if proc is None or modeb_crawl_state.get("status") != "running":
+            snapshot = _modeb_crawl_snapshot_locked(tail_lines=80)
+            return {"success": True, "data": snapshot, "message": "当前没有运行中的抓取任务"}
+
+        try:
+            proc.terminate()
+            proc.wait(timeout=8)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5)
+        except Exception:
+            pass
+
+        modeb_crawl_state["ended_at"] = _now_iso()
+        modeb_crawl_state["return_code"] = proc.returncode
+        modeb_crawl_state["status"] = "stopped"
+        modeb_crawl_state["process"] = None
+        log_handle = modeb_crawl_state.get("log_handle")
+        if log_handle is not None:
+            try:
+                log_handle.flush()
+                log_handle.close()
+            except Exception:
+                pass
+            modeb_crawl_state["log_handle"] = None
+        snapshot = _modeb_crawl_snapshot_locked(tail_lines=80)
+    return {"success": True, "data": snapshot}
+
+
+@app.post("/modeb/opinion/import")
+async def modeb_import_opinion(request: OpinionImportRequest):
+    """
+    导入 MediaCrawler 舆情数据并生成企业舆情特征
+    """
+    global opinion_feature_by_id, opinion_feature_by_name
+
+    if not MODEB_OPINION_AVAILABLE:
+        raise HTTPException(status_code=503, detail="ModeB 舆情模块不可用")
+
+    media_root = Path(request.media_root) if request.media_root else DEFAULT_MEDIA_ROOT
+    enterprise_csv = Path(request.enterprise_csv) if request.enterprise_csv else DEFAULT_ENTERPRISE_CSV
+    if not media_root.exists():
+        raise HTTPException(status_code=400, detail=f"MediaCrawler 数据目录不存在: {media_root}")
+    if not enterprise_csv.exists():
+        raise HTTPException(status_code=400, detail=f"企业主档不存在: {enterprise_csv}")
+
+    try:
+        summary = build_opinion_features(
+            media_root=media_root,
+            enterprise_csv=enterprise_csv,
+            platform=request.platform,
+            days=request.days,
+        )
+        opinion_feature_by_id, opinion_feature_by_name = load_opinion_feature_map(OPINION_FEATURE_CSV)
+        return {"success": True, "data": summary}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"舆情导入失败: {e}")
+
+
+@app.get("/modeb/opinion/summary")
+async def modeb_opinion_summary():
+    """获取舆情导入摘要"""
+    if not MODEB_OPINION_AVAILABLE:
+        raise HTTPException(status_code=503, detail="ModeB 舆情模块不可用")
+    if not OPINION_SUMMARY_JSON.exists():
+        return {
+            "success": True,
+            "data": {
+                "message": "尚未生成舆情特征，请先调用 /modeb/opinion/import",
+                "opinion_feature_loaded_count": len(opinion_feature_by_id),
+            },
+        }
+    data = json.loads(OPINION_SUMMARY_JSON.read_text(encoding="utf-8"))
+    data["opinion_feature_loaded_count"] = len(opinion_feature_by_id)
+    return {"success": True, "data": data}
+
+
+@app.get("/modeb/opinion/top")
+async def modeb_opinion_top(top_n: int = Query(20, ge=1, le=200)):
+    """获取舆情风险 TopN 企业"""
+    if not MODEB_OPINION_AVAILABLE:
+        raise HTTPException(status_code=503, detail="ModeB 舆情模块不可用")
+    if not OPINION_FEATURE_CSV.exists():
+        return {
+            "success": True,
+            "data": [],
+            "message": "尚未生成舆情特征，请先调用 /modeb/opinion/import",
+        }
+    rows: List[Dict[str, Any]] = []
+    with OPINION_FEATURE_CSV.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append(row)
+    rows.sort(key=lambda x: float(x.get("opinion_risk_index", 0.0) or 0.0), reverse=True)
+    return {"success": True, "data": rows[:top_n]}
+
+
 # ==================== 症状驱动评估 API (Mode B) ====================
 
 @app.post("/symptom/assess")
@@ -598,6 +1115,7 @@ async def symptom_assess(request: SymptomAssessRequest):
 
     try:
         result = symptom_router.assess(request.query, request.product_type)
+        linked_enterprises = _enrich_linked_enterprises_with_opinion(result.linked_enterprises)
 
         # 转换为字典格式
         response_data = {
@@ -605,14 +1123,16 @@ async def symptom_assess(request: SymptomAssessRequest):
             "symptoms_detected": result.symptoms_detected,
             "risk_factors": result.risk_factors,
             "stage_candidates": result.stage_candidates,
-            "linked_enterprises": result.linked_enterprises,
+            "linked_enterprises": linked_enterprises,
             "evidence": result.evidence,
             "risk_level": result.risk_level,
             "confidence": result.confidence,
             "suggested_actions": result.suggested_actions,
             # LLM 增强字段
             "llm_extraction": result.llm_extraction,
-            "processing_steps": result.processing_steps
+            "processing_steps": result.processing_steps,
+            "opinion_enabled": MODEB_OPINION_AVAILABLE,
+            "opinion_feature_loaded_count": len(opinion_feature_by_id),
         }
 
         return {
@@ -688,6 +1208,7 @@ async def symptom_assess_stream(request: SymptomAssessRequest):
             await asyncio.sleep(0.1)
 
             result = symptom_router.assess(request.query, request.product_type)
+            linked_enterprises = _enrich_linked_enterprises_with_opinion(result.linked_enterprises)
 
             # Step 4: 返回最终结果
             yield f"data: {json.dumps({
@@ -699,12 +1220,14 @@ async def symptom_assess_stream(request: SymptomAssessRequest):
                     'symptoms_detected': result.symptoms_detected,
                     'risk_factors': result.risk_factors,
                     'stage_candidates': result.stage_candidates,
-                    'linked_enterprises': result.linked_enterprises[:5],  # 只返回前5个
+                    'linked_enterprises': linked_enterprises[:5],  # 只返回前5个
                     'risk_level': result.risk_level,
                     'confidence': result.confidence,
                     'suggested_actions': result.suggested_actions,
                     'llm_extraction': result.llm_extraction,
-                    'processing_steps': result.processing_steps
+                    'processing_steps': result.processing_steps,
+                    'opinion_enabled': MODEB_OPINION_AVAILABLE,
+                    'opinion_feature_loaded_count': len(opinion_feature_by_id),
                 }
             }, ensure_ascii=False)}\n\n"
 
@@ -936,6 +1459,1151 @@ async def get_alerts(
                 ]
             }
         }
+
+
+# ==================== 子图 & LLM 评估 API ====================
+
+def _parse_ts_local(ts: str | None):
+    """解析时间戳字符串为 datetime 对象"""
+    if not ts:
+        return None
+    ts = ts.strip()
+    if not ts:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(ts, fmt)
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(ts)
+    except Exception:
+        return None
+
+
+def _extract_subgraph_local(
+    graph: Dict[str, Any],
+    region: Optional[str],
+    start_time: Optional[datetime],
+    end_time: Optional[datetime],
+    seed_node: Optional[str],
+    k_hop: int,
+    max_nodes: int = 300,
+    max_edges: int = 600,
+) -> Dict[str, Any]:
+    """从完整图中提取满足条件的子图（与 scripts/run_llm_subgraph_assessment.py 逻辑一致）"""
+    nodes = graph.get("nodes", [])
+    edges = graph.get("edges", [])
+
+    node_by_id = {n["node_id"]: n for n in nodes}
+    node_by_name = {n["name"]: n for n in nodes}
+
+    # 1) 边级时间过滤
+    edge_filtered = []
+    for e in edges:
+        ts = _parse_ts_local(e.get("timestamp"))
+        if start_time and (ts is None or ts < start_time):
+            continue
+        if end_time and (ts is None or ts > end_time):
+            continue
+        edge_filtered.append(e)
+
+    # 2) 节点级区域过滤
+    base_node_ids = set()
+    for n in nodes:
+        if region and n.get("region") != region:
+            continue
+        base_node_ids.add(n["node_id"])
+
+    if not region:
+        for e in edge_filtered:
+            base_node_ids.add(e["source"])
+            base_node_ids.add(e["target"])
+
+    # 3) k-hop 扩展（基于过滤后的边构建邻接表）
+    adjacency: Dict[str, set] = defaultdict(set)
+    for e in edge_filtered:
+        s, t = e["source"], e["target"]
+        adjacency[s].add(t)
+        adjacency[t].add(s)
+
+    if seed_node:
+        seed_id = node_by_name.get(seed_node, {}).get("node_id") if seed_node in node_by_name else seed_node
+        if seed_id not in node_by_id:
+            raise ValueError(f"seed_node 不存在: {seed_node}")
+        allowed = {seed_id}
+        q: deque = deque([(seed_id, 0)])
+        visited = {seed_id}
+        while q:
+            cur, depth = q.popleft()
+            if depth >= k_hop:
+                continue
+            for nb in adjacency.get(cur, set()):
+                if nb not in visited:
+                    visited.add(nb)
+                    allowed.add(nb)
+                    q.append((nb, depth + 1))
+        selected_nodes = allowed & base_node_ids if base_node_ids else allowed
+    else:
+        selected_nodes = set(base_node_ids)
+
+    sub_edges = [e for e in edge_filtered if e["source"] in selected_nodes and e["target"] in selected_nodes]
+
+    # 优先按边风险降序截断：保证返回的边尽量有意义且节点连通
+    sub_edges.sort(key=lambda x: int(x.get("risk_positive_count", 0)), reverse=True)
+    sub_edges = sub_edges[:max_edges]
+
+    # 从保留的边中收集节点，再补充高风险独立节点至 max_nodes
+    edge_node_ids: set = set()
+    for e in sub_edges:
+        edge_node_ids.add(e["source"])
+        edge_node_ids.add(e["target"])
+
+    # 补充：不在边中但风险高的节点（显示孤立高风险节点）
+    all_candidate_nodes = [node_by_id[nid] for nid in selected_nodes if nid in node_by_id]
+    all_candidate_nodes.sort(key=lambda x: float(x.get("risk_score", 0.0)), reverse=True)
+
+    kept_ids = set(edge_node_ids)
+    for n in all_candidate_nodes:
+        if len(kept_ids) >= max_nodes:
+            break
+        kept_ids.add(n["node_id"])
+
+    sub_nodes = [node_by_id[nid] for nid in kept_ids if nid in node_by_id]
+    sub_nodes.sort(key=lambda x: float(x.get("risk_score", 0.0)), reverse=True)
+
+    return {
+        "meta": {
+            "region": region,
+            "start_time": start_time.isoformat() if start_time else None,
+            "end_time": end_time.isoformat() if end_time else None,
+            "seed_node": seed_node,
+            "k_hop": k_hop,
+            "node_count": len(sub_nodes),
+            "edge_count": len(sub_edges),
+            "capped": len(sub_nodes) >= max_nodes or len(sub_edges) >= max_edges,
+        },
+        "nodes": sub_nodes,
+        "edges": sub_edges,
+    }
+
+
+def _compute_time_window(graph: Dict[str, Any], time_window_days: int):
+    """计算时间窗口：取图中最大时间戳往前推 time_window_days 天"""
+    max_ts = None
+    for e in graph.get("edges", []):
+        ts = _parse_ts_local(e.get("timestamp"))
+        if ts and (max_ts is None or ts > max_ts):
+            max_ts = ts
+    if max_ts is None:
+        max_ts = datetime.now()
+    start_ts = max_ts - timedelta(days=time_window_days)
+    return start_ts, max_ts
+
+
+@app.get("/api/graph/search")
+async def search_graph_nodes(
+    q: str = Query(..., description="企业名称关键词"),
+    limit: int = Query(10, ge=1, le=50),
+):
+    """按企业名模糊搜索异构图节点，返回 node_id + name + type + risk_score"""
+    if llm_graph is None:
+        raise HTTPException(status_code=503, detail="LLM 图尚未加载")
+    q_lower = q.strip().lower()
+    results = [
+        {
+            "node_id": n["node_id"],
+            "name": n["name"],
+            "node_type": n.get("node_type", "未知"),
+            "risk_score": n.get("risk_score", 0.0),
+            "risk_level": n.get("risk_level", "low"),
+            "product_tag": n.get("product_tag", "dairy_general"),
+        }
+        for n in llm_graph["nodes"]
+        if q_lower in n.get("name", "").lower()
+    ]
+    results.sort(key=lambda x: x["risk_score"], reverse=True)
+    return {"success": True, "data": results[:limit], "total": len(results)}
+
+
+@app.get("/api/graph/subgraph")
+async def get_subgraph(
+    region: Optional[str] = Query("上海", description="区域过滤，留空则不过滤"),
+    time_window: int = Query(30, ge=1, le=365, description="时间窗口（天），基于图中最新时间戳往前推"),
+    k_hop: int = Query(2, ge=1, le=5, description="k-hop 邻域深度"),
+    seed_node: Optional[str] = Query(None, description="种子节点名称或 node_id（留空则不做 k-hop 扩展）"),
+    max_nodes: int = Query(300, ge=10, le=1000, description="返回节点数上限"),
+    max_edges: int = Query(600, ge=10, le=3000, description="返回边数上限"),
+):
+    """
+    提取 LLM 异构图的子图
+
+    - 先按 time_window 过滤边（从图内最大时间戳往前推 N 天）
+    - 再按 region 过滤节点
+    - 若指定 seed_node，对其做 k-hop BFS 扩展
+    - 结果按风险分数降序，并截断到 max_nodes/max_edges
+    """
+    if llm_graph is None:
+        raise HTTPException(
+            status_code=503,
+            detail="LLM 图尚未加载，请先运行 scripts/prepare_llm_hetero_graph.py 生成 data/llm_graph/graph_llm_ready.json"
+        )
+
+    try:
+        start_ts, end_ts = _compute_time_window(llm_graph, time_window)
+        subgraph = _extract_subgraph_local(
+            graph=llm_graph,
+            region=region if region else None,
+            start_time=start_ts,
+            end_time=end_ts,
+            seed_node=seed_node,
+            k_hop=k_hop,
+            max_nodes=max_nodes,
+            max_edges=max_edges,
+        )
+        return {"success": True, "data": subgraph}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"子图提取失败: {e}")
+
+
+class LLMAssessRequest(BaseModel):
+    region: Optional[str] = "上海"
+    time_window: int = 30
+    k_hop: int = 2
+    seed_node: Optional[str] = None
+    use_mock_llm: bool = False
+
+
+@app.post("/api/modea/llm_assess")
+async def llm_assess_subgraph(request: LLMAssessRequest):
+    """
+    对指定子图执行 LLM 风险评估（Mode A 子图版本）
+
+    流程：
+    1. 按参数提取子图
+    2. 汇总子图风险指标（高/中/低节点分布、top nodes）
+    3. 调用 LLM（或 mock）生成风险评估报告
+    """
+    if llm_graph is None:
+        raise HTTPException(
+            status_code=503,
+            detail="LLM 图尚未加载，请先运行 scripts/prepare_llm_hetero_graph.py"
+        )
+
+    try:
+        start_ts, end_ts = _compute_time_window(llm_graph, request.time_window)
+        subgraph = _extract_subgraph_local(
+            graph=llm_graph,
+            region=request.region if request.region else None,
+            start_time=start_ts,
+            end_time=end_ts,
+            seed_node=request.seed_node,
+            k_hop=request.k_hop,
+        )
+
+        nodes = subgraph["nodes"]
+        edges = subgraph["edges"]
+
+        if not nodes:
+            return {
+                "success": True,
+                "data": {
+                    "subgraph_meta": subgraph["meta"],
+                    "rule_summary": {"risk_level": "low", "risk_score": 0.0, "top_nodes": []},
+                    "llm": {"success": False, "content": None, "error": "子图为空，无法评估"},
+                }
+            }
+
+        # 汇总风险
+        risk_scores = [float(n.get("risk_score", 0.0)) for n in nodes]
+        avg_risk = sum(risk_scores) / max(len(risk_scores), 1)
+        high_cnt = sum(1 for n in nodes if n.get("risk_level") == "high")
+        med_cnt = sum(1 for n in nodes if n.get("risk_level") == "medium")
+
+        if avg_risk >= 0.45 or high_cnt >= max(1, len(nodes) // 8):
+            risk_level = "high"
+        elif avg_risk >= 0.25 or med_cnt >= max(1, len(nodes) // 4):
+            risk_level = "medium"
+        else:
+            risk_level = "low"
+
+        risk_score_100 = round(avg_risk * 100, 2)
+        top_nodes = sorted(nodes, key=lambda x: float(x.get("risk_score", 0.0)), reverse=True)[:5]
+
+        triggered_rules = [
+            {"factor": "subgraph_high_risk_node_ratio", "reason": f"high={high_cnt}/{len(nodes)}", "score": round(min(100, 30 + high_cnt * 8), 2)},
+            {"factor": "subgraph_avg_node_risk", "reason": f"avg={avg_risk:.3f}", "score": risk_score_100},
+            {"factor": "subgraph_structure_complexity", "reason": f"nodes={len(nodes)}, edges={len(edges)}", "score": round(min(100, len(edges) / max(len(nodes), 1) * 20), 2)},
+        ]
+        supply_chain_context = {
+            "nodes": [{"id": n["node_id"], "name": n["name"], "risk": n.get("risk_level")} for n in top_nodes],
+            "edges": edges[:20],
+            "complexity_score": round(len(edges) / max(len(nodes), 1), 3),
+        }
+
+        # 调用 LLM
+        from agent.llm_client import get_llm_client
+        use_mock = request.use_mock_llm or not bool(os.environ.get("MINIMAX_API_KEY"))
+        llm_client = get_llm_client(use_mock=use_mock)
+
+        target_name = f"Subgraph[{request.region or 'all'}|t={request.time_window}d|k={request.k_hop}]"
+        response = llm_client.generate_risk_report(
+            target_name=target_name,
+            target_type="enterprise",
+            risk_level=risk_level,
+            risk_score=risk_score_100,
+            triggered_rules=triggered_rules,
+            evidence={"inspections": [], "events": []},
+            supply_chain_context=supply_chain_context,
+            similar_cases=[],
+        )
+
+        return {
+            "success": True,
+            "data": {
+                "query": {
+                    "region": request.region,
+                    "time_window": request.time_window,
+                    "k_hop": request.k_hop,
+                    "seed_node": request.seed_node,
+                },
+                "subgraph_meta": subgraph["meta"],
+                "rule_summary": {
+                    "risk_level": risk_level,
+                    "risk_score": risk_score_100,
+                    "high_count": high_cnt,
+                    "medium_count": med_cnt,
+                    "low_count": len(nodes) - high_cnt - med_cnt,
+                    "top_nodes": [
+                        {"node_id": n["node_id"], "name": n["name"], "risk_level": n.get("risk_level"), "risk_score": n.get("risk_score")}
+                        for n in top_nodes
+                    ],
+                },
+                "llm": {
+                    "success": response.success,
+                    "latency_ms": response.latency_ms,
+                    "error": response.error,
+                    "content": response.content,
+                    "usage": response.usage,
+                    "mock": use_mock,
+                },
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"LLM 评估失败: {e}")
+
+
+# ==================== ModelA v2 API ====================
+
+def _modela_uncertainty(node: Dict[str, Any], product_type: Optional[str] = None) -> float:
+    """基于风险分布熵 + 证据稀缺度估计不确定性（0~1，越高越不确定）。"""
+    vec = node.get("risk_probabilities", []) or []
+    if product_type:
+        vec = node.get("category_risk_probabilities", {}).get(product_type, vec)
+    if not vec:
+        return 1.0
+    probs = [max(1e-6, min(1.0, float(x))) for x in vec]
+    total = sum(probs)
+    norm = [p / total for p in probs] if total > 0 else [1.0 / len(probs)] * len(probs)
+    # 归一化熵
+    import math
+
+    entropy = -sum(p * math.log(p) for p in norm) / max(math.log(len(norm)), 1e-6)
+    profile = node.get("profile_features", {})
+    inspection_cnt = float(profile.get("历史抽检次数", 0))
+    evidence_conf = min(1.0, inspection_cnt / 60.0)
+    return round(max(0.0, min(1.0, 0.65 * entropy + 0.35 * (1.0 - evidence_conf))), 6)
+
+
+def _modela_category_score(node: Dict[str, Any], product_type: Optional[str]) -> float:
+    if product_type:
+        vec = node.get("category_risk_probabilities", {}).get(product_type)
+        if vec:
+            return float(max(vec))
+    return float(node.get("risk_score", 0.0))
+
+
+def _modela_priority(node: Dict[str, Any], product_type: Optional[str]) -> float:
+    risk = _modela_category_score(node, product_type)
+    unc = _modela_uncertainty(node, product_type)
+    return round(min(1.0, risk * (1.0 + 0.45 * unc)), 6)
+
+
+def _modela_ranking_nodes(
+    graph: Dict[str, Any],
+    product_type: Optional[str],
+    node_type: Optional[str],
+) -> List[Dict[str, Any]]:
+    ranked = []
+    for n in graph.get("nodes", []):
+        if node_type and n.get("node_type") != node_type:
+            continue
+        risk = _modela_category_score(n, product_type)
+        unc = _modela_uncertainty(n, product_type)
+        pri = _modela_priority(n, product_type)
+        ranked.append(
+            {
+                "node_id": n.get("node_id"),
+                "name": n.get("name"),
+                "node_type": n.get("node_type"),
+                "enterprise_scale": n.get("enterprise_scale"),
+                "risk_score": round(risk, 6),
+                "uncertainty": unc,
+                "priority_score": pri,
+                "profile_features": n.get("profile_features", {}),
+            }
+        )
+    ranked.sort(key=lambda x: x["priority_score"], reverse=True)
+    return ranked
+
+
+def _modela_risk_level(score: float) -> str:
+    if score >= 0.66:
+        return "high"
+    if score >= 0.38:
+        return "medium"
+    return "low"
+
+
+def _modela_quantile(values: List[float], q: float) -> float:
+    if not values:
+        return 1.0
+    arr = sorted(float(v) for v in values)
+    if len(arr) == 1:
+        return arr[0]
+    q = max(0.0, min(1.0, float(q)))
+    idx = int(round((len(arr) - 1) * q))
+    return arr[max(0, min(len(arr) - 1, idx))]
+
+
+def _modela_thresholds(vectors: List[List[float]], top_ratio: float) -> List[float]:
+    ratio = max(0.001, min(0.5, float(top_ratio)))
+    q = 1.0 - ratio
+    out = []
+    for i in range(7):
+        vals = [float(v[i]) for v in vectors if len(v) > i]
+        out.append(round(_modela_quantile(vals, q), 6))
+    return out
+
+
+def _modela_node_vec(node: Dict[str, Any], product_type: Optional[str]) -> List[float]:
+    if product_type:
+        vec = node.get("category_risk_probabilities", {}).get(product_type)
+        if vec:
+            return [float(x) for x in vec]
+    return [float(x) for x in (node.get("risk_probabilities", []) or [0.0] * 7)]
+
+
+def _modela_extract_view(
+    graph: Dict[str, Any],
+    view_mode: str,
+    product_type: Optional[str],
+    seed_node: Optional[str],
+    k_hop: int,
+    max_nodes: int,
+    max_edges: int,
+    top_ratio: float = 0.05,
+) -> Dict[str, Any]:
+    edges_all = graph.get("edges", [])
+    nodes_all = graph.get("nodes", [])
+    node_by_id = {n.get("node_id"): n for n in nodes_all if n.get("node_id")}
+    node_by_name = {n.get("name"): n for n in nodes_all if n.get("name")}
+
+    if view_mode not in {"full", "product"}:
+        raise ValueError("view_mode 仅支持 full 或 product")
+    if view_mode == "product" and not product_type:
+        raise ValueError("view_mode=product 时必须提供 product_type")
+
+    if product_type:
+        filtered_edges = [e for e in edges_all if e.get("dairy_product_type") == product_type]
+    else:
+        filtered_edges = list(edges_all)
+
+    selected_edge_indices = set()
+    selected_node_ids = set()
+    if seed_node:
+        seed_id = seed_node
+        if seed_node in node_by_name:
+            seed_id = node_by_name[seed_node]["node_id"]
+        if seed_id not in node_by_id:
+            raise ValueError(f"seed_node 不存在: {seed_node}")
+        adjacency: Dict[str, set] = defaultdict(set)
+        edge_bucket: Dict[tuple, List[int]] = defaultdict(list)
+        for idx, edge in enumerate(filtered_edges):
+            s, t = edge.get("source"), edge.get("target")
+            if not s or not t:
+                continue
+            adjacency[s].add(t)
+            adjacency[t].add(s)
+            edge_bucket[(s, t)].append(idx)
+            edge_bucket[(t, s)].append(idx)
+        depth_limit = max(1, int(k_hop))
+        queue = deque([(seed_id, 0)])
+        visited = {seed_id}
+        selected_node_ids.add(seed_id)
+        while queue:
+            cur, dep = queue.popleft()
+            if dep >= depth_limit:
+                continue
+            for nxt in adjacency.get(cur, set()):
+                if nxt not in visited:
+                    visited.add(nxt)
+                    selected_node_ids.add(nxt)
+                    queue.append((nxt, dep + 1))
+                for ei in edge_bucket.get((cur, nxt), []):
+                    selected_edge_indices.add(ei)
+    else:
+        for idx, edge in enumerate(filtered_edges):
+            selected_edge_indices.add(idx)
+            selected_node_ids.add(edge.get("source"))
+            selected_node_ids.add(edge.get("target"))
+
+    chosen_edges = [filtered_edges[i] for i in sorted(selected_edge_indices)]
+    chosen_edges.sort(key=lambda e: float(max(e.get("risk_probabilities", [0.0]))), reverse=True)
+    capped_edges = len(chosen_edges) > max_edges
+    chosen_edges = chosen_edges[:max_edges]
+
+    connected_nodes = set()
+    for edge in chosen_edges:
+        connected_nodes.add(edge.get("source"))
+        connected_nodes.add(edge.get("target"))
+    for node_id in selected_node_ids:
+        if len(connected_nodes) >= max_nodes:
+            break
+        connected_nodes.add(node_id)
+
+    node_candidates = [node_by_id[nid] for nid in connected_nodes if nid in node_by_id]
+    node_candidates.sort(
+        key=lambda n: max(_modela_node_vec(n, product_type)),
+        reverse=True,
+    )
+    capped_nodes = len(node_candidates) > max_nodes
+    chosen_nodes = node_candidates[:max_nodes]
+    keep_node_ids = {n["node_id"] for n in chosen_nodes}
+    chosen_edges = [e for e in chosen_edges if e.get("source") in keep_node_ids and e.get("target") in keep_node_ids]
+
+    node_view = []
+    for n in chosen_nodes:
+        vec = _modela_node_vec(n, product_type)
+        score = max(vec) if vec else 0.0
+        node_view.append(
+            {
+                **n,
+                "view_scope": view_mode,
+                "view_product_type": product_type,
+                "view_risk_probabilities": vec,
+                "view_risk_score": round(float(score), 6),
+                "view_risk_level": _modela_risk_level(float(score)),
+            }
+        )
+
+    edge_view = []
+    for e in chosen_edges:
+        vec = [float(x) for x in (e.get("risk_probabilities", []) or [0.0] * 7)]
+        score = max(vec) if vec else 0.0
+        edge_view.append(
+            {
+                **e,
+                "view_scope": view_mode,
+                "view_product_type": product_type,
+                "view_risk_probabilities": vec,
+                "view_risk_score": round(float(score), 6),
+                "view_risk_level": _modela_risk_level(float(score)),
+            }
+        )
+
+    risk_keys = graph.get("meta", {}).get("risk_dimensions", [])
+    if len(risk_keys) != 7:
+        risk_keys = [
+            "non_food_additives",
+            "pesticide_vet_residue",
+            "food_additive_excess",
+            "microbial_contamination",
+            "heavy_metal",
+            "biotoxin",
+            "other_contaminants",
+        ]
+    node_thresholds = _modela_thresholds([n.get("view_risk_probabilities", [0.0] * 7) for n in node_view], top_ratio)
+    edge_thresholds = _modela_thresholds([e.get("view_risk_probabilities", [0.0] * 7) for e in edge_view], top_ratio)
+
+    for n in node_view:
+        vec = n.get("view_risk_probabilities", [0.0] * 7)
+        flags = {risk_keys[i]: bool(float(vec[i]) >= float(node_thresholds[i])) for i in range(7)}
+        n["top5_flags"] = flags
+        n["top5_count"] = int(sum(1 for v in flags.values() if v))
+        n["is_top5_any"] = bool(n["top5_count"] > 0)
+
+    for e in edge_view:
+        vec = e.get("view_risk_probabilities", [0.0] * 7)
+        flags = {risk_keys[i]: bool(float(vec[i]) >= float(edge_thresholds[i])) for i in range(7)}
+        e["top5_flags"] = flags
+        e["top5_count"] = int(sum(1 for v in flags.values() if v))
+        e["is_top5_any"] = bool(e["top5_count"] > 0)
+
+    return {
+        "meta": {
+            "view_mode": view_mode,
+            "product_type": product_type,
+            "seed_node": seed_node,
+            "k_hop": k_hop,
+            "node_count": len(node_view),
+            "edge_count": len(edge_view),
+            "risk_dimensions": risk_keys,
+            "risk_dimensions_zh": graph.get("meta", {}).get("risk_dimensions_zh", []),
+            "top5_thresholds": {
+                "ratio": float(top_ratio),
+                "node": dict(zip(risk_keys, node_thresholds)),
+                "edge": dict(zip(risk_keys, edge_thresholds)),
+            },
+            "capped_nodes": capped_nodes,
+            "capped_edges": capped_edges,
+        },
+        "nodes": node_view,
+        "edges": edge_view,
+    }
+
+
+class ModelAModeAReportRequest(BaseModel):
+    view_mode: str = "product"
+    product_type: Optional[str] = None
+    seed_node: Optional[str] = None
+    k_hop: int = 0
+    max_nodes: int = 400
+    max_edges: int = 1500
+    top_ratio: float = 0.05
+    use_mock_llm: bool = False
+
+
+class ModelAResourcePlanRequest(BaseModel):
+    product_type: Optional[str] = None
+    node_type: Optional[str] = None
+    budget: float = 100.0
+    max_enterprises: int = 20
+    cost_large: float = 1.8
+    cost_medium: float = 1.2
+    cost_small: float = 1.0
+    min_samples_per_type: int = 0
+
+@app.get("/api/modela/v2/meta")
+async def modela_v2_meta():
+    """返回 ModelA v2 元信息与构建状态。"""
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        return {"success": True, "data": graph.get("meta", {})}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"加载 ModelA v2 元信息失败: {e}")
+
+
+@app.get("/api/modela/v2/categories")
+async def modela_v2_categories():
+    """返回乳制品品类列表。"""
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        categories = graph.get("meta", {}).get("product_categories", [])
+        return {"success": True, "data": categories, "total": len(categories)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"加载品类失败: {e}")
+
+
+@app.get("/api/modela/v2/subgraph")
+async def modela_v2_subgraph(
+    product_type: str = Query(..., description="乳制品品类"),
+    seed_node: Optional[str] = Query(None, description="种子节点名称或ID"),
+    k_hop: int = Query(0, ge=0, le=5, description="子图k-hop范围，0表示不过滤"),
+    max_nodes: int = Query(500, ge=10, le=5000),
+    max_edges: int = Query(2000, ge=10, le=50000),
+):
+    """按品类提取子图，并返回节点/边7类风险概率。"""
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        subgraph = extract_category_subgraph(
+            graph=graph,
+            product_type=product_type,
+            k_hop=k_hop,
+            seed_node=seed_node,
+            max_nodes=max_nodes,
+            max_edges=max_edges,
+        )
+        if MODELA_FORMULA_AVAILABLE:
+            subgraph = compute_formula_scores(
+                subgraph,
+                query_context={
+                    "view_mode": "product",
+                    "product_type": product_type,
+                    "seed_node": seed_node,
+                    "k_hop": k_hop,
+                },
+            )
+        return {"success": True, "data": subgraph}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ModelA v2 子图提取失败: {e}")
+
+
+@app.get("/api/modela/v2/view")
+async def modela_v2_view(
+    view_mode: str = Query("product", description="full 或 product"),
+    product_type: Optional[str] = Query(None, description="乳制品品类，view_mode=product 时必填"),
+    seed_node: Optional[str] = Query(None, description="种子节点名称或ID"),
+    k_hop: int = Query(0, ge=0, le=5),
+    max_nodes: int = Query(600, ge=50, le=5000),
+    max_edges: int = Query(4000, ge=100, le=50000),
+    top_ratio: float = Query(0.05, gt=0.0, le=0.2),
+):
+    """统一图视图接口：支持全图/品类子图，返回节点与边的Top5%风险标签。"""
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        data = _modela_extract_view(
+            graph=graph,
+            view_mode=view_mode,
+            product_type=product_type,
+            seed_node=seed_node,
+            k_hop=k_hop,
+            max_nodes=max_nodes,
+            max_edges=max_edges,
+            top_ratio=top_ratio,
+        )
+        if MODELA_FORMULA_AVAILABLE:
+            data = compute_formula_scores(
+                data,
+                query_context={
+                    "view_mode": view_mode,
+                    "product_type": product_type,
+                    "seed_node": seed_node,
+                    "k_hop": k_hop,
+                },
+            )
+        return {"success": True, "data": data}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ModelA v2 视图提取失败: {e}")
+
+
+@app.post("/api/modela/v2/modea_report")
+async def modela_v2_modea_report(request: ModelAModeAReportRequest):
+    """
+    Mode A 结论与策略报告（LLM驱动）：
+    先按全图/品类图提取视图，再汇总规则指标，最后调用 LLM 生成报告。
+    """
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        view = _modela_extract_view(
+            graph=graph,
+            view_mode=request.view_mode,
+            product_type=request.product_type,
+            seed_node=request.seed_node,
+            k_hop=request.k_hop,
+            max_nodes=request.max_nodes,
+            max_edges=request.max_edges,
+            top_ratio=request.top_ratio,
+        )
+        if MODELA_FORMULA_AVAILABLE:
+            view = compute_formula_scores(
+                view,
+                query_context={
+                    "view_mode": request.view_mode,
+                    "product_type": request.product_type,
+                    "seed_node": request.seed_node,
+                    "k_hop": request.k_hop,
+                },
+            )
+        nodes = view.get("nodes", [])
+        edges = view.get("edges", [])
+        if not nodes:
+            return {
+                "success": True,
+                "data": {
+                    "query": request.dict(),
+                    "view_meta": view.get("meta", {}),
+                    "rule_summary": {"risk_level": "low", "risk_score": 0.0, "top_nodes": []},
+                    "llm": {"success": False, "content": None, "error": "图为空，无法生成报告"},
+                },
+            }
+
+        node_risk_scores = [float(n.get("risk_proxy", n.get("view_risk_score", 0.0))) for n in nodes]
+        node_priority_scores = [float(n.get("priority_score", n.get("view_risk_score", 0.0))) for n in nodes]
+        edge_scores = [float(e.get("edge_risk_proxy", e.get("view_risk_score", 0.0))) for e in edges] if edges else [0.0]
+        avg_node_risk = sum(node_risk_scores) / max(len(node_risk_scores), 1)
+        avg_priority = sum(node_priority_scores) / max(len(node_priority_scores), 1)
+        avg_edge_risk = sum(edge_scores) / max(len(edge_scores), 1)
+        high_node_cnt = sum(1 for n in nodes if float(n.get("priority_score", n.get("view_risk_score", 0.0))) >= 0.66)
+        top5_node_cnt = sum(1 for n in nodes if bool(n.get("is_top5_any")))
+        uncertainty_scores = [float(n.get("uncertainty_proxy", _modela_uncertainty(n, request.product_type))) for n in nodes]
+        credibility_scores = [float(n.get("credibility_proxy", 0.0)) for n in nodes]
+        avg_uncertainty = sum(uncertainty_scores) / max(len(uncertainty_scores), 1)
+        avg_credibility = sum(credibility_scores) / max(len(credibility_scores), 1) if credibility_scores else 0.0
+
+        weighted_score = 0.55 * avg_priority + 0.25 * avg_edge_risk + 0.20 * avg_uncertainty
+        risk_score_100 = round(weighted_score * 100, 2)
+        if weighted_score >= 0.58 or high_node_cnt >= max(1, len(nodes) // 10):
+            risk_level = "high"
+        elif weighted_score >= 0.34:
+            risk_level = "medium"
+        else:
+            risk_level = "low"
+
+        top_nodes = sorted(
+            nodes,
+            key=lambda x: float(x.get("priority_score", x.get("view_risk_score", 0.0))),
+            reverse=True,
+        )[:8]
+        triggered_rules = [
+            {
+                "factor": "node_avg_priority",
+                "reason": f"avg_priority={avg_priority:.4f}",
+                "score": round(avg_priority * 100, 2),
+            },
+            {
+                "factor": "edge_avg_risk",
+                "reason": f"avg_edge_risk={avg_edge_risk:.4f}",
+                "score": round(avg_edge_risk * 100, 2),
+            },
+            {
+                "factor": "high_risk_node_ratio",
+                "reason": f"high={high_node_cnt}/{len(nodes)}",
+                "score": round(high_node_cnt / max(len(nodes), 1) * 100, 2),
+            },
+            {
+                "factor": "top5_hotspot_ratio",
+                "reason": f"top5_any={top5_node_cnt}/{len(nodes)}",
+                "score": round(top5_node_cnt / max(len(nodes), 1) * 100, 2),
+            },
+            {
+                "factor": "uncertainty_penalty",
+                "reason": f"avg_uncertainty={avg_uncertainty:.4f}",
+                "score": round(avg_uncertainty * 100, 2),
+            },
+            {
+                "factor": "credibility_support",
+                "reason": f"avg_credibility={avg_credibility:.4f}",
+                "score": round(avg_credibility * 100, 2),
+            },
+        ]
+
+        supply_chain_context = {
+            "nodes": [
+                {
+                    "id": n.get("node_id"),
+                    "name": n.get("name"),
+                    "risk": _modela_risk_level(float(n.get("priority_score", n.get("view_risk_score", 0.0)))),
+                    "score": n.get("priority_score", n.get("view_risk_score")),
+                }
+                for n in top_nodes
+            ],
+            "edges": edges[:30],
+            "complexity_score": round(len(edges) / max(len(nodes), 1), 3),
+            "view_mode": request.view_mode,
+            "product_type": request.product_type,
+        }
+
+        from agent.llm_client import get_llm_client
+
+        use_mock = request.use_mock_llm or not bool(os.environ.get("MINIMAX_API_KEY"))
+        llm_client = get_llm_client(use_mock=use_mock)
+        response = llm_client.generate_risk_report(
+            target_name=f"ModelA-v2[{request.view_mode}|{request.product_type or 'ALL'}]",
+            target_type="enterprise",
+            risk_level=risk_level,
+            risk_score=risk_score_100,
+            triggered_rules=triggered_rules,
+            evidence={"inspections": [], "events": []},
+            supply_chain_context=supply_chain_context,
+            similar_cases=[],
+        )
+
+        return {
+            "success": True,
+            "data": {
+                "query": request.dict(),
+                "view_meta": view.get("meta", {}),
+                "rule_summary": {
+                    "risk_level": risk_level,
+                    "risk_score": risk_score_100,
+                    "high_count": high_node_cnt,
+                    "low_count": len(nodes) - high_node_cnt,
+                    "avg_node_risk": round(avg_node_risk, 6),
+                    "avg_priority": round(avg_priority, 6),
+                    "avg_edge_risk": round(avg_edge_risk, 6),
+                    "avg_uncertainty": round(avg_uncertainty, 6),
+                    "avg_credibility": round(avg_credibility, 6),
+                    "top_nodes": [
+                        {
+                            "node_id": n.get("node_id"),
+                            "name": n.get("name"),
+                            "risk_level": _modela_risk_level(float(n.get("priority_score", n.get("view_risk_score", 0.0)))),
+                            "risk_score": n.get("priority_score", n.get("view_risk_score")),
+                        }
+                        for n in top_nodes
+                    ],
+                },
+                "llm": {
+                    "success": response.success,
+                    "latency_ms": response.latency_ms,
+                    "error": response.error,
+                    "content": response.content,
+                    "usage": response.usage,
+                    "mock": use_mock,
+                },
+            },
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"ModeA 报告生成失败: {e}")
+
+
+@app.get("/api/modela/v2/screening")
+async def modela_v2_screening(
+    product_type: Optional[str] = Query(None, description="乳制品品类"),
+    node_type: Optional[str] = Query(None, description="节点类型，如 原奶供应商"),
+    top_n: int = Query(10, ge=1, le=500),
+):
+    """
+    目标1+2：初始筛选 + 不确定性量化（优先级排序）
+    """
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        if MODELA_FORMULA_AVAILABLE:
+            view = _modela_extract_view(
+                graph=graph,
+                view_mode="product" if product_type else "full",
+                product_type=product_type,
+                seed_node=None,
+                k_hop=0,
+                max_nodes=5000,
+                max_edges=50000,
+                top_ratio=0.05,
+            )
+            scored = compute_formula_scores(
+                view,
+                query_context={
+                    "view_mode": "product" if product_type else "full",
+                    "product_type": product_type,
+                    "seed_node": None,
+                    "k_hop": 0,
+                    "node_type": node_type,
+                },
+            )
+            ranked_nodes = rank_nodes_by_priority(scored, node_type=node_type, top_n=max(5000, top_n))
+            ranked = [
+                {
+                    "node_id": n.get("node_id"),
+                    "name": n.get("name"),
+                    "node_type": n.get("node_type"),
+                    "enterprise_scale": n.get("enterprise_scale"),
+                    "risk_score": round(float(n.get("risk_proxy", n.get("risk_score", 0.0))), 6),
+                    "uncertainty": round(float(n.get("uncertainty_proxy", 0.0)), 6),
+                    "priority_score": round(float(n.get("priority_score", 0.0)), 6),
+                    "priority_base_score": round(float(n.get("priority_base_score", 0.0)), 6),
+                    "priority_piecewise_score": round(float(n.get("priority_piecewise_score", 0.0)), 6),
+                    "profile_features": n.get("profile_features", {}),
+                    "source_mix": n.get("source_mix", {}),
+                    "formula_contrib": n.get("formula_contrib", {}),
+                    "kqv_overlay": n.get("kqv_overlay", {}),
+                }
+                for n in ranked_nodes
+            ]
+        else:
+            ranked = _modela_ranking_nodes(graph, product_type=product_type, node_type=node_type)
+        return {
+            "success": True,
+            "data": {
+                "total_candidates": len(ranked),
+                "top_n": top_n,
+                "items": ranked[:top_n],
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"筛选失败: {e}")
+
+
+@app.get("/api/modela/v2/ranking_eval")
+async def modela_v2_ranking_eval(
+    product_type: Optional[str] = Query(None),
+    node_type: Optional[str] = Query(None),
+    top_k: int = Query(10, ge=1, le=500),
+):
+    """
+    目标2：排序效果评估（弱监督 Proxy，关注 Top-K 命中率）
+    """
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        if MODELA_FORMULA_AVAILABLE:
+            view = _modela_extract_view(
+                graph=graph,
+                view_mode="product" if product_type else "full",
+                product_type=product_type,
+                seed_node=None,
+                k_hop=0,
+                max_nodes=5000,
+                max_edges=50000,
+                top_ratio=0.05,
+            )
+            scored = compute_formula_scores(
+                view,
+                query_context={
+                    "view_mode": "product" if product_type else "full",
+                    "product_type": product_type,
+                    "seed_node": None,
+                    "k_hop": 0,
+                    "node_type": node_type,
+                },
+            )
+            ranked_nodes = rank_nodes_by_priority(scored, node_type=node_type, top_n=5000)
+            ranked = [
+                {
+                    "priority_score": float(n.get("priority_score", 0.0)),
+                    "profile_features": n.get("profile_features", {}),
+                }
+                for n in ranked_nodes
+            ]
+        else:
+            ranked = _modela_ranking_nodes(graph, product_type=product_type, node_type=node_type)
+        if not ranked:
+            return {"success": True, "data": {"total": 0, "top_k": top_k, "precision_at_k": 0.0, "recall_at_k": 0.0}}
+
+        # proxy标签：历史不合格次数 > 0 视为风险企业
+        labels = [1 if float(item["profile_features"].get("历史不合格次数", 0)) > 0 else 0 for item in ranked]
+        total_pos = sum(labels)
+        k = min(top_k, len(ranked))
+        topk_pos = sum(labels[:k])
+        precision_at_k = topk_pos / max(k, 1)
+        recall_at_k = topk_pos / max(total_pos, 1)
+        return {
+            "success": True,
+            "data": {
+                "total": len(ranked),
+                "top_k": k,
+                "positive_total_proxy": total_pos,
+                "positive_in_top_k_proxy": topk_pos,
+                "precision_at_k": round(precision_at_k, 6),
+                "recall_at_k": round(recall_at_k, 6),
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"排序评估失败: {e}")
+
+
+@app.post("/api/modela/v2/resource_plan")
+async def modela_v2_resource_plan(request: ModelAResourcePlanRequest):
+    """
+    目标3：预算约束下的检测资源分配（贪心近似）
+    """
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        if MODELA_FORMULA_AVAILABLE:
+            view = _modela_extract_view(
+                graph=graph,
+                view_mode="product" if request.product_type else "full",
+                product_type=request.product_type,
+                seed_node=None,
+                k_hop=0,
+                max_nodes=5000,
+                max_edges=50000,
+                top_ratio=0.05,
+            )
+            scored = compute_formula_scores(
+                view,
+                query_context={
+                    "view_mode": "product" if request.product_type else "full",
+                    "product_type": request.product_type,
+                    "seed_node": None,
+                    "k_hop": 0,
+                    "node_type": request.node_type,
+                },
+            )
+            plan = build_budget_plan(
+                scored_view=scored,
+                budget=float(request.budget),
+                max_enterprises=int(request.max_enterprises),
+                node_type=request.node_type,
+                rho=0.20,
+                tau=0.10,
+            )
+            return {"success": True, "data": plan}
+
+        ranked = _modela_ranking_nodes(graph, product_type=request.product_type, node_type=request.node_type)
+
+        def sample_cost(item: Dict[str, Any]) -> float:
+            scale = str(item.get("enterprise_scale", "小型企业"))
+            if "大" in scale:
+                return request.cost_large
+            if "中" in scale:
+                return request.cost_medium
+            return request.cost_small
+
+        # 分组保证最小覆盖
+        by_type: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        for item in ranked:
+            by_type[item["node_type"]].append(item)
+
+        selected: List[Dict[str, Any]] = []
+        used_ids = set()
+        budget_left = float(request.budget)
+
+        if request.min_samples_per_type > 0:
+            for t, items in by_type.items():
+                count = 0
+                for item in items:
+                    c = sample_cost(item)
+                    if item["node_id"] in used_ids:
+                        continue
+                    if c <= budget_left and len(selected) < request.max_enterprises and count < request.min_samples_per_type:
+                        selected.append({**item, "sample_cost": round(c, 4)})
+                        used_ids.add(item["node_id"])
+                        budget_left -= c
+                        count += 1
+
+        # 剩余预算按收益/成本比贪心
+        candidates = [item for item in ranked if item["node_id"] not in used_ids]
+        candidates.sort(key=lambda x: (x["priority_score"] / max(sample_cost(x), 1e-6)), reverse=True)
+        for item in candidates:
+            if len(selected) >= request.max_enterprises:
+                break
+            c = sample_cost(item)
+            if c <= budget_left:
+                selected.append({**item, "sample_cost": round(c, 4)})
+                budget_left -= c
+
+        expected_risk_covered = round(sum(float(x["priority_score"]) for x in selected), 6)
+        return {
+            "success": True,
+            "data": {
+                "budget": request.budget,
+                "budget_used": round(request.budget - budget_left, 6),
+                "budget_left": round(budget_left, 6),
+                "selected_count": len(selected),
+                "expected_risk_covered": expected_risk_covered,
+                "items": selected,
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"资源分配失败: {e}")
+
+
+@app.post("/api/modela/v2/rebuild")
+async def modela_v2_rebuild():
+    """强制重建 ModelA v2 数据产物。"""
+    try:
+        graph = _ensure_modela_v2_graph(force_rebuild=True)
+        return {
+            "success": True,
+            "message": "ModelA v2 重建完成",
+            "data": graph.get("meta", {}),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"重建失败: {e}")
 
 
 if __name__ == "__main__":

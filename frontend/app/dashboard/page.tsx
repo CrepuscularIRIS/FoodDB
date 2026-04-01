@@ -16,10 +16,11 @@ const FilterPanel = dynamic(() => import('@/components/FilterPanel'), { ssr: fal
 const RiskStatsPanel = dynamic(() => import('@/components/RiskStatsPanel'), { ssr: false });
 const EnterpriseListPanel = dynamic(() => import('@/components/EnterpriseListPanel'), { ssr: false });
 const GraphLegend = dynamic(() => import('@/components/GraphLegend'), { ssr: false });
+const LLMSubgraphMapView = dynamic(() => import('@/components/LLMSubgraphMapView'), { ssr: false });
 
 import { MapPinIcon, PresentationChartLineIcon, ListBulletIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
-type ViewMode = 'graph' | 'heatmap' | 'list';
+type ViewMode = 'graph' | 'heatmap' | 'list' | 'subgraph';
 
 export default function Dashboard() {
   const [nodes, setNodes] = useState<GraphNode[]>([]);
@@ -218,11 +219,12 @@ export default function Dashboard() {
             <div className="h-6 w-px bg-gray-700"></div>
             
             <div className="flex bg-gray-800/50 rounded-lg p-1">
-              {[
-                { key: 'graph', icon: PresentationChartLineIcon, label: '网络图' },
-                { key: 'heatmap', icon: MapPinIcon, label: '热力图' },
-                { key: 'list', icon: ListBulletIcon, label: '列表' },
-              ].map(({ key, icon: Icon, label }) => (
+                {[
+                  { key: 'graph', icon: PresentationChartLineIcon, label: '网络图' },
+                  { key: 'heatmap', icon: MapPinIcon, label: '热力图' },
+                  { key: 'list', icon: ListBulletIcon, label: '列表' },
+                  { key: 'subgraph', icon: MapPinIcon, label: 'LLM子图' },
+                ].map(({ key, icon: Icon, label }) => (
                 <button
                   key={key}
                   onClick={() => setViewMode(key as ViewMode)}
@@ -291,10 +293,14 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* 右侧筛选面板 */}
+          {viewMode === 'subgraph' && (
+            <LLMSubgraphMapView />
+          )}
+
+          {/* 右侧筛选面板（subgraph 视图有自己的控件，此处隐藏） */}
           <div
             className={`absolute top-4 right-4 z-20 w-80 max-w-[35vw] transition-all duration-300 ${
-              showFilters ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0 pointer-events-none'
+              showFilters && viewMode !== 'subgraph' ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0 pointer-events-none'
             }`}
           >
             <div className="max-h-[calc(100vh-260px)] overflow-y-auto pr-1 pb-6">

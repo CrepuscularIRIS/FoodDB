@@ -9,6 +9,22 @@ import {
   LinkedWorkflowRequest,
   LinkedWorkflowResponse,
   WorkflowStepEvent,
+  SubgraphResponse,
+  LLMAssessResponse,
+  SubgraphQueryParams,
+  ModelAV2Meta,
+  ModelAV2Subgraph,
+  ModelAV2GraphView,
+  ModelAModeAReportResponse,
+  ModelAScreeningResponse,
+  ModelARankingEvalResponse,
+  ModelAResourcePlanResponse,
+  ModeBOpinionCrawlStartPayload,
+  ModeBOpinionCrawlStatus,
+  ModeBOpinionImportPayload,
+  ModeBOpinionSummary,
+  ModeBOpinionTopItem,
+  ModeBSymptomAssessData,
 } from '@/types';
 
 // 创建axios实例
@@ -532,6 +548,306 @@ export const graphApi = {
     };
     
     return ws;
+  },
+};
+
+// 子图 & LLM 评估 API
+export const subgraphApi = {
+  // 获取子图数据
+  getSubgraph: async (params: SubgraphQueryParams): Promise<ApiResponse<SubgraphResponse>> => {
+    try {
+      const query = new URLSearchParams();
+      if (params.region !== undefined) query.append('region', params.region);
+      if (params.time_window !== undefined) query.append('time_window', String(params.time_window));
+      if (params.k_hop !== undefined) query.append('k_hop', String(params.k_hop));
+      if (params.seed_node) query.append('seed_node', params.seed_node);
+      if (params.max_nodes !== undefined) query.append('max_nodes', String(params.max_nodes));
+      if (params.max_edges !== undefined) query.append('max_edges', String(params.max_edges));
+
+      const response = await api.get(`/api/graph/subgraph?${query.toString()}`);
+      const payload = response.data;
+      return {
+        success: !!payload?.success,
+        data: payload?.data,
+        error: payload?.error,
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  // 触发 LLM 风险评估
+  llmAssess: async (params: {
+    region?: string;
+    time_window?: number;
+    k_hop?: number;
+    seed_node?: string;
+    use_mock_llm?: boolean;
+  }): Promise<ApiResponse<LLMAssessResponse>> => {
+    try {
+      const response = await api.post('/api/modea/llm_assess', {
+        region: params.region ?? '上海',
+        time_window: params.time_window ?? 30,
+        k_hop: params.k_hop ?? 2,
+        seed_node: params.seed_node ?? null,
+        use_mock_llm: params.use_mock_llm ?? false,
+      });
+      const payload = response.data;
+      return {
+        success: !!payload?.success,
+        data: payload?.data,
+        error: payload?.error,
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  // 按企业名搜索节点
+  searchNodes: async (q: string, limit = 10): Promise<{
+    success: boolean;
+    data?: Array<{ node_id: string; name: string; node_type: string; risk_score: number; risk_level: string; product_tag: string }>;
+    total?: number;
+    error?: string;
+  }> => {
+    try {
+      const response = await api.get(`/api/graph/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, total: payload?.total };
+    } catch (error: any) {
+      return { success: false, error: error.message || '搜索失败' };
+    }
+  },
+};
+
+export const modelAV2Api = {
+  getMeta: async (): Promise<ApiResponse<ModelAV2Meta>> => {
+    try {
+      const response = await api.get('/api/modela/v2/meta');
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, error: payload?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  getCategories: async (): Promise<ApiResponse<string[]>> => {
+    try {
+      const response = await api.get('/api/modela/v2/categories');
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, error: payload?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  getSubgraph: async (params: {
+    product_type: string;
+    seed_node?: string;
+    k_hop?: number;
+    max_nodes?: number;
+    max_edges?: number;
+  }): Promise<ApiResponse<ModelAV2Subgraph>> => {
+    try {
+      const query = new URLSearchParams();
+      query.append('product_type', params.product_type);
+      if (params.seed_node) query.append('seed_node', params.seed_node);
+      if (params.k_hop !== undefined) query.append('k_hop', String(params.k_hop));
+      if (params.max_nodes !== undefined) query.append('max_nodes', String(params.max_nodes));
+      if (params.max_edges !== undefined) query.append('max_edges', String(params.max_edges));
+
+      const response = await api.get(`/api/modela/v2/subgraph?${query.toString()}`);
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, error: payload?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  getView: async (params: {
+    view_mode: 'full' | 'product';
+    product_type?: string;
+    seed_node?: string;
+    k_hop?: number;
+    max_nodes?: number;
+    max_edges?: number;
+    top_ratio?: number;
+  }): Promise<ApiResponse<ModelAV2GraphView>> => {
+    try {
+      const query = new URLSearchParams();
+      query.append('view_mode', params.view_mode);
+      if (params.product_type) query.append('product_type', params.product_type);
+      if (params.seed_node) query.append('seed_node', params.seed_node);
+      if (params.k_hop !== undefined) query.append('k_hop', String(params.k_hop));
+      if (params.max_nodes !== undefined) query.append('max_nodes', String(params.max_nodes));
+      if (params.max_edges !== undefined) query.append('max_edges', String(params.max_edges));
+      if (params.top_ratio !== undefined) query.append('top_ratio', String(params.top_ratio));
+      const response = await api.get(`/api/modela/v2/view?${query.toString()}`);
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, error: payload?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  modeAReport: async (payload: {
+    view_mode: 'full' | 'product';
+    product_type?: string;
+    seed_node?: string;
+    k_hop?: number;
+    max_nodes?: number;
+    max_edges?: number;
+    top_ratio?: number;
+    use_mock_llm?: boolean;
+  }): Promise<ApiResponse<ModelAModeAReportResponse>> => {
+    try {
+      const response = await api.post('/api/modela/v2/modea_report', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  rebuild: async (): Promise<ApiResponse<ModelAV2Meta>> => {
+    try {
+      const response = await api.post('/api/modela/v2/rebuild');
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, error: payload?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  screening: async (params: {
+    product_type?: string;
+    node_type?: string;
+    top_n?: number;
+  }): Promise<ApiResponse<ModelAScreeningResponse>> => {
+    try {
+      const query = new URLSearchParams();
+      if (params.product_type) query.append('product_type', params.product_type);
+      if (params.node_type) query.append('node_type', params.node_type);
+      query.append('top_n', String(params.top_n ?? 10));
+      const response = await api.get(`/api/modela/v2/screening?${query.toString()}`);
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, error: payload?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  rankingEval: async (params: {
+    product_type?: string;
+    node_type?: string;
+    top_k?: number;
+  }): Promise<ApiResponse<ModelARankingEvalResponse>> => {
+    try {
+      const query = new URLSearchParams();
+      if (params.product_type) query.append('product_type', params.product_type);
+      if (params.node_type) query.append('node_type', params.node_type);
+      query.append('top_k', String(params.top_k ?? 10));
+      const response = await api.get(`/api/modela/v2/ranking_eval?${query.toString()}`);
+      const payload = response.data;
+      return { success: !!payload?.success, data: payload?.data, error: payload?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  resourcePlan: async (payload: {
+    product_type?: string;
+    node_type?: string;
+    budget: number;
+    max_enterprises?: number;
+    cost_large?: number;
+    cost_medium?: number;
+    cost_small?: number;
+    min_samples_per_type?: number;
+  }): Promise<ApiResponse<ModelAResourcePlanResponse>> => {
+    try {
+      const response = await api.post('/api/modela/v2/resource_plan', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '请求失败' };
+    }
+  },
+};
+
+// ModeB 舆情模块 API（MediaCrawler）
+export const modebOpinionApi = {
+  startCrawl: async (payload: ModeBOpinionCrawlStartPayload): Promise<ApiResponse<ModeBOpinionCrawlStatus>> => {
+    try {
+      const response = await api.post('/modeb/opinion/crawl/start', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '启动抓取失败' };
+    }
+  },
+
+  getCrawlStatus: async (tailLines: number = 80): Promise<ApiResponse<ModeBOpinionCrawlStatus>> => {
+    try {
+      const response = await api.get(`/modeb/opinion/crawl/status?tail_lines=${tailLines}`);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '获取抓取状态失败' };
+    }
+  },
+
+  stopCrawl: async (): Promise<ApiResponse<ModeBOpinionCrawlStatus>> => {
+    try {
+      const response = await api.post('/modeb/opinion/crawl/stop');
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '停止抓取失败' };
+    }
+  },
+
+  importOpinion: async (payload: ModeBOpinionImportPayload): Promise<ApiResponse<ModeBOpinionSummary>> => {
+    try {
+      const response = await api.post('/modeb/opinion/import', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '导入失败' };
+    }
+  },
+
+  getSummary: async (): Promise<ApiResponse<ModeBOpinionSummary>> => {
+    try {
+      const response = await api.get('/modeb/opinion/summary');
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '获取摘要失败' };
+    }
+  },
+
+  getTop: async (topN: number = 20): Promise<ApiResponse<ModeBOpinionTopItem[]>> => {
+    try {
+      const response = await api.get(`/modeb/opinion/top?top_n=${topN}`);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '获取Top企业失败' };
+    }
+  },
+
+  symptomAssess: async (query: string, productType?: string): Promise<ApiResponse<ModeBSymptomAssessData>> => {
+    try {
+      const response = await api.post('/symptom/assess', {
+        query,
+        product_type: productType || null,
+      });
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'ModeB评估失败' };
+    }
   },
 };
 
