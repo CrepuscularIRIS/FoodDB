@@ -11,6 +11,7 @@ import type {
   ModelARankingEvalResponse,
   ModelAResourcePlanResponse,
   ModelAScreeningResponse,
+  ModelATemporalSimResponse,
 } from '@/types';
 
 const ReactEcharts = dynamic(() => import('echarts-for-react'), { ssr: false });
@@ -80,6 +81,13 @@ export default function ModelAV2Page() {
   const [screening, setScreening] = useState<ModelAScreeningResponse | null>(null);
   const [rankingEval, setRankingEval] = useState<ModelARankingEvalResponse | null>(null);
   const [resourcePlan, setResourcePlan] = useState<ModelAResourcePlanResponse | null>(null);
+  const [temporalSim, setTemporalSim] = useState<ModelATemporalSimResponse | null>(null);
+  const [simLoading, setSimLoading] = useState(false);
+  const [trainMonth, setTrainMonth] = useState('2025-01');
+  const [testMonth, setTestMonth] = useState('2025-02');
+  const [simTopK, setSimTopK] = useState(50);
+  const [inspectCount, setInspectCount] = useState(120);
+  const [exploreWeight, setExploreWeight] = useState(0.35);
   const [report, setReport] = useState<ModelAModeAReportResponse | null>(null);
 
   useEffect(() => {
@@ -137,11 +145,15 @@ export default function ModelAV2Page() {
         product_type: product,
         node_type: screeningType || undefined,
         top_n: topN,
+        max_nodes: maxNodes,
+        max_edges: maxEdges,
       }),
       modelAV2Api.rankingEval({
         product_type: product,
         node_type: screeningType || undefined,
         top_k: topN,
+        max_nodes: maxNodes,
+        max_edges: maxEdges,
       }),
     ]);
 
@@ -160,10 +172,34 @@ export default function ModelAV2Page() {
       node_type: screeningType || undefined,
       budget,
       max_enterprises: topN,
+      max_nodes: maxNodes,
+      max_edges: maxEdges,
       min_samples_per_type: 0,
     });
     if (res.success && res.data) setResourcePlan(res.data);
     else setError(res.error || '资源分配失败');
+  };
+
+  const runTemporalSim = async () => {
+    setError('');
+    setSimLoading(true);
+    const product = viewMode === 'product' ? selectedCategory : undefined;
+    const res = await modelAV2Api.temporalSimulate({
+      train_month: trainMonth,
+      test_month: testMonth,
+      product_type: product,
+      node_type: screeningType || undefined,
+      max_nodes: maxNodes,
+      max_edges: maxEdges,
+      top_ratio: topRatio,
+      top_k: simTopK,
+      inspect_count: inspectCount,
+      explore_weight: exploreWeight,
+      seed: 42,
+    });
+    setSimLoading(false);
+    if (res.success && res.data) setTemporalSim(res.data);
+    else setError(res.error || '月度训练测试模拟失败');
   };
 
   const runModeAReport = async () => {
@@ -677,6 +713,136 @@ export default function ModelAV2Page() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+        <div className="text-sm font-semibold mb-3">月度训练/测试 + 抽检反馈闭环（流程验证）</div>
+        <div className="flex flex-wrap items-end gap-3 mb-3">
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">训练月</label>
+            <input
+              value={trainMonth}
+              onChange={(e) => setTrainMonth(e.target.value)}
+              placeholder="YYYY-MM"
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-28"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">测试月</label>
+            <input
+              value={testMonth}
+              onChange={(e) => setTestMonth(e.target.value)}
+              placeholder="YYYY-MM"
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-28"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Top-K</label>
+            <input
+              type="number"
+              min={10}
+              max={500}
+              value={simTopK}
+              onChange={(e) => setSimTopK(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-24"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">抽检数量</label>
+            <input
+              type="number"
+              min={20}
+              max={2000}
+              value={inspectCount}
+              onChange={(e) => setInspectCount(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-24"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">探索权重</label>
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              value={exploreWeight}
+              onChange={(e) => setExploreWeight(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-24"
+            />
+          </div>
+          <button
+            onClick={runTemporalSim}
+            disabled={simLoading}
+            className="px-3 py-1.5 rounded bg-violet-600 text-white text-sm hover:bg-violet-500 disabled:opacity-60"
+          >
+            {simLoading ? '模拟中...' : '执行月度模拟'}
+          </button>
+        </div>
+
+        {!temporalSim && <div className="text-xs text-slate-400">用于展示跨月泛化与抽检反馈增益（弱监督流程验证）。</div>}
+
+        {temporalSim && (
+          <div className="grid grid-cols-12 gap-4 text-xs">
+            <div className="col-span-4 rounded border border-slate-700 bg-slate-950/70 p-2 space-y-1">
+              <div>训练月: {temporalSim.train_snapshot.month}，节点 {temporalSim.train_snapshot.node_count}，边 {temporalSim.train_snapshot.edge_count}</div>
+              <div>测试月: {temporalSim.test_snapshot.month}，节点 {temporalSim.test_snapshot.node_count}，边 {temporalSim.test_snapshot.edge_count}</div>
+              <div>抽检命中率: {(temporalSim.inspection.hit_rate * 100).toFixed(1)}%</div>
+              <div>抽检阳性数: {temporalSim.inspection.positive_found}/{temporalSim.inspection.selected_count}</div>
+              <div>反馈前风险分层: 高{temporalSim.risk_buckets_before.high} / 中{temporalSim.risk_buckets_before.medium} / 低{temporalSim.risk_buckets_before.low}</div>
+              <div>反馈后风险分层: 高{temporalSim.risk_buckets_after_feedback.high} / 中{temporalSim.risk_buckets_after_feedback.medium} / 低{temporalSim.risk_buckets_after_feedback.low}</div>
+            </div>
+            <div className="col-span-4 rounded border border-slate-700 bg-slate-950/70 p-2 space-y-1">
+              <div className="text-slate-300">反馈前指标</div>
+              <div>Precision@{temporalSim.metrics_before.top_k}: {(temporalSim.metrics_before.precision_at_k * 100).toFixed(1)}%</div>
+              <div>Recall@{temporalSim.metrics_before.top_k}: {(temporalSim.metrics_before.recall_at_k * 100).toFixed(1)}%</div>
+              <div className="text-slate-300 pt-1">反馈后指标</div>
+              <div>Precision@{temporalSim.metrics_after_feedback.top_k}: {(temporalSim.metrics_after_feedback.precision_at_k * 100).toFixed(1)}%</div>
+              <div>Recall@{temporalSim.metrics_after_feedback.top_k}: {(temporalSim.metrics_after_feedback.recall_at_k * 100).toFixed(1)}%</div>
+              <div className="pt-1 text-emerald-300">
+                ΔPrecision: {((temporalSim.metrics_after_feedback.precision_at_k - temporalSim.metrics_before.precision_at_k) * 100).toFixed(1)}pp
+              </div>
+              <div className="text-emerald-300">
+                ΔRecall: {((temporalSim.metrics_after_feedback.recall_at_k - temporalSim.metrics_before.recall_at_k) * 100).toFixed(1)}pp
+              </div>
+            </div>
+            <div className="col-span-4 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">建议</div>
+              <div className="space-y-1">
+                {(temporalSim.recommendations || []).map((x, idx) => (
+                  <div key={`rec-${idx}`}>{idx + 1}. {x}</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="col-span-12 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">抽检样本（前30）</div>
+              <div className="max-h-48 overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-slate-400">
+                    <tr>
+                      <th className="text-left py-1">#</th>
+                      <th className="text-left py-1">节点ID</th>
+                      <th className="text-left py-1">预测分</th>
+                      <th className="text-left py-1">不确定性</th>
+                      <th className="text-left py-1">抽检标签</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(temporalSim.inspection.items || []).slice(0, 30).map((it) => (
+                      <tr key={`${it.node_id}-${it.rank}`} className="border-t border-slate-700/70">
+                        <td className="py-1">{it.rank}</td>
+                        <td className="py-1">{it.node_id}</td>
+                        <td className="py-1">{(it.predicted_score * 100).toFixed(1)}%</td>
+                        <td className="py-1">{(it.uncertainty * 100).toFixed(1)}%</td>
+                        <td className={`py-1 ${it.inspection_label === 1 ? 'text-rose-300' : 'text-emerald-300'}`}>{it.inspection_label}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/70 p-3">

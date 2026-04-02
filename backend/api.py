@@ -9,6 +9,8 @@ import sys
 import json
 import asyncio
 import csv
+import math
+import hashlib
 import subprocess
 import threading
 from collections import defaultdict, deque
@@ -2069,6 +2071,173 @@ def _modela_extract_view(
     }
 
 
+def _modela_stable_random_01(key: str) -> float:
+    digest = hashlib.sha256(key.encode("utf-8")).digest()
+    value = int.from_bytes(digest[:8], byteorder="big", signed=False)
+    return value / float(2**64 - 1)
+
+
+def _modela_month_index(month: str) -> int:
+    """将 YYYY-MM / YYYYMM 转为整数索引，异常时返回 0。"""
+    s = str(month or "").strip().replace("/", "-")
+    if not s:
+        return 0
+    try:
+        if "-" in s:
+            y, m = s.split("-", 1)
+            return int(y) * 12 + int(m)
+        if len(s) == 6:
+            return int(s[:4]) * 12 + int(s[4:6])
+    except Exception:
+        return 0
+    return 0
+
+
+def _modela_build_month_graph(
+    base_graph: Dict[str, Any],
+    month: str,
+    product_type: Optional[str],
+    seed: int,
+) -> Dict[str, Any]:
+    """
+    根据月份对边进行确定性扰动，构造“同节点、异边关系”的月度图。
+    说明：这是流程验证用的可复现实验图，不代表真实业务观测。
+    """
+    month_idx = _modela_month_index(month)
+    edges_in = base_graph.get("edges", [])
+    nodes_in = base_graph.get("nodes", [])
+
+    if product_type:
+        edges_src = [e for e in edges_in if e.get("dairy_product_type") == product_type]
+    else:
+        edges_src = list(edges_in)
+
+    if not edges_src:
+        edges_src = list(edges_in)
+
+    selected_edges: List[Dict[str, Any]] = []
+    node_sum: Dict[str, List[float]] = defaultdict(lambda: [0.0] * 7)
+    node_cnt: Dict[str, int] = defaultdict(int)
+    global_sum = [0.0] * 7
+    global_cnt = 0
+
+    for e in edges_src:
+        eid = str(e.get("edge_id") or "")
+        if not eid:
+            continue
+        prod = str(e.get("dairy_product_type") or "")
+        src_t = str(e.get("source_type") or "")
+        dst_t = str(e.get("target_type") or "")
+        base_keep = 0.70 + 0.15 * math.sin(month_idx * 0.23 + len(prod) * 0.17)
+        stage_bias = 0.06 if src_t == "原奶供应商" else 0.0
+        stage_bias += 0.04 if dst_t == "零售终端" else 0.0
+        keep_prob = max(0.30, min(0.96, base_keep + stage_bias))
+        keep_draw = _modela_stable_random_01(f"keep|{seed}|{month}|{eid}")
+        if keep_draw > keep_prob:
+            continue
+
+        vec = [float(x) for x in (e.get("risk_probabilities", []) or [0.0] * 7)]
+        if len(vec) < 7:
+            vec = vec + [0.0] * (7 - len(vec))
+        out_vec: List[float] = []
+        for i in range(7):
+            season = 0.05 * math.sin((month_idx + i + 1) * 0.41)
+            jitter = (_modela_stable_random_01(f"jit|{seed}|{month}|{eid}|{i}") - 0.5) * 0.22
+            v = max(0.0, min(1.0, vec[i] * (1.0 + season + jitter)))
+            out_vec.append(round(v, 6))
+            global_sum[i] += v
+        global_cnt += 1
+
+        item = dict(e)
+        item["risk_probabilities"] = out_vec
+        item["risk_vector"] = out_vec
+        selected_edges.append(item)
+
+        s = item.get("source")
+        t = item.get("target")
+        if s:
+            for i in range(7):
+                node_sum[s][i] += out_vec[i]
+            node_cnt[s] += 1
+        if t:
+            for i in range(7):
+                node_sum[t][i] += out_vec[i]
+            node_cnt[t] += 1
+
+    if global_cnt <= 0:
+        global_avg = [0.0] * 7
+    else:
+        global_avg = [global_sum[i] / global_cnt for i in range(7)]
+
+    nodes_out: List[Dict[str, Any]] = []
+    for n in nodes_in:
+        nid = n.get("node_id")
+        item = dict(n)
+        old_vec = [float(x) for x in (item.get("risk_probabilities", []) or [0.0] * 7)]
+        if len(old_vec) < 7:
+            old_vec = old_vec + [0.0] * (7 - len(old_vec))
+        local = node_sum.get(nid, global_avg)
+        cnt = node_cnt.get(nid, 0)
+        if cnt > 0:
+            local = [v / cnt for v in local]
+        new_vec: List[float] = []
+        for i in range(7):
+            exposure_delta = local[i] - global_avg[i]
+            jitter = (_modela_stable_random_01(f"n-jit|{seed}|{month}|{nid}|{i}") - 0.5) * 0.08
+            nv = max(0.0, min(1.0, old_vec[i] + 0.22 * exposure_delta + jitter))
+            new_vec.append(round(nv, 6))
+        item["risk_probabilities"] = new_vec
+        item["risk_vector"] = new_vec
+        item["risk_score"] = round(max(new_vec), 6)
+        if product_type:
+            cat = dict(item.get("category_risk_probabilities", {}) or {})
+            cat[product_type] = new_vec
+            item["category_risk_probabilities"] = cat
+        nodes_out.append(item)
+
+    out = {
+        "meta": {
+            **(base_graph.get("meta", {}) or {}),
+            "temporal_mode": True,
+            "month": month,
+            "seed": int(seed),
+            "source_node_count": len(nodes_in),
+            "source_edge_count": len(edges_src),
+            "node_count": len(nodes_out),
+            "edge_count": len(selected_edges),
+            "product_type": product_type,
+        },
+        "nodes": nodes_out,
+        "edges": selected_edges,
+    }
+    return out
+
+
+def _modela_precision_recall_at_k(
+    ranked_ids: List[str],
+    labels: Dict[str, int],
+    top_k: int,
+) -> Dict[str, float]:
+    k = max(1, min(int(top_k), len(ranked_ids)))
+    top_ids = ranked_ids[:k]
+    top_pos = sum(1 for nid in top_ids if int(labels.get(nid, 0)) == 1)
+    total_pos = sum(int(v) for v in labels.values())
+    return {
+        "top_k": k,
+        "positive_total": int(total_pos),
+        "positive_in_top_k": int(top_pos),
+        "precision_at_k": round(top_pos / max(k, 1), 6),
+        "recall_at_k": round(top_pos / max(total_pos, 1), 6),
+    }
+
+
+def _modela_risk_buckets(scores: List[float]) -> Dict[str, int]:
+    high = sum(1 for s in scores if s >= 0.66)
+    mid = sum(1 for s in scores if 0.38 <= s < 0.66)
+    low = sum(1 for s in scores if s < 0.38)
+    return {"high": int(high), "medium": int(mid), "low": int(low)}
+
+
 class ModelAModeAReportRequest(BaseModel):
     view_mode: str = "product"
     product_type: Optional[str] = None
@@ -2085,10 +2254,31 @@ class ModelAResourcePlanRequest(BaseModel):
     node_type: Optional[str] = None
     budget: float = 100.0
     max_enterprises: int = 20
+    max_nodes: int = 2000
+    max_edges: int = 15000
     cost_large: float = 1.8
     cost_medium: float = 1.2
     cost_small: float = 1.0
     min_samples_per_type: int = 0
+
+
+class ModelATemporalSimRequest(BaseModel):
+    """
+    月度训练/测试 + 抽检反馈模拟请求。
+    用于在缺少真实月度标签时进行流程验证与演示。
+    """
+
+    train_month: str = "2025-01"
+    test_month: str = "2025-02"
+    product_type: Optional[str] = None
+    node_type: Optional[str] = None
+    max_nodes: int = 5000
+    max_edges: int = 50000
+    top_ratio: float = 0.05
+    top_k: int = 50
+    inspect_count: int = 120
+    explore_weight: float = 0.35
+    seed: int = 42
 
 @app.get("/api/modela/v2/meta")
 async def modela_v2_meta():
@@ -2368,6 +2558,8 @@ async def modela_v2_screening(
     product_type: Optional[str] = Query(None, description="乳制品品类"),
     node_type: Optional[str] = Query(None, description="节点类型，如 原奶供应商"),
     top_n: int = Query(10, ge=1, le=500),
+    max_nodes: int = Query(2000, ge=200, le=5000),
+    max_edges: int = Query(15000, ge=1000, le=50000),
 ):
     """
     目标1+2：初始筛选 + 不确定性量化（优先级排序）
@@ -2381,8 +2573,8 @@ async def modela_v2_screening(
                 product_type=product_type,
                 seed_node=None,
                 k_hop=0,
-                max_nodes=5000,
-                max_edges=50000,
+                max_nodes=max_nodes,
+                max_edges=max_edges,
                 top_ratio=0.05,
             )
             scored = compute_formula_scores(
@@ -2433,6 +2625,8 @@ async def modela_v2_ranking_eval(
     product_type: Optional[str] = Query(None),
     node_type: Optional[str] = Query(None),
     top_k: int = Query(10, ge=1, le=500),
+    max_nodes: int = Query(2000, ge=200, le=5000),
+    max_edges: int = Query(15000, ge=1000, le=50000),
 ):
     """
     目标2：排序效果评估（弱监督 Proxy，关注 Top-K 命中率）
@@ -2446,8 +2640,8 @@ async def modela_v2_ranking_eval(
                 product_type=product_type,
                 seed_node=None,
                 k_hop=0,
-                max_nodes=5000,
-                max_edges=50000,
+                max_nodes=max_nodes,
+                max_edges=max_edges,
                 top_ratio=0.05,
             )
             scored = compute_formula_scores(
@@ -2509,8 +2703,8 @@ async def modela_v2_resource_plan(request: ModelAResourcePlanRequest):
                 product_type=request.product_type,
                 seed_node=None,
                 k_hop=0,
-                max_nodes=5000,
-                max_edges=50000,
+                max_nodes=int(request.max_nodes),
+                max_edges=int(request.max_edges),
                 top_ratio=0.05,
             )
             scored = compute_formula_scores(
@@ -2590,6 +2784,242 @@ async def modela_v2_resource_plan(request: ModelAResourcePlanRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"资源分配失败: {e}")
+
+
+@app.post("/api/modela/v2/temporal_simulate")
+async def modela_v2_temporal_simulate(request: ModelATemporalSimRequest):
+    """
+    月度训练/测试 + 抽检反馈闭环模拟。
+    适用于当前“弱标签/无标签”阶段的流程验证与演示。
+    """
+    try:
+        if request.top_k <= 0:
+            raise HTTPException(status_code=400, detail="top_k 必须大于0")
+        if request.inspect_count <= 0:
+            raise HTTPException(status_code=400, detail="inspect_count 必须大于0")
+
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+
+        train_graph = _modela_build_month_graph(
+            base_graph=graph,
+            month=request.train_month,
+            product_type=request.product_type,
+            seed=int(request.seed),
+        )
+        test_graph = _modela_build_month_graph(
+            base_graph=graph,
+            month=request.test_month,
+            product_type=request.product_type,
+            seed=int(request.seed) + 17,
+        )
+
+        view_mode = "product" if request.product_type else "full"
+
+        train_view = _modela_extract_view(
+            graph=train_graph,
+            view_mode=view_mode,
+            product_type=request.product_type,
+            seed_node=None,
+            k_hop=0,
+            max_nodes=int(request.max_nodes),
+            max_edges=int(request.max_edges),
+            top_ratio=float(request.top_ratio),
+        )
+        test_view = _modela_extract_view(
+            graph=test_graph,
+            view_mode=view_mode,
+            product_type=request.product_type,
+            seed_node=None,
+            k_hop=0,
+            max_nodes=int(request.max_nodes),
+            max_edges=int(request.max_edges),
+            top_ratio=float(request.top_ratio),
+        )
+
+        if MODELA_FORMULA_AVAILABLE:
+            train_scored = compute_formula_scores(
+                train_view,
+                query_context={
+                    "view_mode": view_mode,
+                    "product_type": request.product_type,
+                    "month": request.train_month,
+                    "node_type": request.node_type,
+                },
+            )
+            test_scored = compute_formula_scores(
+                test_view,
+                query_context={
+                    "view_mode": view_mode,
+                    "product_type": request.product_type,
+                    "month": request.test_month,
+                    "node_type": request.node_type,
+                },
+            )
+            train_ranked_nodes = rank_nodes_by_priority(train_scored, node_type=request.node_type, top_n=100000)
+            test_ranked_nodes = rank_nodes_by_priority(test_scored, node_type=request.node_type, top_n=100000)
+        else:
+            train_scored = train_view
+            test_scored = test_view
+            train_ranked_nodes = sorted(
+                [n for n in train_view.get("nodes", []) if (not request.node_type or n.get("node_type") == request.node_type)],
+                key=lambda x: float(x.get("view_risk_score", x.get("risk_score", 0.0))),
+                reverse=True,
+            )
+            test_ranked_nodes = sorted(
+                [n for n in test_view.get("nodes", []) if (not request.node_type or n.get("node_type") == request.node_type)],
+                key=lambda x: float(x.get("view_risk_score", x.get("risk_score", 0.0))),
+                reverse=True,
+            )
+
+        if not test_ranked_nodes:
+            return {
+                "success": True,
+                "data": {
+                    "message": "无可评估节点（请调整 node_type/product_type）",
+                    "config": request.dict(),
+                    "train_snapshot": {"node_count": 0, "edge_count": 0},
+                    "test_snapshot": {"node_count": 0, "edge_count": 0},
+                },
+            }
+
+        # 构造训练月弱标签，并做分箱校准（可审计）
+        train_labels: Dict[str, int] = {}
+        train_raw_scores: Dict[str, float] = {}
+        train_bins: Dict[int, List[int]] = defaultdict(list)
+        for n in train_ranked_nodes:
+            nid = str(n.get("node_id") or "")
+            score = float(n.get("priority_score", n.get("view_risk_score", 0.0)))
+            train_raw_scores[nid] = score
+            unc = float(n.get("uncertainty_proxy", _modela_uncertainty(n, request.product_type)))
+            p_true = max(
+                0.01,
+                min(
+                    0.98,
+                    0.03
+                    + 0.60 * score
+                    + 0.12 * unc
+                    + (_modela_stable_random_01(f"truth-bias|{nid}|{request.train_month}|{request.seed}") - 0.5) * 0.20,
+                ),
+            )
+            y = 1 if _modela_stable_random_01(f"truth-draw|{nid}|{request.train_month}|{request.seed}") < p_true else 0
+            train_labels[nid] = y
+            b = min(9, max(0, int(score * 10)))
+            train_bins[b].append(y)
+
+        bin_rate: Dict[int, float] = {}
+        for b in range(10):
+            arr = train_bins.get(b, [])
+            if not arr:
+                bin_rate[b] = (sum(train_labels.values()) + 1.0) / (len(train_labels) + 2.0)
+            else:
+                # beta 平滑，避免极端概率
+                bin_rate[b] = (sum(arr) + 1.0) / (len(arr) + 2.0)
+
+        test_labels: Dict[str, int] = {}
+        raw_scores: Dict[str, float] = {}
+        unc_scores: Dict[str, float] = {}
+        calibrated_scores: Dict[str, float] = {}
+        for n in test_ranked_nodes:
+            nid = str(n.get("node_id") or "")
+            score = float(n.get("priority_score", n.get("view_risk_score", 0.0)))
+            unc = float(n.get("uncertainty_proxy", _modela_uncertainty(n, request.product_type)))
+            raw_scores[nid] = score
+            unc_scores[nid] = unc
+            b = min(9, max(0, int(score * 10)))
+            calibrated_scores[nid] = round(float(bin_rate[b]), 6)
+
+            p_true = max(
+                0.01,
+                min(
+                    0.98,
+                    0.03
+                    + 0.62 * score
+                    + 0.14 * unc
+                    + (_modela_stable_random_01(f"truth-bias|{nid}|{request.test_month}|{request.seed}") - 0.5) * 0.20,
+                ),
+            )
+            y = 1 if _modela_stable_random_01(f"truth-draw|{nid}|{request.test_month}|{request.seed}") < p_true else 0
+            test_labels[nid] = y
+
+        ranked_before = sorted(raw_scores.keys(), key=lambda x: raw_scores[x], reverse=True)
+        metrics_before = _modela_precision_recall_at_k(ranked_before, test_labels, request.top_k)
+
+        # 抽检选择：exploitation + exploration
+        inspect_rank = sorted(
+            raw_scores.keys(),
+            key=lambda nid: raw_scores[nid] * (1.0 + float(request.explore_weight) * unc_scores.get(nid, 0.0)),
+            reverse=True,
+        )
+        inspect_ids = inspect_rank[: min(int(request.inspect_count), len(inspect_rank))]
+        inspect_id_set = set(inspect_ids)
+
+        post_scores: Dict[str, float] = {}
+        inspection_items: List[Dict[str, Any]] = []
+        for idx, nid in enumerate(inspect_ids):
+            y = int(test_labels.get(nid, 0))
+            post_scores[nid] = float(y)
+            inspection_items.append(
+                {
+                    "rank": idx + 1,
+                    "node_id": nid,
+                    "predicted_score": round(raw_scores.get(nid, 0.0), 6),
+                    "uncertainty": round(unc_scores.get(nid, 0.0), 6),
+                    "inspection_label": y,
+                    "feedback_score": float(y),
+                }
+            )
+        for nid, score in calibrated_scores.items():
+            if nid in inspect_id_set:
+                continue
+            post_scores[nid] = score
+
+        ranked_after = sorted(post_scores.keys(), key=lambda x: post_scores[x], reverse=True)
+        metrics_after = _modela_precision_recall_at_k(ranked_after, test_labels, request.top_k)
+
+        pos_found = sum(int(test_labels.get(nid, 0)) for nid in inspect_ids)
+        inspect_hit_rate = pos_found / max(len(inspect_ids), 1)
+
+        bucket_before = _modela_risk_buckets([raw_scores[x] for x in ranked_before])
+        bucket_after = _modela_risk_buckets([post_scores[x] for x in ranked_after])
+
+        return {
+            "success": True,
+            "data": {
+                "config": request.model_dump(),
+                "train_snapshot": {
+                    "month": request.train_month,
+                    "node_count": int(train_scored.get("meta", {}).get("node_count", len(train_scored.get("nodes", [])))),
+                    "edge_count": int(train_scored.get("meta", {}).get("edge_count", len(train_scored.get("edges", [])))),
+                    "positive_rate_proxy": round(sum(train_labels.values()) / max(len(train_labels), 1), 6),
+                    "score_mean": round(sum(train_raw_scores.values()) / max(len(train_raw_scores), 1), 6),
+                },
+                "test_snapshot": {
+                    "month": request.test_month,
+                    "node_count": int(test_scored.get("meta", {}).get("node_count", len(test_scored.get("nodes", [])))),
+                    "edge_count": int(test_scored.get("meta", {}).get("edge_count", len(test_scored.get("edges", [])))),
+                    "positive_rate_proxy": round(sum(test_labels.values()) / max(len(test_labels), 1), 6),
+                },
+                "metrics_before": metrics_before,
+                "metrics_after_feedback": metrics_after,
+                "inspection": {
+                    "selected_count": len(inspect_ids),
+                    "positive_found": int(pos_found),
+                    "hit_rate": round(inspect_hit_rate, 6),
+                    "items": inspection_items[: min(200, len(inspection_items))],
+                },
+                "risk_buckets_before": bucket_before,
+                "risk_buckets_after_feedback": bucket_after,
+                "recommendations": [
+                    "优先对高 priority_score 且 uncertainty_proxy 高的企业执行抽检。",
+                    "将抽检阳性样本回写为强标签，下一轮更新分箱校准参数。",
+                    "按月重复该闭环，观察 Precision@K 与 Recall@K 变化趋势。",
+                ],
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"月度训练测试模拟失败: {e}")
 
 
 @app.post("/api/modela/v2/rebuild")

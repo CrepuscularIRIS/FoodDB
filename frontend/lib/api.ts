@@ -19,6 +19,7 @@ import {
   ModelAScreeningResponse,
   ModelARankingEvalResponse,
   ModelAResourcePlanResponse,
+  ModelATemporalSimResponse,
   ModeBOpinionCrawlStartPayload,
   ModeBOpinionCrawlStatus,
   ModeBOpinionImportPayload,
@@ -723,12 +724,16 @@ export const modelAV2Api = {
     product_type?: string;
     node_type?: string;
     top_n?: number;
+    max_nodes?: number;
+    max_edges?: number;
   }): Promise<ApiResponse<ModelAScreeningResponse>> => {
     try {
       const query = new URLSearchParams();
       if (params.product_type) query.append('product_type', params.product_type);
       if (params.node_type) query.append('node_type', params.node_type);
       query.append('top_n', String(params.top_n ?? 10));
+      if (params.max_nodes !== undefined) query.append('max_nodes', String(params.max_nodes));
+      if (params.max_edges !== undefined) query.append('max_edges', String(params.max_edges));
       const response = await api.get(`/api/modela/v2/screening?${query.toString()}`);
       const payload = response.data;
       return { success: !!payload?.success, data: payload?.data, error: payload?.error };
@@ -741,12 +746,16 @@ export const modelAV2Api = {
     product_type?: string;
     node_type?: string;
     top_k?: number;
+    max_nodes?: number;
+    max_edges?: number;
   }): Promise<ApiResponse<ModelARankingEvalResponse>> => {
     try {
       const query = new URLSearchParams();
       if (params.product_type) query.append('product_type', params.product_type);
       if (params.node_type) query.append('node_type', params.node_type);
       query.append('top_k', String(params.top_k ?? 10));
+      if (params.max_nodes !== undefined) query.append('max_nodes', String(params.max_nodes));
+      if (params.max_edges !== undefined) query.append('max_edges', String(params.max_edges));
       const response = await api.get(`/api/modela/v2/ranking_eval?${query.toString()}`);
       const payload = response.data;
       return { success: !!payload?.success, data: payload?.data, error: payload?.error };
@@ -760,6 +769,8 @@ export const modelAV2Api = {
     node_type?: string;
     budget: number;
     max_enterprises?: number;
+    max_nodes?: number;
+    max_edges?: number;
     cost_large?: number;
     cost_medium?: number;
     cost_small?: number;
@@ -771,6 +782,28 @@ export const modelAV2Api = {
       return { success: !!data?.success, data: data?.data, error: data?.error };
     } catch (error: any) {
       return { success: false, error: error.message || '请求失败' };
+    }
+  },
+
+  temporalSimulate: async (payload: {
+    train_month: string;
+    test_month: string;
+    product_type?: string;
+    node_type?: string;
+    max_nodes?: number;
+    max_edges?: number;
+    top_ratio?: number;
+    top_k?: number;
+    inspect_count?: number;
+    explore_weight?: number;
+    seed?: number;
+  }): Promise<ApiResponse<ModelATemporalSimResponse>> => {
+    try {
+      const response = await api.post('/api/modela/v2/temporal_simulate', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '月度训练测试模拟失败' };
     }
   },
 };

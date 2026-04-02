@@ -697,6 +697,76 @@ export interface ModelAResourcePlanResponse {
   items: ModelAScreeningItem[];
 }
 
+export interface ModelATemporalSimInspectionItem {
+  rank: number;
+  node_id: string;
+  predicted_score: number;
+  uncertainty: number;
+  inspection_label: number;
+  feedback_score: number;
+}
+
+export interface ModelATemporalSimResponse {
+  config: {
+    train_month: string;
+    test_month: string;
+    product_type?: string | null;
+    node_type?: string | null;
+    max_nodes: number;
+    max_edges: number;
+    top_ratio: number;
+    top_k: number;
+    inspect_count: number;
+    explore_weight: number;
+    seed: number;
+  };
+  train_snapshot: {
+    month: string;
+    node_count: number;
+    edge_count: number;
+    positive_rate_proxy: number;
+    score_mean: number;
+  };
+  test_snapshot: {
+    month: string;
+    node_count: number;
+    edge_count: number;
+    positive_rate_proxy: number;
+  };
+  metrics_before: {
+    top_k: number;
+    positive_total: number;
+    positive_in_top_k: number;
+    precision_at_k: number;
+    recall_at_k: number;
+  };
+  metrics_after_feedback: {
+    top_k: number;
+    positive_total: number;
+    positive_in_top_k: number;
+    precision_at_k: number;
+    recall_at_k: number;
+  };
+  inspection: {
+    selected_count: number;
+    positive_found: number;
+    hit_rate: number;
+    items: ModelATemporalSimInspectionItem[];
+  };
+  risk_buckets_before: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  risk_buckets_after_feedback: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  recommendations: string[];
+  message?: string;
+}
+
 // ==================== ModeB 舆情模块类型 ====================
 
 export interface ModeBOpinionImportPayload {
