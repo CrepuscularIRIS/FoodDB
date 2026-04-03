@@ -26,6 +26,10 @@ import {
   ModeBOpinionSummary,
   ModeBOpinionTopItem,
   ModeBSymptomAssessData,
+  ModeBMultimodalAssessPayload,
+  ModeBMultimodalAssessData,
+  ModeBQingmingBriefData,
+  ModeBQingmingQuickStartPayload,
 } from '@/types';
 
 // 创建axios实例
@@ -840,6 +844,18 @@ export const modebOpinionApi = {
     }
   },
 
+  qingmingQuickStart: async (
+    payload: ModeBQingmingQuickStartPayload
+  ): Promise<ApiResponse<ModeBOpinionCrawlStatus>> => {
+    try {
+      const response = await api.post('/modeb/opinion/qingming/quick_start', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '清明一键抓取启动失败' };
+    }
+  },
+
   importOpinion: async (payload: ModeBOpinionImportPayload): Promise<ApiResponse<ModeBOpinionSummary>> => {
     try {
       const response = await api.post('/modeb/opinion/import', payload);
@@ -857,6 +873,27 @@ export const modebOpinionApi = {
       return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
     } catch (error: any) {
       return { success: false, error: error.message || '获取摘要失败' };
+    }
+  },
+
+  getQingmingBrief: async (params?: {
+    platform?: string;
+    days?: number;
+    top_n?: number;
+    media_root?: string;
+  }): Promise<ApiResponse<ModeBQingmingBriefData>> => {
+    try {
+      const q = new URLSearchParams();
+      if (params?.platform) q.append('platform', params.platform);
+      if (params?.days) q.append('days', String(params.days));
+      if (params?.top_n) q.append('top_n', String(params.top_n));
+      if (params?.media_root) q.append('media_root', params.media_root);
+      const query = q.toString();
+      const response = await api.get(`/modeb/opinion/qingming/brief${query ? `?${query}` : ''}`);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '获取清明简报失败' };
     }
   },
 
@@ -880,6 +917,16 @@ export const modebOpinionApi = {
       return { success: !!data?.success, data: data?.data, error: data?.error };
     } catch (error: any) {
       return { success: false, error: error.message || 'ModeB评估失败' };
+    }
+  },
+
+  multimodalAssess: async (payload: ModeBMultimodalAssessPayload): Promise<ApiResponse<ModeBMultimodalAssessData>> => {
+    try {
+      const response = await api.post('/modeb/multimodal/assess', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error || data?.message };
+    } catch (error: any) {
+      return { success: false, error: error.message || '四模态评估失败' };
     }
   },
 };

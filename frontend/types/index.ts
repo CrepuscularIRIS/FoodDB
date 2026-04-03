@@ -869,3 +869,67 @@ export interface ModeBSymptomAssessData {
   opinion_enabled?: boolean;
   opinion_feature_loaded_count?: number;
 }
+
+export interface ModeBMultimodalItemPayload {
+  name: string;
+  mime_type: string;
+  data_url?: string;
+  note?: string;
+}
+
+export interface ModeBMultimodalAssessPayload {
+  text?: string;
+  image_items?: ModeBMultimodalItemPayload[];
+  video_items?: ModeBMultimodalItemPayload[];
+  audio_items?: ModeBMultimodalItemPayload[];
+  product_type?: string;
+  use_qingming_context?: boolean;
+  qingming_days?: number;
+  qingming_platform?: string;
+}
+
+export interface ModeBMultimodalAssessData extends ModeBSymptomAssessData {
+  fused_query: string;
+  modalities: {
+    text_length: number;
+    image_count: number;
+    video_count: number;
+    audio_count: number;
+    images: Array<Record<string, any>>;
+    videos: Array<Record<string, any>>;
+    audios: Array<Record<string, any>>;
+  };
+  qingming_context?: ModeBQingmingBriefData;
+}
+
+export interface ModeBQingmingBriefData {
+  platform: string;
+  days_window: number;
+  scanned_records: number;
+  qingming_hits: number;
+  qingming_dairy_hits: number;
+  platform_distribution: Record<string, number>;
+  top_qingming_keywords: Array<[string, number]>;
+  top_risk_keywords: Array<[string, number]>;
+  samples: Array<{
+    platform: string;
+    record_type: string;
+    create_time?: string | null;
+    text: string;
+    qingming_keywords: string[];
+    dairy_keywords: string[];
+    risk_keywords: string[];
+    engagement: number;
+  }>;
+  generated_at: string;
+}
+
+export interface ModeBQingmingQuickStartPayload {
+  mediacrawler_root?: string;
+  platform?: string;
+  headless?: boolean;
+  get_comment?: boolean;
+  get_sub_comment?: boolean;
+  save_data_option?: 'json' | 'csv' | 'excel' | 'sqlite' | 'db' | 'mongodb' | 'postgres';
+  login_type?: 'qrcode' | 'phone' | 'cookie';
+}

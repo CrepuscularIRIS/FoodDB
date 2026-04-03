@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { modebOpinionApi } from '@/lib/api';
 import type {
+  ModeBMultimodalAssessData,
+  ModeBMultimodalItemPayload,
   ModeBOpinionCrawlStatus,
+  ModeBQingmingBriefData,
   ModeBOpinionSummary,
   ModeBOpinionTopItem,
   ModeBSymptomAssessData,
@@ -12,6 +15,7 @@ import type {
 const DEFAULT_MEDIA_ROOT = '/home/yarizakurahime/Agents/winteragent/MediaCrawler/data';
 const DEFAULT_CRAWLER_ROOT = '/home/yarizakurahime/Agents/winteragent/MediaCrawler';
 const DEFAULT_ENTERPRISE_CSV = '/home/yarizakurahime/data/dairy_supply_chain_risk/data/merged/enterprise_master.csv';
+const MAX_MM_FILE_SIZE_MB = 4;
 
 const PLATFORM_OPTIONS = [
   { value: 'all', label: '全部平台' },
@@ -26,6 +30,15 @@ const PLATFORM_OPTIONS = [
 function toPct(v: string | number | undefined): string {
   const n = Number(v || 0);
   return `${(n * 100).toFixed(1)}%`;
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error(`读取文件失败: ${file.name}`));
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function ModeBOpinionPage() {
@@ -47,11 +60,27 @@ export default function ModeBOpinionPage() {
   const [loadingTop, setLoadingTop] = useState(false);
   const [importing, setImporting] = useState(false);
   const [loadingAssess, setLoadingAssess] = useState(false);
+  const [loadingMultimodalAssess, setLoadingMultimodalAssess] = useState(false);
+  const [loadingQingmingBrief, setLoadingQingmingBrief] = useState(false);
+  const [startingQingmingCrawl, setStartingQingmingCrawl] = useState(false);
 
   const [summary, setSummary] = useState<ModeBOpinionSummary | null>(null);
+  const [qingmingBrief, setQingmingBrief] = useState<ModeBQingmingBriefData | null>(null);
   const [topItems, setTopItems] = useState<ModeBOpinionTopItem[]>([]);
   const [assessQuery, setAssessQuery] = useState('腹泻 发热 呕吐');
   const [assessResult, setAssessResult] = useState<ModeBSymptomAssessData | null>(null);
+  const [multimodalResult, setMultimodalResult] = useState<ModeBMultimodalAssessData | null>(null);
+  const [mmText, setMmText] = useState('清明期间有消费者反馈牛奶异味并伴随腹泻');
+  const [mmProductType, setMmProductType] = useState('');
+  const [mmUseQingming, setMmUseQingming] = useState(true);
+  const [qingmingDays, setQingmingDays] = useState(15);
+  const [qingmingPlatform, setQingmingPlatform] = useState('all');
+  const [imageItems, setImageItems] = useState<ModeBMultimodalItemPayload[]>([]);
+  const [videoItems, setVideoItems] = useState<ModeBMultimodalItemPayload[]>([]);
+  const [audioItems, setAudioItems] = useState<ModeBMultimodalItemPayload[]>([]);
+  const [imageNote, setImageNote] = useState('图片包含包装外观、色泽、结块等线索');
+  const [videoNote, setVideoNote] = useState('视频包含开箱、储运、现场环境线索');
+  const [audioNote, setAudioNote] = useState('语音包含消费者主诉、时间地点与症状');
   const [error, setError] = useState('');
 
   const refreshSummary = async () => {
@@ -72,6 +101,24 @@ export default function ModeBOpinionPage() {
     if (res.success && res.data) {
       setTopItems(res.data);
     } else if (res.error) {
+      setError(res.error);
+    }
+  };
+
+  const refreshQingmingBrief = async () => {
+    setLoadingQingmingBrief(true);
+    const res = await modebOpinionApi.getQingmingBrief({
+      platform: qingmingPlatform,
+      days: qingmingDays,
+      top_n: 12,
+      media_root: mediaRoot.trim() || undefined,
+    });
+    setLoadingQingmingBrief(false);
+    if (res.success && res.data) {
+      setQingmingBrief(res.data);
+      return;
+    }
+    if (res.error) {
       setError(res.error);
     }
   };
@@ -127,6 +174,26 @@ export default function ModeBOpinionPage() {
     setError(res.error || '停止抓取失败');
   };
 
+  const startQingmingQuickCrawler = async () => {
+    setStartingQingmingCrawl(true);
+    setError('');
+    const res = await modebOpinionApi.qingmingQuickStart({
+      mediacrawler_root: crawlerRoot.trim() || undefined,
+      platform: qingmingPlatform === 'all' ? 'weibo' : qingmingPlatform,
+      headless: false,
+      get_comment: true,
+      get_sub_comment: false,
+      save_data_option: 'json',
+      login_type: 'qrcode',
+    });
+    setStartingQingmingCrawl(false);
+    if (res.success && res.data) {
+      setCrawlStatus(res.data);
+      return;
+    }
+    setError(res.error || '清明一键抓取启动失败');
+  };
+
   const importOpinion = async () => {
     setImporting(true);
     setError('');
@@ -140,7 +207,7 @@ export default function ModeBOpinionPage() {
 
     if (res.success && res.data) {
       setSummary(res.data);
-      await refreshTop(topN);
+      await Promise.all([refreshTop(topN), refreshQingmingBrief()]);
       return;
     }
     setError(res.error || '导入失败');
@@ -162,10 +229,69 @@ export default function ModeBOpinionPage() {
     }
   };
 
+  const loadModalityFiles = async (
+    files: FileList | null,
+    modality: 'image' | 'video' | 'audio'
+  ) => {
+    if (!files || files.length === 0) return;
+    const picked = Array.from(files).slice(0, 4);
+    const maxBytes = MAX_MM_FILE_SIZE_MB * 1024 * 1024;
+    const items: ModeBMultimodalItemPayload[] = [];
+    for (const file of picked) {
+      const item: ModeBMultimodalItemPayload = {
+        name: file.name,
+        mime_type: file.type || 'application/octet-stream',
+      };
+      if (file.size <= maxBytes) {
+        try {
+          item.data_url = await readAsDataUrl(file);
+        } catch (e: any) {
+          item.note = `文件读取失败: ${e?.message || ''}`;
+        }
+      } else {
+        item.note = `文件超过 ${MAX_MM_FILE_SIZE_MB}MB，未内联，仅使用文件名与备注`;
+      }
+      items.push(item);
+    }
+    if (modality === 'image') setImageItems(items);
+    if (modality === 'video') setVideoItems(items);
+    if (modality === 'audio') setAudioItems(items);
+  };
+
+  const runMultimodalAssess = async () => {
+    if (!mmText.trim() && imageItems.length === 0 && videoItems.length === 0 && audioItems.length === 0) {
+      setError('请至少输入文本或上传一种模态文件');
+      return;
+    }
+    setLoadingMultimodalAssess(true);
+    setError('');
+    const attachNote = (arr: ModeBMultimodalItemPayload[], note: string) =>
+      arr.map((x) => ({
+        ...x,
+        note: [x.note, note].filter(Boolean).join(' | '),
+      }));
+    const res = await modebOpinionApi.multimodalAssess({
+      text: mmText.trim() || undefined,
+      image_items: attachNote(imageItems, imageNote),
+      video_items: attachNote(videoItems, videoNote),
+      audio_items: attachNote(audioItems, audioNote),
+      product_type: mmProductType.trim() || undefined,
+      use_qingming_context: mmUseQingming,
+      qingming_days: qingmingDays,
+      qingming_platform: qingmingPlatform,
+    });
+    setLoadingMultimodalAssess(false);
+    if (res.success && res.data) {
+      setMultimodalResult(res.data);
+      return;
+    }
+    setError(res.error || '四模态评估失败');
+  };
+
   useEffect(() => {
     const boot = async () => {
       setError('');
-      await Promise.all([refreshSummary(), refreshTop(20), refreshCrawlStatus(true)]);
+      await Promise.all([refreshSummary(), refreshTop(20), refreshCrawlStatus(true), refreshQingmingBrief()]);
     };
     boot();
   }, []);
@@ -277,6 +403,101 @@ export default function ModeBOpinionPage() {
             <pre className="max-h-56 overflow-auto rounded border border-slate-200 bg-slate-900 p-3 text-xs text-slate-100 whitespace-pre-wrap">
               {crawlStatus.log_tail.join('\n')}
             </pre>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <div className="text-base font-semibold text-slate-900">清明节舆情专题</div>
+          <select
+            value={qingmingPlatform}
+            onChange={(e) => setQingmingPlatform(e.target.value)}
+            className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+          >
+            {PLATFORM_OPTIONS.map((x) => (
+              <option key={x.value} value={x.value}>
+                {x.label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min={1}
+            max={120}
+            value={qingmingDays}
+            onChange={(e) => setQingmingDays(Number(e.target.value) || 15)}
+            className="w-24 rounded border border-slate-300 px-2 py-1.5 text-sm"
+          />
+          <button
+            onClick={startQingmingQuickCrawler}
+            disabled={startingQingmingCrawl}
+            className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-500 disabled:opacity-60"
+          >
+            {startingQingmingCrawl ? '启动中...' : '一键启动清明抓取'}
+          </button>
+          <button
+            onClick={refreshQingmingBrief}
+            disabled={loadingQingmingBrief}
+            className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            {loadingQingmingBrief ? '刷新中...' : '刷新清明简报'}
+          </button>
+        </div>
+
+        {qingmingBrief && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+              <Metric label="扫描记录" value={String(qingmingBrief.scanned_records)} />
+              <Metric label="清明命中" value={String(qingmingBrief.qingming_hits)} />
+              <Metric label="乳制品相关" value={String(qingmingBrief.qingming_dairy_hits)} />
+              <Metric label="平台" value={qingmingBrief.platform} />
+              <Metric label="窗口天数" value={String(qingmingBrief.days_window)} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="rounded border border-slate-200 bg-white p-3">
+                <div className="text-xs text-slate-500 mb-2">清明关键词热度</div>
+                <div className="flex flex-wrap gap-2">
+                  {(qingmingBrief.top_qingming_keywords || []).map(([k, v]) => (
+                    <span key={k} className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
+                      {k} {v}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded border border-slate-200 bg-white p-3">
+                <div className="text-xs text-slate-500 mb-2">风险关键词热度</div>
+                <div className="flex flex-wrap gap-2">
+                  {(qingmingBrief.top_risk_keywords || []).map(([k, v]) => (
+                    <span key={k} className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
+                      {k} {v}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="overflow-auto rounded border border-slate-200 bg-white">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th className="text-left px-2 py-2">平台</th>
+                    <th className="text-left px-2 py-2">时间</th>
+                    <th className="text-left px-2 py-2">文本片段</th>
+                    <th className="text-left px-2 py-2">互动量</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(qingmingBrief.samples || []).map((x, idx) => (
+                    <tr key={`${x.platform}-${idx}`} className="border-t border-slate-100">
+                      <td className="px-2 py-2">{x.platform}</td>
+                      <td className="px-2 py-2">{x.create_time || '-'}</td>
+                      <td className="px-2 py-2">{x.text}</td>
+                      <td className="px-2 py-2">{x.engagement}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -431,6 +652,171 @@ export default function ModeBOpinionPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-violet-200 bg-violet-50/30 p-4">
+        <div className="text-base font-semibold text-slate-900 mb-3">Mode B 四模态融合评估（文本/图片/视频/语音）</div>
+        <div className="grid grid-cols-12 gap-3 text-sm">
+          <div className="col-span-12">
+            <label className="block text-slate-600 mb-1">文本描述</label>
+            <textarea
+              value={mmText}
+              onChange={(e) => setMmText(e.target.value)}
+              rows={3}
+              className="w-full rounded border border-slate-300 px-2 py-1.5"
+              placeholder="输入事件描述、症状与场景线索"
+            />
+          </div>
+          <div className="col-span-12 md:col-span-3">
+            <label className="block text-slate-600 mb-1">产品类型（可选）</label>
+            <input
+              value={mmProductType}
+              onChange={(e) => setMmProductType(e.target.value)}
+              className="w-full rounded border border-slate-300 px-2 py-1.5"
+              placeholder="如：巴氏杀菌乳"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-slate-600 mb-1">清明窗口(天)</label>
+            <input
+              type="number"
+              min={1}
+              max={120}
+              value={qingmingDays}
+              onChange={(e) => setQingmingDays(Number(e.target.value) || 15)}
+              className="w-full rounded border border-slate-300 px-2 py-1.5"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-slate-600 mb-1">清明平台</label>
+            <select
+              value={qingmingPlatform}
+              onChange={(e) => setQingmingPlatform(e.target.value)}
+              className="w-full rounded border border-slate-300 px-2 py-1.5"
+            >
+              {PLATFORM_OPTIONS.map((x) => (
+                <option key={x.value} value={x.value}>
+                  {x.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-12 md:col-span-5 flex items-end">
+            <label className="inline-flex items-center gap-2 text-slate-700">
+              <input
+                type="checkbox"
+                checked={mmUseQingming}
+                onChange={(e) => setMmUseQingming(e.target.checked)}
+              />
+              融合清明舆情上下文
+            </label>
+          </div>
+
+          <div className="col-span-12 md:col-span-4">
+            <label className="block text-slate-600 mb-1">图片文件（最多4个，单个≤{MAX_MM_FILE_SIZE_MB}MB）</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => loadModalityFiles(e.target.files, 'image')}
+              className="w-full rounded border border-slate-300 px-2 py-1.5 bg-white"
+            />
+            <input
+              value={imageNote}
+              onChange={(e) => setImageNote(e.target.value)}
+              className="mt-2 w-full rounded border border-slate-300 px-2 py-1.5"
+              placeholder="图片备注"
+            />
+            <div className="mt-1 text-xs text-slate-500">已选 {imageItems.length} 个</div>
+          </div>
+
+          <div className="col-span-12 md:col-span-4">
+            <label className="block text-slate-600 mb-1">视频文件（最多4个，单个≤{MAX_MM_FILE_SIZE_MB}MB）</label>
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              onChange={(e) => loadModalityFiles(e.target.files, 'video')}
+              className="w-full rounded border border-slate-300 px-2 py-1.5 bg-white"
+            />
+            <input
+              value={videoNote}
+              onChange={(e) => setVideoNote(e.target.value)}
+              className="mt-2 w-full rounded border border-slate-300 px-2 py-1.5"
+              placeholder="视频备注"
+            />
+            <div className="mt-1 text-xs text-slate-500">已选 {videoItems.length} 个</div>
+          </div>
+
+          <div className="col-span-12 md:col-span-4">
+            <label className="block text-slate-600 mb-1">语音文件（最多4个，单个≤{MAX_MM_FILE_SIZE_MB}MB）</label>
+            <input
+              type="file"
+              accept="audio/*"
+              multiple
+              onChange={(e) => loadModalityFiles(e.target.files, 'audio')}
+              className="w-full rounded border border-slate-300 px-2 py-1.5 bg-white"
+            />
+            <input
+              value={audioNote}
+              onChange={(e) => setAudioNote(e.target.value)}
+              className="mt-2 w-full rounded border border-slate-300 px-2 py-1.5"
+              placeholder="语音备注"
+            />
+            <div className="mt-1 text-xs text-slate-500">已选 {audioItems.length} 个</div>
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <button
+            onClick={runMultimodalAssess}
+            disabled={loadingMultimodalAssess}
+            className="rounded bg-violet-600 px-3 py-1.5 text-sm text-white hover:bg-violet-500 disabled:opacity-60"
+          >
+            {loadingMultimodalAssess ? '融合评估中...' : '执行四模态融合评估'}
+          </button>
+        </div>
+
+        {multimodalResult && (
+          <div className="mt-4 space-y-3">
+            <div className="rounded border border-slate-200 bg-white p-3 text-sm text-slate-700">
+              <div>融合Query: {multimodalResult.fused_query}</div>
+              <div className="mt-1">
+                风险等级: <b>{multimodalResult.risk_level}</b>，置信度: <b>{(Number(multimodalResult.confidence || 0) * 100).toFixed(1)}%</b>
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                模态计数: 文本 {multimodalResult.modalities?.text_length || 0} 字符，
+                图片 {multimodalResult.modalities?.image_count || 0}，
+                视频 {multimodalResult.modalities?.video_count || 0}，
+                语音 {multimodalResult.modalities?.audio_count || 0}
+              </div>
+            </div>
+            <div className="overflow-auto rounded border border-slate-200 bg-white">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th className="text-left px-2 py-2">企业</th>
+                    <th className="text-left px-2 py-2">基础风险分</th>
+                    <th className="text-left px-2 py-2">舆情指数</th>
+                    <th className="text-left px-2 py-2">综合分</th>
+                    <th className="text-left px-2 py-2">提及数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(multimodalResult.linked_enterprises || []).map((x) => (
+                    <tr key={x.enterprise_id} className="border-t border-slate-100">
+                      <td className="px-2 py-2">{x.enterprise_name}</td>
+                      <td className="px-2 py-2">{Number(x.risk_score || 0).toFixed(2)}</td>
+                      <td className="px-2 py-2">{toPct(x.opinion_risk_index || 0)}</td>
+                      <td className="px-2 py-2 font-semibold text-violet-700">{Number(x.combined_risk_score || x.risk_score || 0).toFixed(2)}</td>
+                      <td className="px-2 py-2">{x.opinion_mentions_30d || 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">

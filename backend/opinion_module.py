@@ -32,6 +32,29 @@ RISK_KEYWORDS = [
     "变质", "异味", "腹泻", "呕吐", "黑榜", "处罚",
 ]
 
+QINGMING_KEYWORDS = [
+    "清明",
+    "清明节",
+    "祭扫",
+    "踏青",
+    "小长假",
+]
+
+DAIRY_OPINION_KEYWORDS = [
+    "牛奶",
+    "乳制品",
+    "奶粉",
+    "酸奶",
+    "巴氏",
+    "生乳",
+    "变质",
+    "异味",
+    "腹泻",
+    "投诉",
+    "不合格",
+    "召回",
+]
+
 
 ENTERPRISE_SUFFIXES = [
     "股份有限公司",
@@ -442,3 +465,82 @@ def load_opinion_feature_map(path: Path = FEATURE_CSV) -> Tuple[Dict[str, Dict[s
             if name:
                 by_name[name] = row
     return by_id, by_name
+
+
+def build_qingming_brief(
+    media_root: Path = DEFAULT_MEDIA_ROOT,
+    platform: str = "all",
+    days: int = 15,
+    top_n: int = 20,
+) -> Dict[str, Any]:
+    """
+    清明节舆情快速简报（轻量版）：
+    - 统计“清明关键词 + 乳制品相关词”命中的帖子/评论数量
+    - 输出平台分布、关键词热度、样本文本
+    """
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=max(1, int(days)))
+
+    scanned_records = 0
+    qingming_hits = 0
+    qingming_dairy_hits = 0
+    by_platform: Dict[str, int] = {}
+    keyword_counter: Dict[str, int] = {}
+    risk_counter: Dict[str, int] = {}
+    samples: List[Dict[str, Any]] = []
+
+    for pf, record_type, item, is_comment, _ in _iter_media_records(media_root, platform):
+        scanned_records += 1
+        text = _record_text(item)
+        if not text:
+            continue
+        ts = _parse_timestamp(item)
+        if ts and ts < cutoff:
+            continue
+
+        hits_qingming = [w for w in QINGMING_KEYWORDS if w in text]
+        if not hits_qingming:
+            continue
+        qingming_hits += 1
+        by_platform[pf] = by_platform.get(pf, 0) + 1
+
+        for w in hits_qingming:
+            keyword_counter[w] = keyword_counter.get(w, 0) + 1
+
+        hits_dairy = [w for w in DAIRY_OPINION_KEYWORDS if w in text]
+        hits_risk = [w for w in RISK_KEYWORDS if w in text]
+        if hits_dairy:
+            qingming_dairy_hits += 1
+        for w in hits_risk:
+            risk_counter[w] = risk_counter.get(w, 0) + 1
+
+        if len(samples) < max(5, min(top_n, 30)):
+            samples.append(
+                {
+                    "platform": pf,
+                    "record_type": record_type,
+                    "create_time": ts.isoformat() if ts else None,
+                    "text": text[:180],
+                    "qingming_keywords": hits_qingming,
+                    "dairy_keywords": hits_dairy[:6],
+                    "risk_keywords": hits_risk[:6],
+                    "engagement": _engagement(item, is_comment),
+                }
+            )
+
+    # engagement 排序样本
+    samples.sort(key=lambda x: int(x.get("engagement") or 0), reverse=True)
+    samples = samples[:top_n]
+
+    return {
+        "platform": platform,
+        "days_window": int(days),
+        "scanned_records": int(scanned_records),
+        "qingming_hits": int(qingming_hits),
+        "qingming_dairy_hits": int(qingming_dairy_hits),
+        "platform_distribution": dict(sorted(by_platform.items(), key=lambda kv: kv[1], reverse=True)),
+        "top_qingming_keywords": sorted(keyword_counter.items(), key=lambda kv: kv[1], reverse=True)[:10],
+        "top_risk_keywords": sorted(risk_counter.items(), key=lambda kv: kv[1], reverse=True)[:10],
+        "samples": samples,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }

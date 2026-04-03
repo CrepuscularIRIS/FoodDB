@@ -11,6 +11,8 @@ import asyncio
 import csv
 import math
 import hashlib
+import base64
+import re
 import subprocess
 import threading
 from collections import defaultdict, deque
@@ -37,7 +39,7 @@ if env_path.exists():
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.workflow import RiskAssessmentAgent
 from agent.symptom_router import get_symptom_router, SymptomRiskResult
@@ -86,6 +88,7 @@ try:
         SUMMARY_JSON as OPINION_SUMMARY_JSON,
         FEATURE_CSV as OPINION_FEATURE_CSV,
         build_opinion_features,
+        build_qingming_brief,
         load_opinion_feature_map,
     )
     MODEB_OPINION_AVAILABLE = True
@@ -97,6 +100,7 @@ except ImportError as e:
             SUMMARY_JSON as OPINION_SUMMARY_JSON,
             FEATURE_CSV as OPINION_FEATURE_CSV,
             build_opinion_features,
+            build_qingming_brief,
             load_opinion_feature_map,
         )
         MODEB_OPINION_AVAILABLE = True
@@ -242,6 +246,36 @@ class OpinionCrawlStartRequest(BaseModel):
     start_page: int = 1
     max_comments_count_singlenotes: int = 20
     save_data_option: str = "json"
+
+
+class QingmingQuickCrawlRequest(BaseModel):
+    """清明节舆情一键抓取（简单版）"""
+    mediacrawler_root: Optional[str] = None
+    platform: str = "weibo"
+    headless: bool = True
+    get_comment: bool = True
+    get_sub_comment: bool = False
+    save_data_option: str = "json"
+    login_type: str = "qrcode"
+
+
+class ModeBMultimodalItemRequest(BaseModel):
+    name: str = ""
+    mime_type: str = ""
+    data_url: Optional[str] = None
+    note: Optional[str] = None
+
+
+class ModeBMultimodalAssessRequest(BaseModel):
+    """ModeB 四模态输入融合评估"""
+    text: Optional[str] = None
+    image_items: List[ModeBMultimodalItemRequest] = Field(default_factory=list)
+    video_items: List[ModeBMultimodalItemRequest] = Field(default_factory=list)
+    audio_items: List[ModeBMultimodalItemRequest] = Field(default_factory=list)
+    product_type: Optional[str] = None
+    use_qingming_context: bool = False
+    qingming_days: int = 15
+    qingming_platform: str = "all"
 
 
 class LinkedWorkflowRequest(BaseModel):
@@ -432,6 +466,133 @@ def _enrich_linked_enterprises_with_opinion(items: List[Dict[str, Any]]) -> List
 
     enriched.sort(key=lambda x: float(x.get("combined_risk_score", x.get("risk_score", 0.0))), reverse=True)
     return enriched
+
+
+MODEB_MM_RISK_TERMS = [
+    "腹泻",
+    "呕吐",
+    "发热",
+    "异味",
+    "变质",
+    "过期",
+    "污染",
+    "细菌",
+    "投诉",
+    "召回",
+    "不合格",
+    "中毒",
+]
+
+
+def _modeb_decode_data_url(data_url: str, max_bytes: int = 2 * 1024 * 1024) -> bytes:
+    if not data_url:
+        return b""
+    if not data_url.startswith("data:"):
+        return b""
+    try:
+        head, body = data_url.split(",", 1)
+    except ValueError:
+        return b""
+    if ";base64" not in head:
+        raw = body.encode("utf-8", errors="ignore")
+        return raw[:max_bytes]
+    try:
+        raw = base64.b64decode(body, validate=False)
+    except Exception:
+        return b""
+    return raw[:max_bytes]
+
+
+def _modeb_extract_textual_hints(
+    item: ModeBMultimodalItemRequest,
+    modality: str,
+) -> Dict[str, Any]:
+    name = str(item.name or "").strip()
+    mime = str(item.mime_type or "").strip()
+    note = str(item.note or "").strip()
+    hints: List[str] = []
+    if name:
+        hints.append(name)
+    if note:
+        hints.append(note)
+
+    raw = b""
+    if item.data_url:
+        raw = _modeb_decode_data_url(item.data_url)
+    size_bytes = len(raw)
+
+    # 仅对 text/* 尝试提取正文，其他模态只提取文件名/备注关键词
+    decoded_text = ""
+    if mime.startswith("text/") and raw:
+        decoded_text = raw.decode("utf-8", errors="ignore")
+        if decoded_text:
+            hints.append(decoded_text[:1200])
+
+    merged = " ".join(hints).lower()
+    hit_terms = [w for w in MODEB_MM_RISK_TERMS if w in merged]
+    # 尝试抽取中文片段，避免文件名完全无信息
+    zh_tokens = re.findall(r"[\u4e00-\u9fff]{2,8}", merged)
+
+    return {
+        "modality": modality,
+        "name": name,
+        "mime_type": mime,
+        "size_bytes": size_bytes,
+        "risk_terms": hit_terms[:10],
+        "zh_tokens": zh_tokens[:20],
+        "text_hint": " ".join(hints)[:600],
+    }
+
+
+def _modeb_compose_multimodal_query(
+    text: Optional[str],
+    image_items: List[ModeBMultimodalItemRequest],
+    video_items: List[ModeBMultimodalItemRequest],
+    audio_items: List[ModeBMultimodalItemRequest],
+) -> Dict[str, Any]:
+    text_part = str(text or "").strip()
+    image_ev = [_modeb_extract_textual_hints(x, "image") for x in (image_items or [])[:5]]
+    video_ev = [_modeb_extract_textual_hints(x, "video") for x in (video_items or [])[:5]]
+    audio_ev = [_modeb_extract_textual_hints(x, "audio") for x in (audio_items or [])[:5]]
+
+    parts: List[str] = []
+    if text_part:
+        parts.append(text_part)
+
+    def join_hint(arr: List[Dict[str, Any]], title: str) -> None:
+        if not arr:
+            return
+        cues: List[str] = []
+        for e in arr:
+            if e.get("text_hint"):
+                cues.append(str(e["text_hint"]))
+            if e.get("risk_terms"):
+                cues.extend(str(x) for x in e["risk_terms"])
+            if e.get("zh_tokens"):
+                cues.extend(str(x) for x in e["zh_tokens"][:6])
+        if cues:
+            parts.append(f"[{title}] " + " ".join(cues[:80]))
+
+    join_hint(image_ev, "图片线索")
+    join_hint(video_ev, "视频线索")
+    join_hint(audio_ev, "语音线索")
+
+    fused_query = " ".join(p for p in parts if p).strip()
+    if not fused_query:
+        fused_query = "乳制品 风险 线索不足"
+
+    return {
+        "fused_query": fused_query[:3000],
+        "evidence": {
+            "text_length": len(text_part),
+            "image_count": len(image_ev),
+            "video_count": len(video_ev),
+            "audio_count": len(audio_ev),
+            "images": image_ev,
+            "videos": video_ev,
+            "audios": audio_ev,
+        },
+    }
 
 
 # 风险研判
@@ -1034,6 +1195,53 @@ async def modeb_opinion_crawl_stop():
     return {"success": True, "data": snapshot}
 
 
+@app.post("/modeb/opinion/qingming/quick_start")
+async def modeb_opinion_qingming_quick_start(request: QingmingQuickCrawlRequest):
+    """
+    清明节舆情一键抓取（简单版）。
+    使用固定关键词模板，便于快速演示。
+    """
+    qingming_keywords = "清明节 乳制品,清明 假期 牛奶,清明 奶粉 投诉,清明 乳制品 变质"
+    crawl_req = OpinionCrawlStartRequest(
+        mediacrawler_root=request.mediacrawler_root,
+        platform=request.platform,
+        crawler_type="search",
+        login_type=request.login_type,
+        keywords=qingming_keywords,
+        headless=request.headless,
+        get_comment=request.get_comment,
+        get_sub_comment=request.get_sub_comment,
+        start_page=1,
+        max_comments_count_singlenotes=20,
+        save_data_option=request.save_data_option,
+    )
+    return await modeb_opinion_crawl_start(crawl_req)
+
+
+@app.get("/modeb/opinion/qingming/brief")
+async def modeb_opinion_qingming_brief(
+    platform: str = Query("all", description="平台: all/weibo/douyin/xhs/..."),
+    days: int = Query(15, ge=1, le=120),
+    top_n: int = Query(20, ge=5, le=100),
+    media_root: Optional[str] = Query(None),
+):
+    """
+    清明节舆情快速简报（轻量统计，不依赖复杂模型）。
+    """
+    if not MODEB_OPINION_AVAILABLE:
+        raise HTTPException(status_code=503, detail="ModeB 舆情模块不可用")
+    root = Path(media_root) if media_root else DEFAULT_MEDIA_ROOT
+    if not root.exists():
+        raise HTTPException(status_code=400, detail=f"MediaCrawler 数据目录不存在: {root}")
+    data = build_qingming_brief(
+        media_root=root,
+        platform=platform,
+        days=days,
+        top_n=top_n,
+    )
+    return {"success": True, "data": data}
+
+
 @app.post("/modeb/opinion/import")
 async def modeb_import_opinion(request: OpinionImportRequest):
     """
@@ -1143,6 +1351,63 @@ async def symptom_assess(request: SymptomAssessRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"症状评估失败: {str(e)}")
+
+
+@app.post("/modeb/multimodal/assess")
+async def modeb_multimodal_assess(request: ModeBMultimodalAssessRequest):
+    """
+    ModeB 四模态融合评估：
+    - 文本、图片、视频、语音线索融合为统一 query
+    - 复用症状驱动风险路由与舆情增强链路
+    """
+    if not symptom_router:
+        raise HTTPException(status_code=503, detail="症状驱动路由器未初始化")
+
+    try:
+        composed = _modeb_compose_multimodal_query(
+            text=request.text,
+            image_items=request.image_items,
+            video_items=request.video_items,
+            audio_items=request.audio_items,
+        )
+        fused_query = composed["fused_query"]
+        evidence = composed["evidence"]
+
+        qingming_ctx: Optional[Dict[str, Any]] = None
+        if request.use_qingming_context and MODEB_OPINION_AVAILABLE:
+            qingming_ctx = build_qingming_brief(
+                media_root=DEFAULT_MEDIA_ROOT,
+                platform=request.qingming_platform,
+                days=int(request.qingming_days),
+                top_n=10,
+            )
+            qingming_hint = (
+                f" 清明舆情: 命中{qingming_ctx.get('qingming_hits', 0)}条, "
+                f"乳制品相关{qingming_ctx.get('qingming_dairy_hits', 0)}条。"
+            )
+            fused_query = (fused_query + qingming_hint)[:3200]
+
+        result = symptom_router.assess(fused_query, request.product_type)
+        linked_enterprises = _enrich_linked_enterprises_with_opinion(result.linked_enterprises)
+
+        payload = {
+            "query": result.query,
+            "fused_query": fused_query,
+            "modalities": evidence,
+            "risk_level": result.risk_level,
+            "confidence": result.confidence,
+            "symptoms_detected": result.symptoms_detected,
+            "risk_factors": result.risk_factors,
+            "stage_candidates": result.stage_candidates,
+            "linked_enterprises": linked_enterprises,
+            "suggested_actions": result.suggested_actions,
+            "opinion_enabled": MODEB_OPINION_AVAILABLE,
+            "opinion_feature_loaded_count": len(opinion_feature_by_id),
+            "qingming_context": qingming_ctx,
+        }
+        return {"success": True, "data": payload}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"四模态评估失败: {e}")
 
 
 @app.post("/symptom/assess_stream")
