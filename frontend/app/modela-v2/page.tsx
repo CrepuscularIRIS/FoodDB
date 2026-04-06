@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { modelAV2Api } from '@/lib/api';
+import GlobalSituationBoard from '@/components/modela/GlobalSituationBoard';
+import WorkflowPipeline from '@/components/modela/WorkflowPipeline';
 import type {
   ModelAV2Edge,
   ModelAV2GraphView,
@@ -17,6 +19,7 @@ import type {
 } from '@/types';
 
 const ReactEcharts = dynamic(() => import('echarts-for-react'), { ssr: false });
+const RiskSandbox3D = dynamic(() => import('@/components/modela/RiskSandbox3D'), { ssr: false });
 
 const RISK_NAMES = ['非食用添加剂', '农药兽药残留', '食品添加剂', '微生物', '重金属污染物', '生物毒素', '其他污染物'];
 const TYPE_COLORS = ['#22d3ee', '#38bdf8', '#34d399', '#fbbf24', '#fb7185', '#a78bfa', '#f97316', '#2dd4bf', '#60a5fa'];
@@ -113,6 +116,7 @@ export default function ModelAV2Page() {
   const [integratedBudget, setIntegratedBudget] = useState(120);
   const [integratedEdgeRatio, setIntegratedEdgeRatio] = useState(0.5);
   const [integratedFeedbackStrength, setIntegratedFeedbackStrength] = useState(0.8);
+  const [show3DSandbox, setShow3DSandbox] = useState(false);
   const [report, setReport] = useState<ModelAModeAReportResponse | null>(null);
 
   useEffect(() => {
@@ -284,6 +288,50 @@ export default function ModelAV2Page() {
     setIntegratedLoading(false);
     if (res.success && res.data) setIntegratedResult(res.data);
     else setError(res.error || '整合闭环模拟失败');
+  };
+
+  const exportIntegratedJSON = () => {
+    if (!integratedResult) return;
+    const blob = new Blob([JSON.stringify(integratedResult, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `modea_integrated_closed_loop_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportInspectionCSV = () => {
+    if (!integratedResult) return;
+    const rows = integratedResult.inspection_strategy.items || [];
+    const header = ['order', 'kind', 'entity_id', 'name_or_path', 'score', 'uncertainty', 'cost', 'inspect_frequency', 'objective', 'utility'];
+    const lines = [header.join(',')];
+    for (const it of rows) {
+      const nameOrPath =
+        it.kind === 'node'
+          ? (it.name || it.raw_id || '')
+          : `${it.source_name || it.source || ''}->${it.target_name || it.target || ''}`;
+      const line = [
+        it.order,
+        it.kind,
+        `"${String(it.entity_id || '').replace(/"/g, '""')}"`,
+        `"${String(nameOrPath).replace(/"/g, '""')}"`,
+        it.score,
+        it.uncertainty,
+        it.cost,
+        it.inspect_frequency,
+        it.objective,
+        it.utility,
+      ];
+      lines.push(line.join(','));
+    }
+    const blob = new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `modea_inspection_plan_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const runModeAReport = async () => {
@@ -684,6 +732,57 @@ export default function ModelAV2Page() {
 
       {error && <div className="text-sm text-rose-300 mb-3">{error}</div>}
 
+      <GlobalSituationBoard graph={graph} integrated={integratedResult} />
+
+      <div className="mt-4 grid grid-cols-12 gap-4">
+        <div className="col-span-12 md:col-span-8">
+          <WorkflowPipeline integrated={integratedResult} />
+        </div>
+        <div className="col-span-12 md:col-span-4 rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+          <div className="text-sm font-semibold mb-2">L4 执行层：导出与汇报</div>
+          <div className="text-xs text-slate-300 mb-3">
+            用于导出抽检任务书和闭环证据包，直接支持汇报与审查。
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={exportInspectionCSV}
+              disabled={!integratedResult}
+              className="px-3 py-1.5 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500 disabled:opacity-50"
+            >
+              导出抽检计划 CSV
+            </button>
+            <button
+              onClick={exportIntegratedJSON}
+              disabled={!integratedResult}
+              className="px-3 py-1.5 rounded bg-cyan-600 text-white text-xs hover:bg-cyan-500 disabled:opacity-50"
+            >
+              导出闭环证据 JSON
+            </button>
+            <button
+              onClick={() => setShow3DSandbox((v) => !v)}
+              className="px-3 py-1.5 rounded bg-violet-600 text-white text-xs hover:bg-violet-500"
+            >
+              {show3DSandbox ? '收起3D沙盘' : '打开3D沙盘'}
+            </button>
+          </div>
+          <div className="mt-3 text-[11px] text-slate-400">
+            说明：3D 沙盘是实验能力，用于汇报演示“风险高程地形”和节点下钻，不替代主图。
+          </div>
+        </div>
+      </div>
+
+      {show3DSandbox && (
+        <div className="mt-4">
+          <RiskSandbox3D
+            nodes={graph?.nodes || []}
+            onPickNode={(n) => {
+              setSelectedNode(n);
+              setSelectedEdge(null);
+            }}
+          />
+        </div>
+      )}
+
       <div className="mb-4 rounded-xl border border-slate-700 bg-slate-900/70 p-3">
         <div className="text-sm font-semibold mb-2">5.4Pro 公式落地状态</div>
         <div className="grid grid-cols-12 gap-3 text-xs">
@@ -729,7 +828,7 @@ export default function ModelAV2Page() {
         </div>
 
         <div className="col-span-4 rounded-xl border border-slate-700 bg-slate-900/80 p-3">
-          <h3 className="font-semibold text-slate-100 mb-2">图谱指标</h3>
+          <h3 className="font-semibold text-slate-100 mb-2">L3 证据层：图谱指标与节点解释</h3>
           {graph && (
             <div className="text-xs text-slate-300 space-y-1 mb-3">
               <div>节点: {graph.meta.node_count}</div>
