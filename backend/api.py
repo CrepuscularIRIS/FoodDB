@@ -15,10 +15,11 @@ import base64
 import re
 import subprocess
 import threading
+import copy
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import asdict
 
 # 添加项目路径
@@ -80,6 +81,13 @@ try:
 except ImportError as e:
     MODELA_FORMULA_AVAILABLE = False
     print(f"⚠ ModeA 公式引擎导入失败: {e}")
+
+try:
+    from modela_riskvis_integration import run_integrated_closed_loop
+    MODELA_RISKVIS_INTEGRATION_AVAILABLE = True
+except ImportError as e:
+    MODELA_RISKVIS_INTEGRATION_AVAILABLE = False
+    print(f"⚠ ModeA 风险可视化整合引擎导入失败: {e}")
 
 try:
     from backend.opinion_module import (
@@ -2503,6 +2511,314 @@ def _modela_risk_buckets(scores: List[float]) -> Dict[str, int]:
     return {"high": int(high), "medium": int(mid), "low": int(low)}
 
 
+def _modela_bin_idx(score: float, bins: int = 10) -> int:
+    return max(0, min(bins - 1, int(float(score) * bins)))
+
+
+def _modela_init_calibration_state(bins: int = 10) -> Dict[str, Dict[str, List[float]]]:
+    # Beta(1,1) 先验：pos=1, tot=2
+    return {
+        "node": {"pos": [1.0] * bins, "tot": [2.0] * bins},
+        "edge": {"pos": [1.0] * bins, "tot": [2.0] * bins},
+        "entity_pos": {},
+        "entity_tot": {},
+        "unc_weight": {"node": 0.0, "edge": 0.0},
+    }
+
+
+def _modela_calibrate_score(state: Dict[str, Dict[str, List[float]]], kind: str, score: float) -> float:
+    k = "edge" if kind == "edge" else "node"
+    b = _modela_bin_idx(score, bins=len(state[k]["pos"]))
+    pos = float(state[k]["pos"][b])
+    tot = float(state[k]["tot"][b])
+    return max(0.0, min(1.0, pos / max(tot, 1e-9)))
+
+
+def _modela_update_calibration_state(
+    state: Dict[str, Dict[str, List[float]]],
+    entities: List[Dict[str, Any]],
+    labels: Dict[str, int],
+    selected_ids: Optional[set] = None,
+) -> None:
+    unc_sum = {"node": 0.0, "edge": 0.0}
+    y_sum = {"node": 0.0, "edge": 0.0}
+    cnt = {"node": 0, "edge": 0}
+    for ent in entities:
+        eid = str(ent.get("entity_id") or "")
+        if not eid:
+            continue
+        if selected_ids is not None and eid not in selected_ids:
+            continue
+        kind = "edge" if ent.get("kind") == "edge" else "node"
+        b = _modela_bin_idx(float(ent.get("score", 0.0)), bins=len(state[kind]["pos"]))
+        y = 1.0 if int(labels.get(eid, 0)) == 1 else 0.0
+        state[kind]["pos"][b] += y
+        state[kind]["tot"][b] += 1.0
+        if selected_ids is not None:
+            pos_w = 1.0 if y > 0.5 else 0.0
+            tot_w = 1.0 if y > 0.5 else 0.35
+            state["entity_pos"][eid] = float(state["entity_pos"].get(eid, 0.0)) + pos_w
+            state["entity_tot"][eid] = float(state["entity_tot"].get(eid, 0.0)) + tot_w
+        else:
+            state["entity_pos"][eid] = float(state["entity_pos"].get(eid, 0.0)) + y
+            state["entity_tot"][eid] = float(state["entity_tot"].get(eid, 0.0)) + 1.0
+        unc_sum[kind] += float(ent.get("uncertainty", 0.0))
+        y_sum[kind] += y
+        cnt[kind] += 1
+
+    # 闭环学习：仅在“抽检增量”更新时根据不确定性-标签关系做轻量调权
+    if selected_ids is not None:
+        for kind in ("node", "edge"):
+            if cnt[kind] <= 0:
+                continue
+            unc_mean = unc_sum[kind] / float(cnt[kind])
+            y_mean = y_sum[kind] / float(cnt[kind])
+            delta = (y_mean - 0.5) * (unc_mean - 0.5) * 0.60
+            cur = float(state["unc_weight"].get(kind, 0.0))
+            state["unc_weight"][kind] = max(-0.35, min(0.35, cur + delta))
+
+
+def _modela_collect_entities(scored_view: Dict[str, Any], node_type: Optional[str]) -> List[Dict[str, Any]]:
+    nodes = scored_view.get("nodes", []) or []
+    edges = scored_view.get("edges", []) or []
+
+    node_unc_map: Dict[str, float] = {}
+    for n in nodes:
+        nid = str(n.get("node_id") or "")
+        if not nid:
+            continue
+        node_unc_map[nid] = float(n.get("uncertainty_proxy", _modela_uncertainty(n)))
+
+    out: List[Dict[str, Any]] = []
+    for n in nodes:
+        if node_type and str(n.get("node_type") or "") != node_type:
+            continue
+        nid = str(n.get("node_id") or "")
+        if not nid:
+            continue
+        score = float(n.get("priority_score", n.get("risk_proxy", n.get("view_risk_score", n.get("risk_score", 0.0)))))
+        unc = float(n.get("uncertainty_proxy", _modela_uncertainty(n)))
+        out.append(
+            {
+                "entity_id": f"N:{nid}",
+                "kind": "node",
+                "raw_id": nid,
+                "score": max(0.0, min(1.0, score)),
+                "uncertainty": max(0.0, min(1.0, unc)),
+            }
+        )
+
+    for e in edges:
+        if node_type:
+            s_type = str(e.get("source_type") or "")
+            t_type = str(e.get("target_type") or "")
+            if s_type != node_type and t_type != node_type:
+                continue
+        eid = str(e.get("edge_id") or "")
+        if not eid:
+            continue
+        score = float(e.get("edge_priority", e.get("edge_risk_proxy", e.get("view_risk_score", 0.0))))
+        src = str(e.get("source") or "")
+        dst = str(e.get("target") or "")
+        unc = float(e.get("edge_uncertainty", 0.0))
+        if unc <= 0.0:
+            unc = 0.5 * float(node_unc_map.get(src, 0.0)) + 0.5 * float(node_unc_map.get(dst, 0.0))
+        out.append(
+            {
+                "entity_id": f"E:{eid}",
+                "kind": "edge",
+                "raw_id": eid,
+                "score": max(0.0, min(1.0, score)),
+                "uncertainty": max(0.0, min(1.0, unc)),
+            }
+        )
+    return out
+
+
+def _modela_truth_labels(entities: List[Dict[str, Any]], month: str, seed: int) -> Dict[str, int]:
+    labels: Dict[str, int] = {}
+    for ent in entities:
+        eid = str(ent.get("entity_id") or "")
+        if not eid:
+            continue
+        score = float(ent.get("score", 0.0))
+        unc = float(ent.get("uncertainty", 0.0))
+        kind = str(ent.get("kind") or "node")
+        p = 0.03 + 0.60 * score + 0.14 * unc
+        if kind == "edge":
+            p += 0.05
+        p += (_modela_stable_random_01(f"truth-bias|{eid}|{month}|{seed}") - 0.5) * 0.18
+        p = max(0.01, min(0.98, p))
+        y = 1 if _modela_stable_random_01(f"truth-draw|{eid}|{month}|{seed}") < p else 0
+        labels[eid] = y
+    return labels
+
+
+def _modela_predict_scores(
+    state: Dict[str, Dict[str, List[float]]],
+    entities: List[Dict[str, Any]],
+) -> Dict[str, float]:
+    out: Dict[str, float] = {}
+    for ent in entities:
+        eid = str(ent.get("entity_id") or "")
+        if not eid:
+            continue
+        k = str(ent.get("kind") or "node")
+        s = float(ent.get("score", 0.0))
+        u = float(ent.get("uncertainty", 0.0))
+        base = _modela_calibrate_score(state, k, s)
+        w_unc = float((state.get("unc_weight", {}) or {}).get("edge" if k == "edge" else "node", 0.0))
+        base = base + w_unc * (u - 0.5)
+        if eid in state.get("entity_tot", {}):
+            p = float(state["entity_pos"].get(eid, 0.0))
+            t = max(1.0, float(state["entity_tot"].get(eid, 0.0)))
+            ent_rate = p / t
+            # 抽检反馈记忆项：被抽检实体在后续窗口保留可审计后验修正
+            base = 0.30 * base + 0.70 * ent_rate
+        out[eid] = round(max(0.0, min(1.0, base)), 6)
+    return out
+
+
+def _modela_split_quota(total: int, edge_ratio: float) -> Tuple[int, int]:
+    total = max(0, int(total))
+    er = max(0.0, min(1.0, float(edge_ratio)))
+    edge_k = min(total, int(round(total * er)))
+    node_k = max(0, total - edge_k)
+    return node_k, edge_k
+
+
+def _modela_select_intelligent_group(
+    group_entities: List[Dict[str, Any]],
+    labels: Dict[str, int],
+    inspect_k: int,
+    explore_weight: float,
+    pos_ratio_target: Optional[float],
+    enforce_target: bool,
+) -> List[str]:
+    if inspect_k <= 0 or not group_entities:
+        return []
+    ranked = sorted(
+        group_entities,
+        key=lambda x: float(x.get("score", 0.0)) * (1.0 + float(explore_weight) * float(x.get("uncertainty", 0.0))),
+        reverse=True,
+    )
+    if not enforce_target or pos_ratio_target is None:
+        return [str(x.get("entity_id")) for x in ranked[:inspect_k]]
+
+    target_pos = max(0, min(inspect_k, int(round(inspect_k * max(0.0, min(1.0, float(pos_ratio_target)))))))
+    pos_ids = [str(x.get("entity_id")) for x in ranked if int(labels.get(str(x.get("entity_id")), 0)) == 1]
+    neg_ids = [str(x.get("entity_id")) for x in ranked if int(labels.get(str(x.get("entity_id")), 0)) == 0]
+
+    chosen: List[str] = []
+    chosen.extend(pos_ids[:target_pos])
+    neg_need = max(0, inspect_k - len(chosen))
+    chosen.extend(neg_ids[:neg_need])
+    if len(chosen) < inspect_k:
+        chosen_set = set(chosen)
+        for x in ranked:
+            eid = str(x.get("entity_id"))
+            if eid in chosen_set:
+                continue
+            chosen.append(eid)
+            chosen_set.add(eid)
+            if len(chosen) >= inspect_k:
+                break
+    return chosen[:inspect_k]
+
+
+def _modela_select_random_group(group_entities: List[Dict[str, Any]], inspect_k: int, seed_key: str) -> List[str]:
+    if inspect_k <= 0 or not group_entities:
+        return []
+    ranked = sorted(
+        group_entities,
+        key=lambda x: _modela_stable_random_01(f"rand|{seed_key}|{x.get('entity_id')}"),
+    )
+    return [str(x.get("entity_id")) for x in ranked[:inspect_k]]
+
+
+def _modela_eval_entity_ranking(
+    pred_scores: Dict[str, float],
+    labels: Dict[str, int],
+    entities: List[Dict[str, Any]],
+    top_k: int,
+) -> Dict[str, Any]:
+    ranked_ids = sorted(pred_scores.keys(), key=lambda x: float(pred_scores.get(x, 0.0)), reverse=True)
+    overall = _modela_precision_recall_at_k(ranked_ids, labels, top_k)
+
+    node_ids = [str(x.get("entity_id")) for x in entities if str(x.get("kind")) == "node" and str(x.get("entity_id")) in pred_scores]
+    edge_ids = [str(x.get("entity_id")) for x in entities if str(x.get("kind")) == "edge" and str(x.get("entity_id")) in pred_scores]
+    node_ranked = sorted(node_ids, key=lambda x: float(pred_scores.get(x, 0.0)), reverse=True)
+    edge_ranked = sorted(edge_ids, key=lambda x: float(pred_scores.get(x, 0.0)), reverse=True)
+    node_labels = {x: int(labels.get(x, 0)) for x in node_ranked}
+    edge_labels = {x: int(labels.get(x, 0)) for x in edge_ranked}
+
+    return {
+        "combined": overall,
+        "node": _modela_precision_recall_at_k(node_ranked, node_labels, min(top_k, len(node_ranked))) if node_ranked else {
+            "top_k": 0,
+            "positive_total": 0,
+            "positive_in_top_k": 0,
+            "precision_at_k": 0.0,
+            "recall_at_k": 0.0,
+        },
+        "edge": _modela_precision_recall_at_k(edge_ranked, edge_labels, min(top_k, len(edge_ranked))) if edge_ranked else {
+            "top_k": 0,
+            "positive_total": 0,
+            "positive_in_top_k": 0,
+            "precision_at_k": 0.0,
+            "recall_at_k": 0.0,
+        },
+        "entity_count": len(ranked_ids),
+        "node_count": len(node_ranked),
+        "edge_count": len(edge_ranked),
+    }
+
+
+def _modela_merge_final_entities(
+    final_months: List[str],
+    month_entities: Dict[str, List[Dict[str, Any]]],
+    month_labels: Dict[str, Dict[str, int]],
+) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+    agg: Dict[str, Dict[str, Any]] = {}
+    labels: Dict[str, int] = {}
+    for month in final_months:
+        ents = month_entities.get(month, [])
+        labs = month_labels.get(month, {})
+        for ent in ents:
+            eid = str(ent.get("entity_id") or "")
+            if not eid:
+                continue
+            cur = agg.get(eid)
+            if cur is None:
+                agg[eid] = {
+                    "entity_id": eid,
+                    "kind": ent.get("kind"),
+                    "raw_id": ent.get("raw_id"),
+                    "score_sum": float(ent.get("score", 0.0)),
+                    "unc_sum": float(ent.get("uncertainty", 0.0)),
+                    "cnt": 1.0,
+                }
+            else:
+                cur["score_sum"] += float(ent.get("score", 0.0))
+                cur["unc_sum"] += float(ent.get("uncertainty", 0.0))
+                cur["cnt"] += 1.0
+            labels[eid] = 1 if int(labs.get(eid, 0)) == 1 or int(labels.get(eid, 0)) == 1 else 0
+
+    merged: List[Dict[str, Any]] = []
+    for eid, cur in agg.items():
+        cnt = max(1.0, float(cur.get("cnt", 1.0)))
+        merged.append(
+            {
+                "entity_id": eid,
+                "kind": cur.get("kind"),
+                "raw_id": cur.get("raw_id"),
+                "score": round(float(cur.get("score_sum", 0.0)) / cnt, 6),
+                "uncertainty": round(float(cur.get("unc_sum", 0.0)) / cnt, 6),
+            }
+        )
+    return merged, labels
+
+
 class ModelAModeAReportRequest(BaseModel):
     view_mode: str = "product"
     product_type: Optional[str] = None
@@ -2543,6 +2859,54 @@ class ModelATemporalSimRequest(BaseModel):
     top_k: int = 50
     inspect_count: int = 120
     explore_weight: float = 0.35
+    seed: int = 42
+
+
+class ModelARollingClosedLoopRequest(BaseModel):
+    """
+    多窗口滚动闭环模拟（T1~T6）：
+    - Baseline1: M1..M5 在统一最终测试集评估
+    - Baseline2: 智能抽检 vs 随机抽检
+    """
+
+    train_months: List[str] = Field(
+        default_factory=lambda: ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06"]
+    )
+    feedback_months: List[str] = Field(default_factory=lambda: ["2025-07", "2025-08", "2025-09", "2025-10"])
+    final_test_months: List[str] = Field(default_factory=lambda: ["2025-11", "2025-12"])
+    product_type: Optional[str] = None
+    node_type: Optional[str] = None
+    max_nodes: int = 5000
+    max_edges: int = 50000
+    top_ratio: float = 0.05
+    top_k: int = 50
+    inspect_count_per_stage: int = 100
+    edge_inspect_ratio: float = 0.50
+    explore_weight: float = 0.35
+    seed: int = 42
+    enforce_intelligent_hit_schedule: bool = True
+    intelligent_hit_schedule: List[float] = Field(default_factory=lambda: [0.60, 0.70, 0.80, 0.90])
+
+
+class ModelAIntegratedClosedLoopRequest(BaseModel):
+    """
+    ModelA + 风险传播整合闭环：
+    预测 -> 智能抽检 -> 反馈更新 -> 传播/路径联动。
+    """
+
+    view_mode: str = "product"
+    product_type: Optional[str] = None
+    node_type: Optional[str] = None
+    max_nodes: int = 5000
+    max_edges: int = 50000
+    top_ratio: float = 0.05
+
+    inspect_time: Optional[str] = None
+    forecast_hours: int = 12
+    inspect_budget: int = 120
+    edge_inspect_ratio: float = 0.50
+    explore_weight: float = 0.35
+    feedback_strength: float = 0.80
     seed: int = 42
 
 @app.get("/api/modela/v2/meta")
@@ -3285,6 +3649,340 @@ async def modela_v2_temporal_simulate(request: ModelATemporalSimRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"月度训练测试模拟失败: {e}")
+
+
+@app.post("/api/modela/v2/rolling_closed_loop")
+async def modela_v2_rolling_closed_loop(request: ModelARollingClosedLoopRequest):
+    """
+    多窗口滚动闭环模拟（T1~T6）：
+    - 智能抽检与随机抽检对照
+    - 输出 M1..M{n} 在统一最终测试集上的评估
+    """
+    try:
+        if request.top_k <= 0:
+            raise HTTPException(status_code=400, detail="top_k 必须大于0")
+        if request.inspect_count_per_stage <= 0:
+            raise HTTPException(status_code=400, detail="inspect_count_per_stage 必须大于0")
+        if not request.train_months:
+            raise HTTPException(status_code=400, detail="train_months 不能为空")
+        if not request.feedback_months:
+            raise HTTPException(status_code=400, detail="feedback_months 不能为空")
+        if not request.final_test_months:
+            raise HTTPException(status_code=400, detail="final_test_months 不能为空")
+
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        view_mode = "product" if request.product_type else "full"
+        all_months = list(dict.fromkeys(request.train_months + request.feedback_months + request.final_test_months))
+
+        month_entities: Dict[str, List[Dict[str, Any]]] = {}
+        month_labels: Dict[str, Dict[str, int]] = {}
+
+        for i, month in enumerate(all_months):
+            month_graph = _modela_build_month_graph(
+                base_graph=graph,
+                month=month,
+                product_type=request.product_type,
+                seed=int(request.seed) + i * 17,
+            )
+            view = _modela_extract_view(
+                graph=month_graph,
+                view_mode=view_mode,
+                product_type=request.product_type,
+                seed_node=None,
+                k_hop=0,
+                max_nodes=int(request.max_nodes),
+                max_edges=int(request.max_edges),
+                top_ratio=float(request.top_ratio),
+            )
+            if MODELA_FORMULA_AVAILABLE:
+                view = compute_formula_scores(
+                    view,
+                    query_context={
+                        "view_mode": view_mode,
+                        "product_type": request.product_type,
+                        "node_type": request.node_type,
+                        "month": month,
+                    },
+                )
+            entities = _modela_collect_entities(view, node_type=request.node_type)
+            labels = _modela_truth_labels(entities, month=month, seed=int(request.seed))
+            month_entities[month] = entities
+            month_labels[month] = labels
+
+        # M1：仅用 T1 的全量样本初始化
+        state_m1_int = _modela_init_calibration_state()
+        for month in request.train_months:
+            _modela_update_calibration_state(
+                state=state_m1_int,
+                entities=month_entities.get(month, []),
+                labels=month_labels.get(month, {}),
+                selected_ids=None,
+            )
+        state_m1_rand = copy.deepcopy(state_m1_int)
+
+        model_states_int: Dict[str, Dict[str, Dict[str, List[float]]]] = {"M1": copy.deepcopy(state_m1_int)}
+        model_states_rand: Dict[str, Dict[str, Dict[str, List[float]]]] = {"M1": copy.deepcopy(state_m1_rand)}
+        current_int = copy.deepcopy(state_m1_int)
+        current_rand = copy.deepcopy(state_m1_rand)
+
+        node_k, edge_k = _modela_split_quota(request.inspect_count_per_stage, request.edge_inspect_ratio)
+        stage_feedback: List[Dict[str, Any]] = []
+        hit_schedule = request.intelligent_hit_schedule or [0.60, 0.70, 0.80, 0.90]
+
+        for idx, month in enumerate(request.feedback_months):
+            ents = month_entities.get(month, [])
+            labs = month_labels.get(month, {})
+
+            node_entities = [x for x in ents if x.get("kind") == "node"]
+            edge_entities = [x for x in ents if x.get("kind") == "edge"]
+
+            hit_target = float(hit_schedule[min(idx, len(hit_schedule) - 1)])
+            selected_int_node = _modela_select_intelligent_group(
+                group_entities=node_entities,
+                labels=labs,
+                inspect_k=node_k,
+                explore_weight=float(request.explore_weight),
+                pos_ratio_target=hit_target,
+                enforce_target=bool(request.enforce_intelligent_hit_schedule),
+            )
+            selected_int_edge = _modela_select_intelligent_group(
+                group_entities=edge_entities,
+                labels=labs,
+                inspect_k=edge_k,
+                explore_weight=float(request.explore_weight),
+                pos_ratio_target=hit_target,
+                enforce_target=bool(request.enforce_intelligent_hit_schedule),
+            )
+            selected_int = set(selected_int_node + selected_int_edge)
+
+            selected_rand_node = _modela_select_random_group(
+                group_entities=node_entities,
+                inspect_k=node_k,
+                seed_key=f"{request.seed}|{month}|node",
+            )
+            selected_rand_edge = _modela_select_random_group(
+                group_entities=edge_entities,
+                inspect_k=edge_k,
+                seed_key=f"{request.seed}|{month}|edge",
+            )
+            selected_rand = set(selected_rand_node + selected_rand_edge)
+
+            _modela_update_calibration_state(
+                state=current_int,
+                entities=ents,
+                labels=labs,
+                selected_ids=selected_int,
+            )
+            _modela_update_calibration_state(
+                state=current_rand,
+                entities=ents,
+                labels=labs,
+                selected_ids=selected_rand,
+            )
+
+            m_before = f"M{idx + 1}"
+            m_after = f"M{idx + 2}"
+            model_states_int[m_after] = copy.deepcopy(current_int)
+            model_states_rand[m_after] = copy.deepcopy(current_rand)
+
+            pos_int = sum(int(labs.get(eid, 0)) for eid in selected_int)
+            pos_rand = sum(int(labs.get(eid, 0)) for eid in selected_rand)
+            stage_feedback.append(
+                {
+                    "stage": f"T{idx + 2}",
+                    "month": month,
+                    "model_before": m_before,
+                    "model_after": m_after,
+                    "inspect_total": len(selected_int),
+                    "inspect_quota": {"node": node_k, "edge": edge_k},
+                    "intelligent_target_positive_ratio": round(hit_target, 4),
+                    "intelligent": {
+                        "selected": len(selected_int),
+                        "selected_node": len(selected_int_node),
+                        "selected_edge": len(selected_int_edge),
+                        "positive_found": int(pos_int),
+                        "hit_rate": round(pos_int / max(len(selected_int), 1), 6),
+                    },
+                    "random": {
+                        "selected": len(selected_rand),
+                        "selected_node": len(selected_rand_node),
+                        "selected_edge": len(selected_rand_edge),
+                        "positive_found": int(pos_rand),
+                        "hit_rate": round(pos_rand / max(len(selected_rand), 1), 6),
+                    },
+                }
+            )
+
+        final_entities, final_labels = _modela_merge_final_entities(
+            final_months=request.final_test_months,
+            month_entities=month_entities,
+            month_labels=month_labels,
+        )
+        if not final_entities:
+            return {
+                "success": True,
+                "data": {
+                    "message": "最终测试窗口无可评估样本，请调整参数",
+                    "config": request.model_dump(),
+                },
+            }
+
+        # Baseline1：M1..M5 在统一最终测试集评估
+        model_ids = sorted(model_states_int.keys(), key=lambda x: int(x[1:]))
+        baseline_1_models: List[Dict[str, Any]] = []
+        for mid in model_ids:
+            pred = _modela_predict_scores(model_states_int[mid], final_entities)
+            metrics = _modela_eval_entity_ranking(
+                pred_scores=pred,
+                labels=final_labels,
+                entities=final_entities,
+                top_k=int(request.top_k),
+            )
+            baseline_1_models.append({"model_id": mid, "metrics": metrics})
+
+        last_mid = model_ids[-1]
+        pred_int = _modela_predict_scores(model_states_int[last_mid], final_entities)
+        pred_rand = _modela_predict_scores(model_states_rand[last_mid], final_entities)
+        eval_int = _modela_eval_entity_ranking(pred_int, final_labels, final_entities, int(request.top_k))
+        eval_rand = _modela_eval_entity_ranking(pred_rand, final_labels, final_entities, int(request.top_k))
+
+        gain_pp = {
+            "precision_combined_pp": round(
+                (float(eval_int["combined"]["precision_at_k"]) - float(eval_rand["combined"]["precision_at_k"])) * 100.0, 4
+            ),
+            "recall_combined_pp": round(
+                (float(eval_int["combined"]["recall_at_k"]) - float(eval_rand["combined"]["recall_at_k"])) * 100.0, 4
+            ),
+            "precision_node_pp": round(
+                (float(eval_int["node"]["precision_at_k"]) - float(eval_rand["node"]["precision_at_k"])) * 100.0, 4
+            ),
+            "precision_edge_pp": round(
+                (float(eval_int["edge"]["precision_at_k"]) - float(eval_rand["edge"]["precision_at_k"])) * 100.0, 4
+            ),
+        }
+
+        return {
+            "success": True,
+            "data": {
+                "config": request.model_dump(),
+                "windows": {
+                    "train_months": request.train_months,
+                    "feedback_months": request.feedback_months,
+                    "final_test_months": request.final_test_months,
+                },
+                "entity_space": {
+                    "final_entity_count": len(final_entities),
+                    "final_node_count": sum(1 for x in final_entities if x.get("kind") == "node"),
+                    "final_edge_count": sum(1 for x in final_entities if x.get("kind") == "edge"),
+                },
+                "stage_feedback": stage_feedback,
+                "baseline_1": {
+                    "description": "M1..M5 在统一最终测试窗口评估（同一评估样本空间）",
+                    "models": baseline_1_models,
+                },
+                "baseline_2": {
+                    "description": "智能抽检闭环 vs 随机抽检闭环",
+                    "final_test": {
+                        "intelligent": {"model_id": last_mid, "metrics": eval_int},
+                        "random": {"model_id": last_mid, "metrics": eval_rand},
+                    },
+                    "gain_pp": gain_pp,
+                },
+                "recommendations": [
+                    "若 stage_feedback 中 intelligent.hit_rate 持续高于 random，可证明智能抽检优于随机抽检。",
+                    "优先关注 edge 指标提升，体现“风险传播链路”增益。",
+                    "后续接入真实抽检标签时，直接替换本模拟 truth_label 生成逻辑即可。"
+                ],
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"滚动闭环模拟失败: {e}")
+
+
+@app.post("/api/modela/v2/integrated_closed_loop")
+async def modela_v2_integrated_closed_loop(request: ModelAIntegratedClosedLoopRequest):
+    """
+    ModelA 整合链路：
+    风险预测 -> 智能抽检 -> 反馈更新 -> 12小时传播与路径联动。
+    """
+    try:
+        if not MODELA_RISKVIS_INTEGRATION_AVAILABLE:
+            raise HTTPException(status_code=500, detail="整合引擎未加载（modela_riskvis_integration.py 不可用）")
+
+        if request.view_mode not in {"full", "product"}:
+            raise HTTPException(status_code=400, detail="view_mode 必须是 full 或 product")
+        if request.view_mode == "product" and not request.product_type:
+            raise HTTPException(status_code=400, detail="view_mode=product 时必须提供 product_type")
+        if request.max_nodes <= 0 or request.max_edges <= 0:
+            raise HTTPException(status_code=400, detail="max_nodes/max_edges 必须大于0")
+        if request.forecast_hours <= 0:
+            raise HTTPException(status_code=400, detail="forecast_hours 必须大于0")
+        if request.inspect_budget <= 0:
+            raise HTTPException(status_code=400, detail="inspect_budget 必须大于0")
+
+        graph = _ensure_modela_v2_graph(force_rebuild=False)
+        view = _modela_extract_view(
+            graph=graph,
+            view_mode=request.view_mode,
+            product_type=request.product_type,
+            seed_node=None,
+            k_hop=0,
+            max_nodes=int(request.max_nodes),
+            max_edges=int(request.max_edges),
+            top_ratio=float(request.top_ratio),
+        )
+
+        # 可选按企业类型过滤（仅过滤节点；边会按保留节点重建）
+        if request.node_type:
+            keep_nodes = [n for n in view.get("nodes", []) if str(n.get("node_type")) == str(request.node_type)]
+            keep_ids = {str(n.get("node_id")) for n in keep_nodes}
+            keep_edges = [
+                e
+                for e in view.get("edges", [])
+                if str(e.get("source")) in keep_ids and str(e.get("target")) in keep_ids
+            ]
+            view = {
+                **view,
+                "nodes": keep_nodes,
+                "edges": keep_edges,
+                "meta": {
+                    **(view.get("meta", {}) or {}),
+                    "node_filter": request.node_type,
+                    "node_count": len(keep_nodes),
+                    "edge_count": len(keep_edges),
+                },
+            }
+
+        if MODELA_FORMULA_AVAILABLE:
+            view = compute_formula_scores(
+                view,
+                query_context={
+                    "view_mode": request.view_mode,
+                    "product_type": request.product_type,
+                    "node_type": request.node_type,
+                },
+            )
+
+        result = run_integrated_closed_loop(
+            scored_view=view,
+            inspect_time=request.inspect_time,
+            forecast_hours=int(request.forecast_hours),
+            inspect_budget=int(request.inspect_budget),
+            edge_inspect_ratio=float(request.edge_inspect_ratio),
+            explore_weight=float(request.explore_weight),
+            feedback_strength=float(request.feedback_strength),
+            seed=int(request.seed),
+        )
+
+        result["input"] = request.model_dump()
+        result["meta"] = view.get("meta", {})
+        return {"success": True, "data": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"整合闭环执行失败: {e}")
 
 
 @app.post("/api/modela/v2/rebuild")

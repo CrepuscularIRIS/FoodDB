@@ -20,6 +20,8 @@ import {
   ModelARankingEvalResponse,
   ModelAResourcePlanResponse,
   ModelATemporalSimResponse,
+  ModelARollingClosedLoopResponse,
+  ModelAIntegratedClosedLoopResponse,
   ModeBOpinionCrawlStartPayload,
   ModeBOpinionCrawlStatus,
   ModeBOpinionImportPayload,
@@ -808,6 +810,56 @@ export const modelAV2Api = {
       return { success: !!data?.success, data: data?.data, error: data?.error };
     } catch (error: any) {
       return { success: false, error: error.message || '月度训练测试模拟失败' };
+    }
+  },
+
+  rollingClosedLoop: async (payload: {
+    train_months: string[];
+    feedback_months: string[];
+    final_test_months: string[];
+    product_type?: string;
+    node_type?: string;
+    max_nodes?: number;
+    max_edges?: number;
+    top_ratio?: number;
+    top_k?: number;
+    inspect_count_per_stage?: number;
+    edge_inspect_ratio?: number;
+    explore_weight?: number;
+    seed?: number;
+    enforce_intelligent_hit_schedule?: boolean;
+    intelligent_hit_schedule?: number[];
+  }): Promise<ApiResponse<ModelARollingClosedLoopResponse>> => {
+    try {
+      const response = await api.post('/api/modela/v2/rolling_closed_loop', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '滚动闭环模拟失败' };
+    }
+  },
+
+  integratedClosedLoop: async (payload: {
+    view_mode: 'full' | 'product';
+    product_type?: string;
+    node_type?: string;
+    max_nodes?: number;
+    max_edges?: number;
+    top_ratio?: number;
+    inspect_time?: string;
+    forecast_hours?: number;
+    inspect_budget?: number;
+    edge_inspect_ratio?: number;
+    explore_weight?: number;
+    feedback_strength?: number;
+    seed?: number;
+  }): Promise<ApiResponse<ModelAIntegratedClosedLoopResponse>> => {
+    try {
+      const response = await api.post('/api/modela/v2/integrated_closed_loop', payload);
+      const data = response.data;
+      return { success: !!data?.success, data: data?.data, error: data?.error };
+    } catch (error: any) {
+      return { success: false, error: error.message || '整合闭环模拟失败' };
     }
   },
 };

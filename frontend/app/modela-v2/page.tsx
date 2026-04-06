@@ -9,9 +9,11 @@ import type {
   ModelAV2Node,
   ModelAModeAReportResponse,
   ModelARankingEvalResponse,
+  ModelARollingClosedLoopResponse,
   ModelAResourcePlanResponse,
   ModelAScreeningResponse,
   ModelATemporalSimResponse,
+  ModelAIntegratedClosedLoopResponse,
 } from '@/types';
 
 const ReactEcharts = dynamic(() => import('echarts-for-react'), { ssr: false });
@@ -41,6 +43,13 @@ function parseJSONText(content?: string): any {
   } catch {
     return null;
   }
+}
+
+function parseMonthList(input: string): string[] {
+  return (input || '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter((x) => !!x);
 }
 
 function nodeScore(n: ModelAV2Node): number {
@@ -88,6 +97,22 @@ export default function ModelAV2Page() {
   const [simTopK, setSimTopK] = useState(50);
   const [inspectCount, setInspectCount] = useState(120);
   const [exploreWeight, setExploreWeight] = useState(0.35);
+  const [rollingLoading, setRollingLoading] = useState(false);
+  const [rollingResult, setRollingResult] = useState<ModelARollingClosedLoopResponse | null>(null);
+  const [trainMonthsText, setTrainMonthsText] = useState('2025-01,2025-02,2025-03,2025-04,2025-05,2025-06');
+  const [feedbackMonthsText, setFeedbackMonthsText] = useState('2025-07,2025-08,2025-09,2025-10');
+  const [finalMonthsText, setFinalMonthsText] = useState('2025-11,2025-12');
+  const [inspectPerStage, setInspectPerStage] = useState(100);
+  const [edgeInspectRatio, setEdgeInspectRatio] = useState(0.5);
+  const [enforceHitSchedule, setEnforceHitSchedule] = useState(true);
+  const [hitScheduleText, setHitScheduleText] = useState('0.6,0.7,0.8,0.9');
+  const [integratedLoading, setIntegratedLoading] = useState(false);
+  const [integratedResult, setIntegratedResult] = useState<ModelAIntegratedClosedLoopResponse | null>(null);
+  const [integratedInspectTime, setIntegratedInspectTime] = useState('');
+  const [integratedForecastHours, setIntegratedForecastHours] = useState(12);
+  const [integratedBudget, setIntegratedBudget] = useState(120);
+  const [integratedEdgeRatio, setIntegratedEdgeRatio] = useState(0.5);
+  const [integratedFeedbackStrength, setIntegratedFeedbackStrength] = useState(0.8);
   const [report, setReport] = useState<ModelAModeAReportResponse | null>(null);
 
   useEffect(() => {
@@ -200,6 +225,65 @@ export default function ModelAV2Page() {
     setSimLoading(false);
     if (res.success && res.data) setTemporalSim(res.data);
     else setError(res.error || '月度训练测试模拟失败');
+  };
+
+  const runRollingClosedLoop = async () => {
+    setError('');
+    setRollingLoading(true);
+    const product = viewMode === 'product' ? selectedCategory : undefined;
+    const trainMonths = parseMonthList(trainMonthsText);
+    const feedbackMonths = parseMonthList(feedbackMonthsText);
+    const finalMonths = parseMonthList(finalMonthsText);
+    const hitSchedule = (hitScheduleText || '')
+      .split(',')
+      .map((x) => Number(x.trim()))
+      .filter((x) => Number.isFinite(x))
+      .map((x) => Math.max(0, Math.min(1, x)));
+
+    const res = await modelAV2Api.rollingClosedLoop({
+      train_months: trainMonths,
+      feedback_months: feedbackMonths,
+      final_test_months: finalMonths,
+      product_type: product,
+      node_type: screeningType || undefined,
+      max_nodes: maxNodes,
+      max_edges: maxEdges,
+      top_ratio: topRatio,
+      top_k: simTopK,
+      inspect_count_per_stage: inspectPerStage,
+      edge_inspect_ratio: edgeInspectRatio,
+      explore_weight: exploreWeight,
+      seed: 42,
+      enforce_intelligent_hit_schedule: enforceHitSchedule,
+      intelligent_hit_schedule: hitSchedule.length > 0 ? hitSchedule : undefined,
+    });
+    setRollingLoading(false);
+    if (res.success && res.data) setRollingResult(res.data);
+    else setError(res.error || '滚动闭环模拟失败');
+  };
+
+  const runIntegratedClosedLoop = async () => {
+    setError('');
+    setIntegratedLoading(true);
+    const product = viewMode === 'product' ? selectedCategory : undefined;
+    const res = await modelAV2Api.integratedClosedLoop({
+      view_mode: viewMode,
+      product_type: product,
+      node_type: screeningType || undefined,
+      max_nodes: maxNodes,
+      max_edges: maxEdges,
+      top_ratio: topRatio,
+      inspect_time: integratedInspectTime.trim() || undefined,
+      forecast_hours: integratedForecastHours,
+      inspect_budget: integratedBudget,
+      edge_inspect_ratio: integratedEdgeRatio,
+      explore_weight: exploreWeight,
+      feedback_strength: integratedFeedbackStrength,
+      seed: 42,
+    });
+    setIntegratedLoading(false);
+    if (res.success && res.data) setIntegratedResult(res.data);
+    else setError(res.error || '整合闭环模拟失败');
   };
 
   const runModeAReport = async () => {
@@ -377,6 +461,98 @@ export default function ModelAV2Page() {
     if (v === undefined || v === null) return '--';
     return Number(v).toFixed(2);
   };
+
+  const integratedPropagationOption = useMemo(() => {
+    const frames = integratedResult?.propagation?.frames || [];
+    return {
+      backgroundColor: '#020617',
+      tooltip: { trigger: 'axis' },
+      legend: {
+        top: 6,
+        textStyle: { color: '#cbd5e1' },
+        data: ['预测活跃节点', '真实活跃节点', '预测最大风险', '真实最大风险'],
+      },
+      grid: { left: 40, right: 16, top: 34, bottom: 28 },
+      xAxis: {
+        type: 'category',
+        data: frames.map((f) => `H${f.hour}`),
+        axisLabel: { color: '#94a3b8', fontSize: 10 },
+      },
+      yAxis: [
+        { type: 'value', name: '节点数', axisLabel: { color: '#94a3b8', fontSize: 10 }, splitLine: { lineStyle: { color: '#1e293b' } } },
+        { type: 'value', name: '风险', min: 0, max: 1, axisLabel: { color: '#94a3b8', fontSize: 10 } },
+      ],
+      series: [
+        {
+          name: '预测活跃节点',
+          type: 'line',
+          smooth: true,
+          yAxisIndex: 0,
+          data: frames.map((f) => f.predicted_active_nodes),
+          lineStyle: { color: '#38bdf8', width: 2 },
+          itemStyle: { color: '#38bdf8' },
+        },
+        {
+          name: '真实活跃节点',
+          type: 'line',
+          smooth: true,
+          yAxisIndex: 0,
+          data: frames.map((f) => f.real_active_nodes),
+          lineStyle: { color: '#22c55e', width: 2 },
+          itemStyle: { color: '#22c55e' },
+        },
+        {
+          name: '预测最大风险',
+          type: 'line',
+          smooth: true,
+          yAxisIndex: 1,
+          data: frames.map((f) => f.predicted_max_score),
+          lineStyle: { color: '#f59e0b', width: 2 },
+          itemStyle: { color: '#f59e0b' },
+        },
+        {
+          name: '真实最大风险',
+          type: 'line',
+          smooth: true,
+          yAxisIndex: 1,
+          data: frames.map((f) => f.real_max_score),
+          lineStyle: { color: '#f43f5e', width: 2 },
+          itemStyle: { color: '#f43f5e' },
+        },
+      ],
+    };
+  }, [integratedResult]);
+
+  const integratedGainOption = useMemo(() => {
+    const g = integratedResult?.optimization?.gain_pp;
+    return {
+      backgroundColor: '#020617',
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 44, right: 16, top: 20, bottom: 28 },
+      xAxis: {
+        type: 'category',
+        data: ['节点Precision', '节点Recall', '边Precision', '边Recall'],
+        axisLabel: { color: '#94a3b8', fontSize: 10 },
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { color: '#94a3b8', fontSize: 10, formatter: '{value}pp' },
+        splitLine: { lineStyle: { color: '#1e293b' } },
+      },
+      series: [
+        {
+          type: 'bar',
+          data: g
+            ? [g.node_precision_pp, g.node_recall_pp, g.edge_precision_pp, g.edge_recall_pp]
+            : [0, 0, 0, 0],
+          itemStyle: {
+            color: (p: any) => ['#38bdf8', '#22c55e', '#f59e0b', '#f43f5e'][p.dataIndex % 4],
+          },
+          barWidth: 26,
+        },
+      ],
+    };
+  }, [integratedResult]);
 
   return (
     <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 text-slate-100 shadow-2xl min-h-[84vh]">
@@ -839,6 +1015,319 @@ export default function ModelAV2Page() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/70 p-3">
+        <div className="text-sm font-semibold mb-3">T1~T6 滚动闭环实验（M1~M5 + 随机基线 + 节点/边）</div>
+        <div className="grid grid-cols-12 gap-3 mb-3">
+          <div className="col-span-12 md:col-span-4">
+            <label className="block text-xs text-slate-400 mb-1">T1 训练窗口（月，逗号分隔）</label>
+            <input
+              value={trainMonthsText}
+              onChange={(e) => setTrainMonthsText(e.target.value)}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-12 md:col-span-4">
+            <label className="block text-xs text-slate-400 mb-1">T2~T5 反馈窗口（月）</label>
+            <input
+              value={feedbackMonthsText}
+              onChange={(e) => setFeedbackMonthsText(e.target.value)}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-12 md:col-span-4">
+            <label className="block text-xs text-slate-400 mb-1">T6 最终测试窗口（月）</label>
+            <input
+              value={finalMonthsText}
+              onChange={(e) => setFinalMonthsText(e.target.value)}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-xs text-slate-400 mb-1">每阶段抽检总量</label>
+            <input
+              type="number"
+              min={20}
+              max={2000}
+              value={inspectPerStage}
+              onChange={(e) => setInspectPerStage(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-xs text-slate-400 mb-1">边抽检占比</label>
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              value={edgeInspectRatio}
+              onChange={(e) => setEdgeInspectRatio(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-12 md:col-span-5">
+            <label className="block text-xs text-slate-400 mb-1">智能抽检命中率目标（阶段序列）</label>
+            <input
+              value={hitScheduleText}
+              onChange={(e) => setHitScheduleText(e.target.value)}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-12 md:col-span-3 flex items-end">
+            <label className="flex items-center gap-2 text-xs text-slate-300">
+              <input type="checkbox" checked={enforceHitSchedule} onChange={(e) => setEnforceHitSchedule(e.target.checked)} />
+              强制命中率目标（用于可控模拟）
+            </label>
+          </div>
+        </div>
+
+        <button
+          onClick={runRollingClosedLoop}
+          disabled={rollingLoading}
+          className="px-3 py-1.5 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {rollingLoading ? '运行中...' : '执行滚动闭环实验'}
+        </button>
+
+        {!rollingResult && <div className="text-xs text-slate-400 mt-2">输出 Baseline1（M1~M5）与 Baseline2（智能 vs 随机），并拆分节点/边指标。</div>}
+
+        {rollingResult && (
+          <div className="mt-3 grid grid-cols-12 gap-4 text-xs">
+            <div className="col-span-12 md:col-span-4 rounded border border-slate-700 bg-slate-950/70 p-2 space-y-1">
+              <div>最终评估样本: {rollingResult.entity_space.final_entity_count}</div>
+              <div>节点: {rollingResult.entity_space.final_node_count}</div>
+              <div>边: {rollingResult.entity_space.final_edge_count}</div>
+              <div>Top-K: {rollingResult.config.top_k}</div>
+              <div>每阶段抽检: {rollingResult.config.inspect_count_per_stage}</div>
+              <div>边抽检占比: {(rollingResult.config.edge_inspect_ratio * 100).toFixed(0)}%</div>
+            </div>
+            <div className="col-span-12 md:col-span-8 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">Baseline2：最终测试 智能 vs 随机</div>
+              <div>智能 Precision@K: {(rollingResult.baseline_2.final_test.intelligent.metrics.combined.precision_at_k * 100).toFixed(1)}%</div>
+              <div>随机 Precision@K: {(rollingResult.baseline_2.final_test.random.metrics.combined.precision_at_k * 100).toFixed(1)}%</div>
+              <div className="text-emerald-300">Precision 增益: {rollingResult.baseline_2.gain_pp.precision_combined_pp.toFixed(2)}pp</div>
+              <div className="text-emerald-300">Recall 增益: {rollingResult.baseline_2.gain_pp.recall_combined_pp.toFixed(2)}pp</div>
+              <div className="text-emerald-300">节点 Precision 增益: {rollingResult.baseline_2.gain_pp.precision_node_pp.toFixed(2)}pp</div>
+              <div className="text-emerald-300">边 Precision 增益: {rollingResult.baseline_2.gain_pp.precision_edge_pp.toFixed(2)}pp</div>
+            </div>
+
+            <div className="col-span-12 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">Baseline1：M1~M5 统一最终测试集评估</div>
+              <div className="overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-slate-400">
+                    <tr>
+                      <th className="text-left py-1">模型</th>
+                      <th className="text-left py-1">Precision@K</th>
+                      <th className="text-left py-1">Recall@K</th>
+                      <th className="text-left py-1">节点Precision</th>
+                      <th className="text-left py-1">边Precision</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rollingResult.baseline_1.models.map((m) => (
+                      <tr key={m.model_id} className="border-t border-slate-700/70">
+                        <td className="py-1">{m.model_id}</td>
+                        <td className="py-1">{(m.metrics.combined.precision_at_k * 100).toFixed(1)}%</td>
+                        <td className="py-1">{(m.metrics.combined.recall_at_k * 100).toFixed(1)}%</td>
+                        <td className="py-1">{(m.metrics.node.precision_at_k * 100).toFixed(1)}%</td>
+                        <td className="py-1">{(m.metrics.edge.precision_at_k * 100).toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="col-span-12 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">阶段反馈（T2~T5）</div>
+              <div className="overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-slate-400">
+                    <tr>
+                      <th className="text-left py-1">阶段</th>
+                      <th className="text-left py-1">月份</th>
+                      <th className="text-left py-1">模型</th>
+                      <th className="text-left py-1">智能命中率</th>
+                      <th className="text-left py-1">随机命中率</th>
+                      <th className="text-left py-1">智能阳性</th>
+                      <th className="text-left py-1">随机阳性</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rollingResult.stage_feedback.map((x) => (
+                      <tr key={`${x.stage}-${x.month}`} className="border-t border-slate-700/70">
+                        <td className="py-1">{x.stage}</td>
+                        <td className="py-1">{x.month}</td>
+                        <td className="py-1">{x.model_before} → {x.model_after}</td>
+                        <td className="py-1 text-emerald-300">{(x.intelligent.hit_rate * 100).toFixed(1)}%</td>
+                        <td className="py-1 text-amber-300">{(x.random.hit_rate * 100).toFixed(1)}%</td>
+                        <td className="py-1">{x.intelligent.positive_found}/{x.intelligent.selected}</td>
+                        <td className="py-1">{x.random.positive_found}/{x.random.selected}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-cyan-700/50 bg-gradient-to-br from-slate-900/80 via-cyan-950/20 to-slate-900/80 p-3">
+        <div className="text-sm font-semibold mb-3">整合闭环：风险预测 → 智能抽检 → 反馈更新 → 12小时传播联动</div>
+        <div className="grid grid-cols-12 gap-3 mb-3">
+          <div className="col-span-12 md:col-span-3">
+            <label className="block text-xs text-slate-400 mb-1">抽检时刻（可空）</label>
+            <input
+              value={integratedInspectTime}
+              onChange={(e) => setIntegratedInspectTime(e.target.value)}
+              placeholder="YYYY-MM-DD HH:mm:ss"
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-xs text-slate-400 mb-1">传播时长(小时)</label>
+            <input
+              type="number"
+              min={1}
+              max={72}
+              value={integratedForecastHours}
+              onChange={(e) => setIntegratedForecastHours(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-xs text-slate-400 mb-1">抽检预算(对象数)</label>
+            <input
+              type="number"
+              min={5}
+              max={2000}
+              value={integratedBudget}
+              onChange={(e) => setIntegratedBudget(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-xs text-slate-400 mb-1">边抽检占比</label>
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              value={integratedEdgeRatio}
+              onChange={(e) => setIntegratedEdgeRatio(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-6 md:col-span-2">
+            <label className="block text-xs text-slate-400 mb-1">反馈强度</label>
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              value={integratedFeedbackStrength}
+              onChange={(e) => setIntegratedFeedbackStrength(Number(e.target.value))}
+              className="border border-slate-600 bg-slate-950 text-slate-100 rounded px-2 py-1.5 text-sm w-full"
+            />
+          </div>
+          <div className="col-span-12 md:col-span-1 flex items-end">
+            <button
+              onClick={runIntegratedClosedLoop}
+              disabled={integratedLoading}
+              className="px-3 py-1.5 rounded bg-cyan-600 text-white text-sm hover:bg-cyan-500 disabled:opacity-60 w-full"
+            >
+              {integratedLoading ? '运行中...' : '执行'}
+            </button>
+          </div>
+        </div>
+
+        {!integratedResult && (
+          <div className="text-xs text-slate-400">
+            该模块融合 risk_visualization 思路：双目标抽检优化（成本/风险消除）+ 链接预测驱动的小时级风险传播。
+          </div>
+        )}
+
+        {integratedResult && (
+          <div className="grid grid-cols-12 gap-4 text-xs">
+            <div className="col-span-12 md:col-span-4 rounded border border-slate-700 bg-slate-950/70 p-2 space-y-1">
+              <div>抽检时刻: {integratedResult.config.inspect_time}</div>
+              <div>传播窗口: {integratedResult.config.forecast_hours} 小时</div>
+              <div>抽检对象: {integratedResult.inspection_strategy.selected_count}（节点 {integratedResult.inspection_strategy.node_selected} / 边 {integratedResult.inspection_strategy.edge_selected}）</div>
+              <div>抽检命中率: {(integratedResult.feedback.hit_rate * 100).toFixed(1)}%</div>
+              <div>阳性发现: {integratedResult.feedback.positive_found}</div>
+              <div>预期风险消除代理: {(integratedResult.inspection_strategy.expected_risk_reduction_proxy * 100).toFixed(2)}%</div>
+              <div>传播种子节点: {(integratedResult.propagation.seed_nodes || []).slice(0, 6).join('、') || '-'}</div>
+            </div>
+
+            <div className="col-span-12 md:col-span-8 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">抽检反馈前后排序增益（pp）</div>
+              <ReactEcharts option={integratedGainOption} style={{ height: 210 }} />
+            </div>
+
+            <div className="col-span-12 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">12小时传播联动（预测路径 vs 真实未来路径）</div>
+              <ReactEcharts option={integratedPropagationOption} style={{ height: 260 }} />
+            </div>
+
+            <div className="col-span-12 md:col-span-6 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">智能抽检策略（前30）</div>
+              <div className="max-h-56 overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-slate-400">
+                    <tr>
+                      <th className="text-left py-1">顺序</th>
+                      <th className="text-left py-1">对象</th>
+                      <th className="text-left py-1">分数</th>
+                      <th className="text-left py-1">成本</th>
+                      <th className="text-left py-1">频次</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {integratedResult.inspection_strategy.items.slice(0, 30).map((x) => (
+                      <tr key={`${x.entity_id}-${x.order}`} className="border-t border-slate-700/70">
+                        <td className="py-1">{x.order}</td>
+                        <td className="py-1">{x.kind === 'node' ? `${x.name || x.raw_id}` : `${x.source_name || x.source}→${x.target_name || x.target}`}</td>
+                        <td className="py-1">{(x.score * 100).toFixed(1)}%</td>
+                        <td className="py-1">{x.cost.toFixed(2)}</td>
+                        <td className="py-1">{x.inspect_frequency}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="col-span-12 md:col-span-6 rounded border border-slate-700 bg-slate-950/70 p-2">
+              <div className="text-slate-300 mb-1">传播路径Top（预测/真实各15）</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="text-cyan-300 mb-1">预测路径</div>
+                  <div className="max-h-52 overflow-auto space-y-1">
+                    {integratedResult.propagation.predicted_paths_top.slice(0, 15).map((x, i) => (
+                      <div key={`pp-${i}`} className="rounded border border-slate-700 p-1">
+                        H{x.hour} {x.source}→{x.target} / {(x.risk_score * 100).toFixed(1)}% / {x.dominant_risk}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-emerald-300 mb-1">真实路径</div>
+                  <div className="max-h-52 overflow-auto space-y-1">
+                    {integratedResult.propagation.real_paths_top.slice(0, 15).map((x, i) => (
+                      <div key={`rp-${i}`} className="rounded border border-slate-700 p-1">
+                        H{x.hour} {x.source}→{x.target} / {(x.risk_score * 100).toFixed(1)}% / {x.dominant_risk}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -767,6 +767,287 @@ export interface ModelATemporalSimResponse {
   message?: string;
 }
 
+export interface ModelARollingClosedLoopModelMetrics {
+  combined: {
+    top_k: number;
+    positive_total: number;
+    positive_in_top_k: number;
+    precision_at_k: number;
+    recall_at_k: number;
+  };
+  node: {
+    top_k: number;
+    positive_total: number;
+    positive_in_top_k: number;
+    precision_at_k: number;
+    recall_at_k: number;
+  };
+  edge: {
+    top_k: number;
+    positive_total: number;
+    positive_in_top_k: number;
+    precision_at_k: number;
+    recall_at_k: number;
+  };
+  entity_count: number;
+  node_count: number;
+  edge_count: number;
+}
+
+export interface ModelARollingClosedLoopResponse {
+  config: {
+    train_months: string[];
+    feedback_months: string[];
+    final_test_months: string[];
+    product_type?: string | null;
+    node_type?: string | null;
+    max_nodes: number;
+    max_edges: number;
+    top_ratio: number;
+    top_k: number;
+    inspect_count_per_stage: number;
+    edge_inspect_ratio: number;
+    explore_weight: number;
+    seed: number;
+    enforce_intelligent_hit_schedule: boolean;
+    intelligent_hit_schedule: number[];
+  };
+  windows: {
+    train_months: string[];
+    feedback_months: string[];
+    final_test_months: string[];
+  };
+  entity_space: {
+    final_entity_count: number;
+    final_node_count: number;
+    final_edge_count: number;
+  };
+  stage_feedback: Array<{
+    stage: string;
+    month: string;
+    model_before: string;
+    model_after: string;
+    inspect_total: number;
+    inspect_quota: { node: number; edge: number };
+    intelligent_target_positive_ratio: number;
+    intelligent: {
+      selected: number;
+      selected_node: number;
+      selected_edge: number;
+      positive_found: number;
+      hit_rate: number;
+    };
+    random: {
+      selected: number;
+      selected_node: number;
+      selected_edge: number;
+      positive_found: number;
+      hit_rate: number;
+    };
+  }>;
+  baseline_1: {
+    description: string;
+    models: Array<{
+      model_id: string;
+      metrics: ModelARollingClosedLoopModelMetrics;
+    }>;
+  };
+  baseline_2: {
+    description: string;
+    final_test: {
+      intelligent: { model_id: string; metrics: ModelARollingClosedLoopModelMetrics };
+      random: { model_id: string; metrics: ModelARollingClosedLoopModelMetrics };
+    };
+    gain_pp: {
+      precision_combined_pp: number;
+      recall_combined_pp: number;
+      precision_node_pp: number;
+      precision_edge_pp: number;
+    };
+  };
+  recommendations: string[];
+  message?: string;
+}
+
+export interface ModelAIntegratedClosedLoopResponse {
+  input?: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  message?: string;
+  config: {
+    inspect_time: string;
+    forecast_hours: number;
+    inspect_budget: number;
+    edge_inspect_ratio: number;
+    explore_weight: number;
+    feedback_strength: number;
+    seed: number;
+  };
+  prediction_before: {
+    node_count: number;
+    edge_count: number;
+    nodes_top: Array<{
+      node_id: string;
+      name: string;
+      node_type: string;
+      enterprise_scale: string;
+      score: number;
+      uncertainty: number;
+      risk_level: string;
+      risk_probabilities: number[];
+      top5_count: number;
+      dominant_risk: { idx: number; name: string; prob: number };
+    }>;
+    edges_top: Array<{
+      edge_id: string;
+      source: string;
+      target: string;
+      source_name: string;
+      target_name: string;
+      source_type: string;
+      target_type: string;
+      dairy_product_type: string;
+      score: number;
+      uncertainty: number;
+      risk_level: string;
+      risk_probabilities: number[];
+      top5_count: number;
+      dominant_risk: { idx: number; name: string; prob: number };
+    }>;
+  };
+  inspection_strategy: {
+    selected_count: number;
+    node_selected: number;
+    edge_selected: number;
+    expected_risk_reduction_proxy: number;
+    items: Array<{
+      entity_id: string;
+      kind: 'node' | 'edge';
+      raw_id: string;
+      name?: string;
+      node_type?: string;
+      source?: string;
+      target?: string;
+      source_name?: string;
+      target_name?: string;
+      dairy_product_type?: string;
+      score: number;
+      uncertainty: number;
+      cost: number;
+      inspect_frequency: number;
+      objective: number;
+      utility: number;
+      order: number;
+    }>;
+  };
+  feedback: {
+    positive_found: number;
+    hit_rate: number;
+    items: Array<{
+      entity_id: string;
+      kind: 'node' | 'edge';
+      raw_id: string;
+      order: number;
+      predicted_score: number;
+      uncertainty: number;
+      inspection_label: number;
+      dominant_risk: string;
+      feedback_score: number;
+      risk_probabilities_after_feedback: number[];
+    }>;
+  };
+  optimization: {
+    before: {
+      node: { top_k: number; positive_total: number; positive_in_top_k: number; precision_at_k: number; recall_at_k: number };
+      edge: { top_k: number; positive_total: number; positive_in_top_k: number; precision_at_k: number; recall_at_k: number };
+    };
+    after: {
+      node: { top_k: number; positive_total: number; positive_in_top_k: number; precision_at_k: number; recall_at_k: number };
+      edge: { top_k: number; positive_total: number; positive_in_top_k: number; precision_at_k: number; recall_at_k: number };
+    };
+    gain_pp: {
+      node_precision_pp: number;
+      node_recall_pp: number;
+      edge_precision_pp: number;
+      edge_recall_pp: number;
+    };
+  };
+  propagation: {
+    seed_nodes: string[];
+    frames: Array<{
+      hour: number;
+      timestamp: string;
+      predicted_active_nodes: number;
+      predicted_active_edges: number;
+      predicted_max_score: number;
+      real_active_nodes: number;
+      real_active_edges: number;
+      real_max_score: number;
+    }>;
+    predicted_paths_top: Array<{
+      hour: number;
+      timestamp: string;
+      source: string;
+      target: string;
+      risk_score: number;
+      risk_level: string;
+      dominant_risk: string;
+      kind: string;
+    }>;
+    real_paths_top: Array<{
+      hour: number;
+      timestamp: string;
+      source: string;
+      target: string;
+      edge_id?: string;
+      risk_score: number;
+      risk_level: string;
+      dominant_risk: string;
+      kind: string;
+    }>;
+  };
+  post_feedback: {
+    nodes_top: Array<{
+      node_id: string;
+      name: string;
+      node_type: string;
+      score: number;
+      risk_level: string;
+      risk_probabilities: number[];
+    }>;
+    edges_top: Array<{
+      edge_id: string;
+      source: string;
+      target: string;
+      source_name: string;
+      target_name: string;
+      score: number;
+      risk_level: string;
+      risk_probabilities: number[];
+    }>;
+    risk_tensor: {
+      node: Array<{
+        node_id: string;
+        name: string;
+        node_type: string;
+        score: number;
+        risk_level: string;
+        risk_probabilities: number[];
+      }>;
+      edge: Array<{
+        edge_id: string;
+        source: string;
+        target: string;
+        source_name: string;
+        target_name: string;
+        score: number;
+        risk_level: string;
+        risk_probabilities: number[];
+      }>;
+    };
+  };
+  recommendations: string[];
+}
+
 // ==================== ModeB 舆情模块类型 ====================
 
 export interface ModeBOpinionImportPayload {
